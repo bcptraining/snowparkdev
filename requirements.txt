@@ -1,0 +1,18 @@
+# Snowflake CLI and dependencies (strict versions for compatibility)
+snowflake-cli-labs==3.10.0
+snowflake-connector-python[secure-local-storage]==3.15.0
+snowflake-core==1.5.1
+boto3==1.39.2
+botocore==1.39.2
+certifi==2025.6.15
+typing-extensions==4.14.0
+
+# Supporting libraries
+requests==2.32.4
+urllib3==2.5.0
+pyjwt==2.10.1
+cryptography==45.0.5
+idna==3.10
+charset_normalizer==3.4.2
+python-dateutil==2.9.0.post0
+six==1.17.0

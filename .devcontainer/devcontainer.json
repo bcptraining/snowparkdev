@@ -1,0 +1,15 @@
+{
+  "name": "Snowpark Dev",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "mamba": "latest"
+  },
+  "postCreateCommand": "mamba env update -f environment.yml && echo '✅ Environment ready!'",
+  "settings": {
+    "python.defaultInterpreterPath": "/opt/conda/envs/py311_env/bin/python"
+  },
+  "extensions": [
+    "ms-python.python"
+  ],
+  "remoteUser": "vscode"
+}

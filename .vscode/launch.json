@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Snowpark Script",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/connection_test.py",
+      "console": "integratedTerminal",
+      "python": "/opt/conda/envs/py311_env/bin/python"
+    }
+  ]
+}
+
