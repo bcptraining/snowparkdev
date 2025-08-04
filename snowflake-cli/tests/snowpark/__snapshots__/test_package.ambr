@@ -1,0 +1,22 @@
+# serializer version: 1
+# name: TestPackage.test_package_lookup[package-with-non-pep-version]
+  '''
+  Package `package-with-non-pep-version` is available in Anaconda in versions: 4d.
+  
+  '''
+# ---
+# name: TestPackage.test_package_lookup[snowflake.core]
+  '''
+  Package `snowflake.core` is available in Anaconda. Latest available version: 0.6.0.
+  
+  '''
+# ---
+# name: TestPackage.test_package_lookup[some-weird-package-we-dont-know]
+  '''
+  
+  Package `some-weird-package-we-dont-know` is not available in Anaconda. To prepare Snowpark compatible package run:
+  snow snowpark package create some-weird-package-we-dont-know
+  
+  
+  '''
+# ---

@@ -1,0 +1,450 @@
+# serializer version: 1
+# name: test_describe[compute-pool-compute_pool_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[database-database_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[function-function_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[git-repository-git_repository_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[integration-integration_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[network-rule-network_rule_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[notebook-notebook_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[procedure-procedure_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[role-role_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[schema-schema_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[secret-secret_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[service-service_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[stage-stage_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[stream-stream_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[streamlit-streamlit_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[table-table_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[task-task_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[user-user_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[view-view_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe[warehouse-warehouse_example]
+  '''
+  +-----------------------------+
+  | name | type        | kind   |
+  |------+-------------+--------|
+  | ID   | NUMBER(38,0 | COLUMN |
+  | NAME | VARCHAR(100 | COLUMN |
+  +-----------------------------+
+  
+  '''
+# ---
+# name: test_describe_fails_image_repository
+  '''
+  +- Error ----------------------------------------------------------------------+
+  | Describe is currently not supported for object of type image-repository      |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[compute-pool-compute_pool_example]
+  '''
+  +--------------------------------------------+
+  | status                                     |
+  |--------------------------------------------|
+  | compute_pool_example successfully dropped. |
+  +--------------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[database-database_example]
+  '''
+  +----------------------------------------+
+  | status                                 |
+  |----------------------------------------|
+  | database_example successfully dropped. |
+  +----------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[function-function_example]
+  '''
+  +----------------------------------------+
+  | status                                 |
+  |----------------------------------------|
+  | function_example successfully dropped. |
+  +----------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[git-repository-git_repository_example]
+  '''
+  +----------------------------------------------+
+  | status                                       |
+  |----------------------------------------------|
+  | git_repository_example successfully dropped. |
+  +----------------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[image-repository-image_repository_example]
+  '''
+  +------------------------------------------------+
+  | status                                         |
+  |------------------------------------------------|
+  | image_repository_example successfully dropped. |
+  +------------------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[integration-integration_example]
+  '''
+  +-------------------------------------------+
+  | status                                    |
+  |-------------------------------------------|
+  | integration_example successfully dropped. |
+  +-------------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[network-rule-network_rule_example]
+  '''
+  +--------------------------------------------+
+  | status                                     |
+  |--------------------------------------------|
+  | network_rule_example successfully dropped. |
+  +--------------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[notebook-notebook_example]
+  '''
+  +----------------------------------------+
+  | status                                 |
+  |----------------------------------------|
+  | notebook_example successfully dropped. |
+  +----------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[procedure-procedure_example]
+  '''
+  +-----------------------------------------+
+  | status                                  |
+  |-----------------------------------------|
+  | procedure_example successfully dropped. |
+  +-----------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[role-role_example]
+  '''
+  +------------------------------------+
+  | status                             |
+  |------------------------------------|
+  | role_example successfully dropped. |
+  +------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[schema-schema_example]
+  '''
+  +--------------------------------------+
+  | status                               |
+  |--------------------------------------|
+  | schema_example successfully dropped. |
+  +--------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[secret-secret_example]
+  '''
+  +--------------------------------------+
+  | status                               |
+  |--------------------------------------|
+  | secret_example successfully dropped. |
+  +--------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[service-service_example]
+  '''
+  +---------------------------------------+
+  | status                                |
+  |---------------------------------------|
+  | service_example successfully dropped. |
+  +---------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[stage-stage_example]
+  '''
+  +-------------------------------------+
+  | status                              |
+  |-------------------------------------|
+  | stage_example successfully dropped. |
+  +-------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[stream-stream_example]
+  '''
+  +--------------------------------------+
+  | status                               |
+  |--------------------------------------|
+  | stream_example successfully dropped. |
+  +--------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[streamlit-streamlit_example]
+  '''
+  +-----------------------------------------+
+  | status                                  |
+  |-----------------------------------------|
+  | streamlit_example successfully dropped. |
+  +-----------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[table-table_example]
+  '''
+  +-------------------------------------+
+  | status                              |
+  |-------------------------------------|
+  | table_example successfully dropped. |
+  +-------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[task-task_example]
+  '''
+  +------------------------------------+
+  | status                             |
+  |------------------------------------|
+  | task_example successfully dropped. |
+  +------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[user-user_example]
+  '''
+  +------------------------------------+
+  | status                             |
+  |------------------------------------|
+  | user_example successfully dropped. |
+  +------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[view-view_example]
+  '''
+  +------------------------------------+
+  | status                             |
+  |------------------------------------|
+  | view_example successfully dropped. |
+  +------------------------------------+
+  
+  '''
+# ---
+# name: test_drop[warehouse-warehouse_example]
+  '''
+  +-----------------------------------------+
+  | status                                  |
+  |-----------------------------------------|
+  | warehouse_example successfully dropped. |
+  +-----------------------------------------+
+  
+  '''
+# ---
+# name: test_replace_and_not_exists_cannot_be_used_together
+  '''
+  Usage: root object create [OPTIONS] OBJECT_TYPE [OBJECT_ATTRIBUTES]...
+  Try 'root object create --help' for help.
+  +- Error ----------------------------------------------------------------------+
+  | Parameters '--if-not-exists' and '--replace' are incompatible and cannot be  |
+  | used simultaneously.                                                         |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---

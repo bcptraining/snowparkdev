@@ -1,0 +1,110 @@
+# serializer version: 1
+# name: test_deploy_multiple_services
+  '''
+  +-----------------------------------------------------+
+  | key    | value                                      |
+  |--------+--------------------------------------------|
+  | status | Service TEST_SERVICE successfully created. |
+  +-----------------------------------------------------+
+  
+  '''
+# ---
+# name: test_deploy_multiple_services_without_entity_id
+  '''
+  Usage: root spcs service deploy [OPTIONS] [ENTITY_ID]
+  Try 'root spcs service deploy --help' for help.
+  +- Error ----------------------------------------------------------------------+
+  | Multiple services found. Please provide entity id for the operation.         |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---
+# name: test_deploy_not_existing_entity_id
+  '''
+  Usage: root spcs service deploy [OPTIONS] [ENTITY_ID]
+  Try 'root spcs service deploy --help' for help.
+  +- Error ----------------------------------------------------------------------+
+  | No 'not_existing_entity_id' entity in project definition file.               |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---
+# name: test_deploy_only_required_fields
+  '''
+  +-----------------------------------------------------+
+  | key    | value                                      |
+  |--------+--------------------------------------------|
+  | status | Service TEST_SERVICE successfully created. |
+  +-----------------------------------------------------+
+  
+  '''
+# ---
+# name: test_deploy_service
+  '''
+  +-----------------------------------------------------+
+  | key    | value                                      |
+  |--------+--------------------------------------------|
+  | status | Service TEST_SERVICE successfully created. |
+  +-----------------------------------------------------+
+  
+  '''
+# ---
+# name: test_deploy_service_already_exists
+  '''
+  +- Error ----------------------------------------------------------------------+
+  | Service TEST_SERVICE already exists.                                         |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---
+# name: test_deploy_service_replace
+  '''
+  +-----------------------------------------------------+
+  | key    | value                                      |
+  |--------+--------------------------------------------|
+  | status | Service TEST_SERVICE successfully created. |
+  +-----------------------------------------------------+
+  
+  '''
+# ---
+# name: test_deploy_service_with_upgrade
+  '''
+  +--------------------------------------------+
+  | key    | value                             |
+  |--------+-----------------------------------|
+  | status | Statement completed successfully. |
+  +--------------------------------------------+
+  
+  '''
+# ---
+# name: test_latest_metrics
+  '''
+  +------------------------------------------------------------------------------+
+  | TIMESTA | DATABAS | SCHEMA  | SERVICE | INSTANC | CONTAIN | METRIC  | METRIC |
+  | MP      | E NAME  | NAME    | NAME    | E ID    | ER NAME | NAME    | VALUE  |
+  |---------+---------+---------+---------+---------+---------+---------+--------|
+  | 2024-12 | N/A     | N/A     | LOG_EVE | N/A     | log-pri | contain | 0.0005 |
+  | -10     |         |         | NT      |         | nter    | er.cpu. | 007168 |
+  | 18:53:2 |         |         |         |         |         | usage   | 666666 |
+  | 1.80900 |         |         |         |         |         |         | 691    |
+  | 0       |         |         |         |         |         |         |        |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---
+# name: test_metrics_all_filters
+  '''
+                      select *
+                      from event_table_db.data_schema.snowservices_logs
+                      where (
+                          resource_attributes:"snow.service.name" = 'LOG_EVENT' and (resource_attributes:"snow.service.instance" = '0' OR resource_attributes:"snow.service.container.instance" = '0') and resource_attributes:"snow.service.container.name" = 'log-printer'
+                          
+                          and timestamp >= sysdate() - interval '2 hour'
+                          and timestamp <= sysdate() - interval '1 hour'
+                      )
+                      and record_type = 'METRIC'
+                      and scope['name'] = 'snow.spcs.platform'
+                      order by timestamp desc
+                  
+  '''
+# ---

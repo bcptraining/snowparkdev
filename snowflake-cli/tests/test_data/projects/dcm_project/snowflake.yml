@@ -1,0 +1,8 @@
+definition_version: 2
+entities:
+  my_project:
+    type: dcm
+    identifier: "my_project"
+    stage: "my_project_stage"
+    artifacts:
+      - definitions/

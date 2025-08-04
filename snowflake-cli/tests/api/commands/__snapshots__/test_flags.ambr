@@ -1,0 +1,34 @@
+# serializer version: 1
+# name: test_format
+  '''
+  Usage: root stage list-files [OPTIONS] STAGE_NAME
+  Try 'root stage list-files --help' for help.
+  +- Error ----------------------------------------------------------------------+
+  | Invalid value for '--format': 'invalid_format' is not one of 'TABLE',        |
+  | 'JSON', 'JSON_EXT', 'CSV'.                                                   |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---
+# name: test_mutually_exclusive_options_error
+  '''
+  Usage: - [OPTIONS]
+  Try '- --help' for help.
+  +- Error ----------------------------------------------------------------------+
+  | Parameters '--option2' and '--option1' are incompatible and cannot be used   |
+  | simultaneously.                                                              |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---
+# name: test_overrideable_option_callback_with_mutually_exclusive
+  '''
+  Usage: - [OPTIONS]
+  Try '- --help' for help.
+  +- Error ----------------------------------------------------------------------+
+  | Parameters '--option2' and '--option1' are incompatible and cannot be used   |
+  | simultaneously.                                                              |
+  +------------------------------------------------------------------------------+
+  
+  '''
+# ---
