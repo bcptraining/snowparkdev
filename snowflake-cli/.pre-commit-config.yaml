@@ -1,0 +1,143 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: "(^tests/|^tests_integration/|^tests_e2e)"
+      - id: end-of-file-fixer
+        exclude: license_header.txt
+      - id: check-yaml
+        exclude: .github/repo_meta.yaml
+      - id: debug-statements
+        exclude: src/snowflake/cli/_app/dev/pycharm_remote_debug.py
+      - id: check-ast
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.1.7"
+    hooks:
+      - id: ruff
+        args: [--fix, --exclude, "**/tests_common/,**/tests_integration/"]
+  - repo: https://github.com/psf/black
+    rev: 22.12.0
+    hooks:
+      - id: black
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.990
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-pkg-resources==0.1.3, types-all==1.0.0]
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.4
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
+  - repo: local
+    hooks:
+      - id: check-print-in-code
+        language: pygrep
+        name: "Check for print statements"
+        entry: "print\\(|echo\\("
+        pass_filenames: true
+        files: ^src/snowflake/.*\.py$
+        exclude: >
+          (?x)
+          ^src/snowflake/cli/api/console/.*$|
+          ^src/snowflake/cli/_app/printing.py$|
+          ^src/snowflake/cli/_app/dev/.*$|
+          ^src/snowflake/cli/templates/.*$|
+          ^src/snowflake/cli/api/utils/rendering.py$|
+          ^src/snowflake/cli/_plugins/spcs/common.py$|
+          ^src/snowflake/cli/_plugins/snowpark/venv.py$|
+          ^src/snowflake/cli/_plugins/sql/repl.py$|
+          ^src/snowflake/cli/_app/cli_app.py$
+      - id: check-app-imports-in-api
+        language: pygrep
+        name: "No top level cli._app imports in cli.api"
+        entry: "^from snowflake\\.cli\\._app"
+        pass_filenames: true
+        files: ^src/snowflake/cli/api/.*\.py$
+      - id: avoid-snowcli
+        language: pygrep
+        name: "Prefer snowflake CLI over snowcli"
+        entry: "snowcli"
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^src/snowflake/cli/_app/constants.py$
+      - id: lock-dependencies
+        name: "Lock project dependencies"
+        language: system
+        entry: hatch
+        args: ["run", "lock-dependencies"]
+        pass_filenames: false
+        files: ^py(project|lock)\.toml$
+      - id: dependencies-sync
+        name: "Copy dependencies from pyproject.toml to requirements.txt"
+        language: system
+        entry: hatch
+        args: ["run", "sync-dependencies"]
+        pass_filenames: false
+        files: ^pyproject.toml$
+      - id: use-local-requirements-model
+        language: pygrep
+        name: "Use snowflake.cli._plugins.snowpark.models.Requirement for requirements parsing"
+        files: ^src/snowflake/.*\.py$
+        entry: >
+          ^from requirements.* import|
+          ^import requirements.*
+        pass_filenames: true
+        exclude: ^src/snowflake/cli/_plugins/snowpark/models.py$
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: insert-license
+        name: Add license for all SQL files
+        files: \.sql$
+        exclude: |
+          (?x)
+          ^\.github/|
+          tests/test_data/projects/.*|
+          tests_integration/test_data/projects/.*
+        args:
+          - --comment-style
+          - "/*||*/"
+          - --license-filepath
+          - scripts/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all toml files
+        files: \.toml$
+        exclude: pylock\.toml$
+        args:
+          - --comment-style
+          - "|#|"
+          - --license-filepath
+          - scripts/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all Python files
+        exclude: |
+          (?x)
+          ^\.github/|
+          tests/test_data/projects/.*|
+          tests_integration/test_data/projects/.*|
+        files: \.py$|\.pyi$
+        args:
+          - --comment-style
+          - "|#|"
+          - --license-filepath
+          - scripts/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all Markdown files
+        exclude: |
+          (?x)
+          ^\.github/|
+          tests/test_data/projects/.*|
+          tests_integration/test_data/projects/.*
+        files: \.md$
+        args:
+          - --comment-style
+          - "<!--|| -->"
+          - --license-filepath
+          - scripts/LICENSE.txt
+          - --fuzzy-match-generates-todo
