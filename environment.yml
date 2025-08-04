@@ -5,3 +5,7 @@ channels:
 dependencies:
   - python=3.11
   - snowflake-snowpark-python=1.9.0
+  - pip
+  - pip:
+    - snowflake-cli
+
