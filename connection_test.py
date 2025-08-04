@@ -1,12 +1,12 @@
+from snowflake.snowpark import Session
+from snowflake import connector
 import os
 
 os.environ["SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED"] = "false"
 
-from snowflake import connector
 
 connector.connection._OCSP_MODE = False  # <- undocumented but effective
 
-from snowflake.snowpark import Session
 
 session = Session.builder.configs(
     {

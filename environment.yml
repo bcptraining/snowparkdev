@@ -1,8 +1,7 @@
 name: py311_env
 channels:
+  - defaults
   - conda-forge
 dependencies:
   - python=3.11
   - snowflake-snowpark-python=1.9.0
-  - ipykernel  # if you're using Jupyter or notebooks
-  - pip        # if you need to layer in pip-only packages later

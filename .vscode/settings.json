@@ -1,3 +1,4 @@
 {
-  "python.defaultInterpreterPath": "/opt/conda/envs/py311_env/bin/python"
+  "python.defaultInterpreterPath": "/opt/conda/envs/py311_env/bin/python",
+  "python.terminal.activateEnvironment": true
 }
