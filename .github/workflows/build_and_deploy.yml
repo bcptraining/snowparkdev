@@ -1,11 +1,16 @@
----
 name: Deploy Snowpark Apps
 
 on:
   push:
     branches:
       - dev
-  workflow_dispatch: {}
+      - devenv
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch to deploy from"
+        required: true
+        default: "dev"
 
 jobs:
   deploy:
@@ -14,13 +19,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: coryp/snowparkdev
-          ref: dev
+          repository: bcptraining/snowparkdev
+          ref: ${{ github.event.inputs.target_branch }}
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install Python Packages
         run: pip install -r requirements.txt
