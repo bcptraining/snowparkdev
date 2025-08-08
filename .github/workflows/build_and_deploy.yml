@@ -1,42 +1,37 @@
+---
 name: Deploy Snowpark Apps
 
-# Controls when the action will run.
 on:
   push:
     branches:
       - dev
-  
-  # Alllows you to run this workflow manually from the actions tab
-  workflow_dispatch: 
+  workflow_dispatch: {}
 
-  jobs:
-    deploy:
-      runs-on: ubunti-latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: coryp/snowparkdev
+          ref: dev
 
-      steps:
-        # Checks-out your repositort under $GITHUB_WORKSPACE, so your job can...
-        - name: Checkout repository
-          uses: actions/checkout@v4
-          with: 
-            repository: coryp/snowparkdev
-            # path: dev
-            ref: dev
-          
-          - name: Setup Python 3.11
-            uses: actions/setup-python@v4
-            with:
-              python-version: '3.11'
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-          - name: Install Python Packages
-            run: pip install -r requirements.tct
+      - name: Install Python Packages
+        run: pip install -r requirements.txt
 
-          - name: Deploy Snowpark Apps
-            working-directory: first_snowpark_project
-            env:
-              SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
-              SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
-              SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD_DEV }}
-              SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE_DEV }}
-              SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
-              SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
-            run: python deploy_snowpark_app.py $GITHUB_WORKSPACE
+      - name: Deploy Snowpark Apps
+        working-directory: first_snowpark_project
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD_DEV }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE_DEV }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
+        run: python deploy_snowpark_app.py $GITHUB_WORKSPACE
