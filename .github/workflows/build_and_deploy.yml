@@ -1,15 +1,15 @@
+---
 name: Deploy Snowpark Apps
 
 on:
   push:
     branches:
       - dev
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
