@@ -57,4 +57,4 @@ jobs:
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
 
         run: |
-          python deploy_snowpark_app.py .
+          python first_snowpark_project/deploy_snowflake_app.py first_snowpark_project
