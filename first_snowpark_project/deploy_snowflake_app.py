@@ -7,8 +7,26 @@ import yaml
 directory_path = sys.argv[1]
 
 os.chdir(f"{directory_path}")
+
+# Check for missing variables
+required_vars = [
+    "SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD",
+    "SNOWFLAKE_ROLE", "SNOWFLAKE_WAREHOUSE", "SNOWFLAKE_DATABASE"
+]
+
+for var in required_vars:
+    if var not in os.environ or not os.environ[var]:
+        raise EnvironmentError(f"Missing required environment variable: {var}")
+
 # Make sure all 6 SNOWFLAKE_ environment variables are set
 # SnowCLI accesses the passowrd directly from the SNOWFLAKE_PASSWORD environmnet variable
 os.system(f"snow snowpark build")
-os.system(f"snow snowpark deploy --replace --temporary-connection --account $SNOWFLAKE_ACCOUNT --user $SNOWFLAKE_USER --role $SNOWFLAKE_ROLE --warehouse $SNOWFLAKE_WAREHOUSE --database $SNOWFLAKE_DATABASE")
-# Triggering deployment for devenv branch
+os.system(
+    f"snow snowpark deploy --replace --temporary-connection "
+    f"--account {os.environ['SNOWFLAKE_ACCOUNT']} "
+    f"--user {os.environ['SNOWFLAKE_USER']} "
+    f"--password {os.environ['SNOWFLAKE_PASSWORD']} "
+    f"--role {os.environ['SNOWFLAKE_ROLE']} "
+    f"--warehouse {os.environ['SNOWFLAKE_WAREHOUSE']} "
+    f"--database {os.environ['SNOWFLAKE_DATABASE']}"
+)
