@@ -4,12 +4,12 @@ import yaml
 import subprocess
 
 required_env_vars = [
-    "SNOWFLAKE_ACCOUNT",
-    "SNOWFLAKE_USER",
-    "SNOWFLAKE_ROLE",
-    "SNOWFLAKE_WAREHOUSE",
-    "SNOWFLAKE_DATABASE",
-    "SNOWFLAKE_PASSWORD"  # Even if not passed directly, SnowCLI expects it
+    "SNOWFLAKE_ACCOUNT_DEV",
+    "SNOWFLAKE_USER_DEV",
+    "SNOWFLAKE_ROLE_DEV",
+    "SNOWFLAKE_WAREHOUSE_DEV",
+    "SNOWFLAKE_DATABASE_DEV",
+    "SNOWFLAKE_PASSWORD_DEV"  # Even if not passed directly, SnowCLI expects it
 ]
 
 missing_vars = [var for var in required_env_vars if not os.getenv(var)]
@@ -29,16 +29,16 @@ subprocess.run([
     "snow", "snowpark", "deploy",
     "--replace",
     "--temporary-connection",
-    "--account", os.getenv("SNOWFLAKE_ACCOUNT"),
-    "--user", os.getenv("SNOWFLAKE_USER"),
-    "--role", os.getenv("SNOWFLAKE_ROLE"),
-    "--warehouse", os.getenv("SNOWFLAKE_WAREHOUSE"),
-    "--database", os.getenv("SNOWFLAKE_DATABASE")
+    "--account", os.getenv("SNOWFLAKE_ACCOUNT_DEV"),
+    "--user", os.getenv("SNOWFLAKE_USER_DEV"),
+    "--role", os.getenv("SNOWFLAKE_ROLE_DEV"),
+    "--warehouse", os.getenv("SNOWFLAKE_WAREHOUSE_DEV"),
+    "--database", os.getenv("SNOWFLAKE_DATABASEDEV")
 ], check=True)
 
 print("🔍 Environment configuration:")
 for var in required_env_vars:
-    if var != "SNOWFLAKE_PASSWORD":
+    if var != "SNOWFLAKE_PASSWORD_DEV":
         print(f"{var}: {os.getenv(var)}")
 
 print("✅ Snowpark app deployed successfully!")
