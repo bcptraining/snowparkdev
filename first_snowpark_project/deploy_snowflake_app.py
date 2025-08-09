@@ -5,7 +5,6 @@ import yaml
 # os.system(f"conda init")
 # os.system(f"conda activate snowpark")
 directory_path = sys.argv[1]
-
 os.chdir(f"{directory_path}")
 
 # Check for missing variables
@@ -17,6 +16,11 @@ required_vars = [
 for var in required_vars:
     if var not in os.environ or not os.environ[var]:
         raise EnvironmentError(f"Missing required environment variable: {var}")
+
+# Debug print to confirm environment variables are visible
+print("Using Snowflake connection:")
+for var in required_vars:
+    print(f"{var}: {'***' if 'PASSWORD' in var else os.environ[var]}")
 
 # Make sure all 6 SNOWFLAKE_ environment variables are set
 # SnowCLI accesses the passowrd directly from the SNOWFLAKE_PASSWORD environmnet variable
