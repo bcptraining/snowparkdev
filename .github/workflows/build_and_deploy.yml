@@ -29,6 +29,16 @@ jobs:
 
       - name: Install Python Packages
         run: pip install -r requirements.txt
+      - name: Deploy Snowpark Apps
+        working-directory: first_snowpark_project
+        run: |
+          export SNOWFLAKE_ACCOUNT="${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}"
+          export SNOWFLAKE_USER="${{ secrets.SNOWFLAKE_USER_DEV }}"
+          export SNOWFLAKE_PASSWORD="${{ secrets.SNOWFLAKE_PASSWORD_DEV }}"
+          export SNOWFLAKE_ROLE="${{ secrets.SNOWFLAKE_ROLE_DEV }}"
+          export SNOWFLAKE_WAREHOUSE="${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}"
+          export SNOWFLAKE_DATABASE="${{ secrets.SNOWFLAKE_DATABASE_DEV }}"
+          python deploy_snowpark_app.py .
 
       - name: Debug Snowflake Env Vars
         run: |
