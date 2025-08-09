@@ -29,16 +29,16 @@ subprocess.run([
     "snow", "snowpark", "deploy",
     "--replace",
     "--temporary-connection",
-    "--account", os.getenv("SNOWFLAKE_ACCOUNT_DEV"),
-    "--user", os.getenv("SNOWFLAKE_USER_DEV"),
-    "--role", os.getenv("SNOWFLAKE_ROLE_DEV"),
-    "--warehouse", os.getenv("SNOWFLAKE_WAREHOUSE_DEV"),
-    "--database", os.getenv("SNOWFLAKE_DATABASEDEV")
+    "--account", os.getenv("SNOWFLAKE_ACCOUNT"),
+    "--user", os.getenv("SNOWFLAKE_USER"),
+    "--role", os.getenv("SNOWFLAKE_ROLE"),
+    "--warehouse", os.getenv("SNOWFLAKE_WAREHOUSE"),
+    "--database", os.getenv("SNOWFLAKE_DATABASE")
 ], check=True)
 
 print("🔍 Environment configuration:")
 for var in required_env_vars:
-    if var != "SNOWFLAKE_PASSWORD_DEV":
+    if var != "SNOWFLAKE_PASSWORD":
         print(f"{var}: {os.getenv(var)}")
 
 print("✅ Snowpark app deployed successfully!")

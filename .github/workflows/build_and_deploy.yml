@@ -32,9 +32,9 @@ jobs:
 
       - name: Debug Snowflake Env Vars
         run: |
-          echo "Account: $SNOWFLAKE_ACCOUNT"
-          echo "User: $SNOWFLAKE_USER"
-          echo "Database: $SNOWFLAKE_DATABASE"
+          echo "Account: $SNOWFLAKE_ACCOUNT_DEV"
+          echo "User: $SNOWFLAKE_USER_DEV"
+          echo "Database: $SNOWFLAKE_DATABASE_DEV"
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
