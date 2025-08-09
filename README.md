@@ -2,14 +2,16 @@
 
 This project uses a custom Mamba-powered environment for Python 3.11 development.
 
-### 🧰 Script Summary: `setup.sh`
+### 🧰 Install & Activate Environment
 
 ```bash
-🔧 [Setup] Initializing Mamba shell...
-🚀 [Setup] Activating environment 'py311_env'...
-✅ [Setup] Environment 'py311_env' activated successfully!
-
+mamba env create -f environment.yml
+mamba activate py311_env
 ```
-### Guide
-👉 [Snowpark Developer Setup Guide](/workspaces/snowparkdev/docs/snowpark-setup.md)
+### 🧭 Optional: Guided Environment Setup
 
+If you prefer a scripted setup or run into shell issues, try:
+```
+bash setup.sh
+```
+👉 [Snowpark Developer Setup Guide](/workspaces/snowparkdev/docs/snowpark-setup.md)

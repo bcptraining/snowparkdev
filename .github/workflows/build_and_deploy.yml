@@ -1,0 +1,54 @@
+name: Deploy Snowpark Apps
+
+on:
+  push:
+    branches:
+      - dev
+      - devenv
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch to deploy from"
+        required: true
+        default: "dev"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: bcptraining/snowparkdev
+          ref: ${{ github.event.inputs.target_branch || github.ref_name }}
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Python Packages
+        run: pip install -r requirements.txt
+
+      - name: Debug Snowflake Env Vars
+        run: |
+          echo "Account: $SNOWFLAKE_ACCOUNT"
+          echo "User: $SNOWFLAKE_USER"
+          echo "Database: $SNOWFLAKE_DATABASE"
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+
+      - name: Deploy Snowpark Apps
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+
+        run: |
+          cd first_snowpark_project 
+          python deploy_snowpark_app.py .
