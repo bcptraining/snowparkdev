@@ -44,7 +44,7 @@ except subprocess.CalledProcessError as e:
     sys.exit(1)
 
 
----- old stuff below
+# ---- old stuff below
 
 
 print("🔍 Environment configuration:")
