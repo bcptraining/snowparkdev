@@ -38,14 +38,17 @@ jobs:
           echo "User: $SNOWFLAKE_USER"
           echo "Database: $SNOWFLAKE_DATABASE"
         env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
 
       - name: Debug file structure
         run: |
           pwd
           ls -R
+
+      - name: Install SnowCLI
+        run: pip install snowflake-cli
 
       - name: Deploy Snowpark Apps
         env:
