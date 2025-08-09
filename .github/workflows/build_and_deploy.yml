@@ -1,10 +1,9 @@
 name: Deploy Snowpark Apps
 
 on:
-  push:
-    branches:
-      - dev
-      - devenv
+  push: branches:https://github.com/bcptraining/snowparkdev/
+    - dev
+    - devenv
   workflow_dispatch:
     inputs:
       target_branch:
