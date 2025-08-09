@@ -48,6 +48,7 @@ jobs:
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE_DEV }}
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
-        
-          run: cd first_snowpark_project |
-          python deploy_snowpark_app.py .
+
+          run: |
+            cd first_snowpark_project 
+            python deploy_snowpark_app.py .
