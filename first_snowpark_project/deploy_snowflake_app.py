@@ -48,8 +48,13 @@ def main():
 
     # Build the Snowpark project
     # run_command(["snow", "snowpark", "build"], "Building Snowpark project")
-    run_command(["snow", "snowpark", "build", "--connection",
-                "default"], "Building Snowpark project")
+    # run_command(["snow", "snowpark", "build", "--connection",
+    #             "default"], "Building Snowpark project")
+    run_command([
+        "snow", "snowpark", "build",
+        "--connection", "default",
+        "--warehouse", os.environ["SNOWFLAKE_WAREHOUSE"]
+    ], "Building Snowpark project")
 
     # Deploy with full connection parameters
     deploy_cmd = [
