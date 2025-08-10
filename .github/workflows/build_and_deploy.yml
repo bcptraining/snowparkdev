@@ -31,8 +31,14 @@ jobs:
       - name: Install Python Packages
         run: pip install -r requirements.txt
 
-      - name: Install SnowCLI
-        run: pip install --upgrade snowcli
+      - name: Remove conflicting CLIs
+        run: |
+          pip uninstall -y snowflake-cli snowcli click
+
+      - name: Install modern SnowCLI
+        run: |
+          pip install click==7.0
+          pip install snowcli==0.1.1
 
       - name: Fix SnowCLI dependencies
         run: pip install click --upgrade
