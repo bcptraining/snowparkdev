@@ -50,7 +50,7 @@ jobs:
             --username ${{ secrets.SNOWFLAKE_USER_DEV }} \
             --password ${{ secrets.SNOWFLAKE_PASSWORD_DEV }} \
             --rolename ${{ secrets.SNOWFLAKE_ROLE_DEV }} \
-            --warehousename ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }} \
+            --warehouse ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }} \
             --dbname ${{ secrets.SNOWFLAKE_DATABASE_DEV }} \
             --schemaname PUBLIC \
             --set-default
