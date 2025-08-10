@@ -1,4 +1,3 @@
-# --- trigger deployment for devenv branch
 import sys
 import os
 
@@ -22,8 +21,17 @@ print("Using Snowflake connection:")
 for var in required_vars:
     print(f"{var}: {'***' if 'PASSWORD' in var else os.environ[var]}")
 
-# Build the Snowpark app
-os.system("snow snowpark build")
+# Build the Snowpark app with full connection info
+build_command = (
+    f"snow snowpark build --temporary-connection "
+    f"--account {os.environ['SNOWFLAKE_ACCOUNT']} "
+    f"--user {os.environ['SNOWFLAKE_USER']} "
+    f"--password {os.environ['SNOWFLAKE_PASSWORD']} "
+    f"--role {os.environ['SNOWFLAKE_ROLE']} "
+    f"--warehouse {os.environ['SNOWFLAKE_WAREHOUSE']} "
+    f"--database {os.environ['SNOWFLAKE_DATABASE']}"
+)
+os.system(build_command)
 
 # Deploy with all required parameters explicitly passed
 deploy_command = (
@@ -35,6 +43,4 @@ deploy_command = (
     f"--warehouse {os.environ['SNOWFLAKE_WAREHOUSE']} "
     f"--database {os.environ['SNOWFLAKE_DATABASE']}"
 )
-
 os.system(deploy_command)
-#
