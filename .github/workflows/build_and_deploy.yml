@@ -34,8 +34,10 @@ jobs:
       - name: Install SnowCLI
         run: pip install snowflake-cli
 
-      - name: Echo unmasked warehouse value
-        run: echo "UNMASKED_WAREHOUSE=$UNMASKED_WAREHOUSE"
+      - name: Print warehouse hash
+        run: |
+          echo "WAREHOUSE length: ${#UNMASKED_WAREHOUSE}"
+          echo "WAREHOUSE hash: $(echo -n $UNMASKED_WAREHOUSE | sha256sum)"
         env:
           UNMASKED_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
 
