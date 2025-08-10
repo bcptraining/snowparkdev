@@ -43,18 +43,19 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           snow --version
 
-      - name: Write SnowCLI config
+      - name: Create SnowCLI config with environment variables
         run: |
           mkdir -p ~/.snowflake
-          echo "[connections.default]" > ~/.snowflake/config.toml
-          echo "accountname = \"$SNOWFLAKE_ACCOUNT\"" >> ~/.snowflake/config.toml
-          echo "username = \"$SNOWFLAKE_USER\"" >> ~/.snowflake/config.toml
-          echo "password = \"$SNOWFLAKE_PASSWORD\"" >> ~/.snowflake/config.toml
-          echo "rolename = \"$SNOWFLAKE_ROLE\"" >> ~/.snowflake/config.toml
-          echo "warehouse = \"$SNOWFLAKE_WAREHOUSE\"" >> ~/.snowflake/config.toml
-          echo "dbname = \"$SNOWFLAKE_DATABASE\"" >> ~/.snowflake/config.toml
-          echo "schemaname = \"PUBLIC\"" >> ~/.snowflake/config.toml
-          echo "authenticator = \"password\"" >> ~/.snowflake/config.toml
+          cat <<EOF > ~/.snowflake/config.toml
+          [connections.default]
+          account = "${SNOWFLAKE_ACCOUNT}"
+          user = "${SNOWFLAKE_USER}"
+          password = "${SNOWFLAKE_PASSWORD}"
+          role = "${SNOWFLAKE_ROLE}"
+          warehouse = "${SNOWFLAKE_WAREHOUSE}"
+          database = "${SNOWFLAKE_DATABASE}"
+          schema = "PUBLIC"
+          EOF
           chmod 0600 ~/.snowflake/config.toml
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
