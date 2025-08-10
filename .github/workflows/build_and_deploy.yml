@@ -47,6 +47,7 @@ jobs:
           database = "${{ secrets.SNOWFLAKE_DATABASE_DEV }}"
           schema = "PUBLIC"
           EOF
+          chmod 0600 ~/.snowflake/config.toml
 
       - name: Debug file structure
         run: |
