@@ -43,17 +43,17 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           snow --version
 
-      - name: Write SnowCLI config with interpolated values
+      - name: Write SnowCLI config
         run: |
           mkdir -p ~/.snowflake
           echo "[connections.default]" > ~/.snowflake/config.toml
-          echo "account = \"$SNOWFLAKE_ACCOUNT\"" >> ~/.snowflake/config.toml
-          echo "user = \"$SNOWFLAKE_USER\"" >> ~/.snowflake/config.toml
+          echo "accountname = \"$SNOWFLAKE_ACCOUNT\"" >> ~/.snowflake/config.toml
+          echo "username = \"$SNOWFLAKE_USER\"" >> ~/.snowflake/config.toml
           echo "password = \"$SNOWFLAKE_PASSWORD\"" >> ~/.snowflake/config.toml
-          echo "role = \"$SNOWFLAKE_ROLE\"" >> ~/.snowflake/config.toml
+          echo "rolename = \"$SNOWFLAKE_ROLE\"" >> ~/.snowflake/config.toml
           echo "warehouse = \"$SNOWFLAKE_WAREHOUSE\"" >> ~/.snowflake/config.toml
-          echo "database = \"$SNOWFLAKE_DATABASE\"" >> ~/.snowflake/config.toml
-          echo "schema = \"PUBLIC\"" >> ~/.snowflake/config.toml
+          echo "dbname = \"$SNOWFLAKE_DATABASE\"" >> ~/.snowflake/config.toml
+          echo "schemaname = \"PUBLIC\"" >> ~/.snowflake/config.toml
           echo "authenticator = \"password\"" >> ~/.snowflake/config.toml
           chmod 0600 ~/.snowflake/config.toml
         env:
