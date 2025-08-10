@@ -47,7 +47,9 @@ def main():
     print_env_summary(required_vars)
 
     # Build the Snowpark project
-    run_command(["snow", "snowpark", "build"], "Building Snowpark project")
+    # run_command(["snow", "snowpark", "build"], "Building Snowpark project")
+    run_command(["snow", "snowpark", "build", "--connection",
+                "default"], "Building Snowpark project")
 
     # Deploy with full connection parameters
     deploy_cmd = [
