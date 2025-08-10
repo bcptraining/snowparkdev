@@ -83,6 +83,11 @@ jobs:
           pwd
           ls -R
 
+      - name: Activate warehouse
+        run: snow sql -q "USE WAREHOUSE $SNOWFLAKE_WAREHOUSE"
+        env:
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
+
       - name: Deploy Snowpark Apps
         run: python first_snowpark_project/deploy_snowflake_app.py first_snowpark_project
         env:
