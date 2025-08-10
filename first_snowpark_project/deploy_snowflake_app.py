@@ -17,10 +17,23 @@ for var in required_vars:
     if var not in os.environ or not os.environ[var]:
         raise EnvironmentError(f"Missing required environment variable: {var}")
 
+# Optional: print to confirm environment variables
+print("Using Snowflake connection:")
+print("SNOWFLAKE_ACCOUNT:", os.environ["SNOWFLAKE_ACCOUNT"])
+print("SNOWFLAKE_USER:", os.environ["SNOWFLAKE_USER"])
+print("SNOWFLAKE_ROLE:", os.environ["SNOWFLAKE_ROLE"])
+print("SNOWFLAKE_WAREHOUSE:", os.environ["SNOWFLAKE_WAREHOUSE"])
+print("SNOWFLAKE_DATABASE:", os.environ["SNOWFLAKE_DATABASE"])
+
+
 # Debug print to confirm environment variables are visible
 print("Using Snowflake connection:")
 for var in required_vars:
     print(f"{var}: {'***' if 'PASSWORD' in var else os.environ[var]}")
+
+# Activate the warehouse explicitly
+warehouse = os.environ["SNOWFLAKE_WAREHOUSE"]
+os.system(f'snow sql --connection default -q "USE WAREHOUSE {warehouse}"')
 
 # Make sure all 6 SNOWFLAKE_ environment variables are set
 # SnowCLI accesses the passowrd directly from the SNOWFLAKE_PASSWORD environmnet variable
