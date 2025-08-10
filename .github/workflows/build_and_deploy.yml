@@ -33,7 +33,6 @@ jobs:
 
       - name: Install SnowCLI
         run: pip install --upgrade snowcli
-v
 
       - name: Check SnowCLI version
         run: snow --version
