@@ -18,12 +18,13 @@ for var in required_vars:
         raise EnvironmentError(f"Missing required environment variable: {var}")
 
 # Optional: print to confirm environment variables
-print("Using Snowflake connection:")
+print("Using Snowflake connection --------:")
 print("SNOWFLAKE_ACCOUNT:", os.environ["SNOWFLAKE_ACCOUNT"])
 print("SNOWFLAKE_USER:", os.environ["SNOWFLAKE_USER"])
 print("SNOWFLAKE_ROLE:", os.environ["SNOWFLAKE_ROLE"])
 print("SNOWFLAKE_WAREHOUSE:", os.environ["SNOWFLAKE_WAREHOUSE"])
 print("SNOWFLAKE_DATABASE:", os.environ["SNOWFLAKE_DATABASE"])
+print("Attempting to use warehouse:", os.environ["SNOWFLAKE_WAREHOUSE"])
 
 
 # Debug print to confirm environment variables are visible
