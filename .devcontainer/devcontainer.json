@@ -5,7 +5,6 @@
     "ghcr.io/devcontainers/features/conda:1": {}
   },
   "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && echo '✅ Environment ready!' && curl -sSL https://install.snowflake.com/snowcli/install.sh | bash && echo 'export PATH=\"$HOME/.snowflake/bin:$PATH\"' >> ~/.bashrc && export PATH=\"$HOME/.snowflake/bin:$PATH\" && snow --version",
-
   "remoteUser": "root",
   "overrideCommand": true,
   "customizations": {
