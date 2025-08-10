@@ -34,6 +34,11 @@ jobs:
       - name: Install SnowCLI
         run: pip install snowflake-cli
 
+      - name: Echo warehouse value (unmasked)
+        run: echo "WAREHOUSE=$WAREHOUSE"
+        env:
+          WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
+
       - name: Create Snowflake config
         run: |
           mkdir -p ~/.snowflake
