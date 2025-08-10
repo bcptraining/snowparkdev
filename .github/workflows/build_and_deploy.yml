@@ -46,14 +46,14 @@ jobs:
       - name: Configure SnowCLI connection
         run: |
           snow connection add --connection-name default \
-            --account-name ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }} \
-            --username ${{ secrets.SNOWFLAKE_USER_DEV }} \
-            --password ${{ secrets.SNOWFLAKE_PASSWORD_DEV }} \
-            --role-name ${{ secrets.SNOWFLAKE_ROLE_DEV }} \
-            --warehouse-name ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }} \
-            --database-name ${{ secrets.SNOWFLAKE_DATABASE_DEV }} \
-            --schema-name PUBLIC \
-            --set-default
+          --accountname ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }} \
+          --username ${{ secrets.SNOWFLAKE_USER_DEV }} \
+          --password ${{ secrets.SNOWFLAKE_PASSWORD_DEV }} \
+          --rolename ${{ secrets.SNOWFLAKE_ROLE_DEV }} \
+          --warehousename ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }} \
+          --dbname ${{ secrets.SNOWFLAKE_DATABASE_DEV }} \
+          --schemaname PUBLIC \
+          --set-default
 
       - name: Verify SnowCLI connection
         run: snow sql -q "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();"
