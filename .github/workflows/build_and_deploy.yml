@@ -35,13 +35,13 @@ jobs:
         run: |
           pip uninstall -y snowcli snowflake-cli click
 
-      - name: Install modern SnowCLI
+      - name: Install SnowCLI via installer
         run: |
-          pip install click==7.0
-          pip install snowcli==0.1.1
+          curl -sSL https://install.snowflake.com/snowcli/install.sh | bash
+          echo "$HOME/.snowflake/bin" >> $GITHUB_PATH
 
-      - name: Fix SnowCLI dependencies
-        run: pip install click --upgrade
+      # - name: Fix SnowCLI dependencies
+      #   run: pip install click --upgrade
 
       - name: Check SnowCLI version
         run: snow --version
