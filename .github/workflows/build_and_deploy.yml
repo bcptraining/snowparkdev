@@ -65,6 +65,9 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
 
+      - name: Secure SnowCLI config file
+        run: chmod 0600 ~/.snowflake/config.toml
+
       - name: Verify SnowCLI connection
         run: snow sql -q "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();"
 
