@@ -1,51 +1,66 @@
 import sys
 import os
-import yaml
-
-# os.system(f"conda init")
-# os.system(f"conda activate snowpark")
-directory_path = sys.argv[1]
-os.chdir(f"{directory_path}")
-
-# Check for missing variables
-required_vars = [
-    "SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD",
-    "SNOWFLAKE_ROLE", "SNOWFLAKE_WAREHOUSE", "SNOWFLAKE_DATABASE"
-]
-
-for var in required_vars:
-    if var not in os.environ or not os.environ[var]:
-        raise EnvironmentError(f"Missing required environment variable: {var}")
-
-# Optional: print to confirm environment variables
-print("Using Snowflake connection --------:")
-print("SNOWFLAKE_ACCOUNT:", os.environ["SNOWFLAKE_ACCOUNT"])
-print("SNOWFLAKE_USER:", os.environ["SNOWFLAKE_USER"])
-print("SNOWFLAKE_ROLE:", os.environ["SNOWFLAKE_ROLE"])
-print("SNOWFLAKE_WAREHOUSE:", os.environ["SNOWFLAKE_WAREHOUSE"])
-print("SNOWFLAKE_DATABASE:", os.environ["SNOWFLAKE_DATABASE"])
-print("Attempting to use warehouse:", os.environ["SNOWFLAKE_WAREHOUSE"])
+import subprocess
 
 
-# Debug print to confirm environment variables are visible
-print("Using Snowflake connection:")
-for var in required_vars:
-    print(f"{var}: {'***' if 'PASSWORD' in var else os.environ[var]}")
+def validate_env_vars(required_vars):
+    missing = [var for var in required_vars if not os.environ.get(var)]
+    if missing:
+        raise EnvironmentError(
+            f"Missing required environment variables: {', '.join(missing)}")
 
-# Activate the warehouse explicitly
-warehouse = os.environ["SNOWFLAKE_WAREHOUSE"]
-os.system(f'snow sql --connection default -q "USE WAREHOUSE {warehouse}"')
 
-# Make sure all 6 SNOWFLAKE_ environment variables are set
-# SnowCLI accesses the passowrd directly from the SNOWFLAKE_PASSWORD environmnet variable
-os.system(f"snow snowpark build")
-os.system("snow snowpark deploy")
-# os.system(
-#     f"snow snowpark deploy --replace --temporary-connection "
-#     f"--account {os.environ['SNOWFLAKE_ACCOUNT']} "
-#     f"--user {os.environ['SNOWFLAKE_USER']} "
-#     f"--password {os.environ['SNOWFLAKE_PASSWORD']} "
-#     f"--role {os.environ['SNOWFLAKE_ROLE']} "
-#     f"--warehouse {os.environ['SNOWFLAKE_WAREHOUSE']} "
-#     f"--database {os.environ['SNOWFLAKE_DATABASE']}"
-# )
+def print_env_summary(required_vars):
+    print("\n🔗 Using Snowflake connection:")
+    for var in required_vars:
+        value = "***" if "PASSWORD" in var else os.environ[var]
+        print(f"{var}: {value}")
+    print()
+
+
+def run_command(command, description):
+    print(f"🚀 {description}...")
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"❌ Error during {description}:")
+        print(result.stderr)
+        raise RuntimeError(f"{description} failed")
+    else:
+        print(f"✅ {description} succeeded")
+        print(result.stdout)
+
+
+def main():
+    if len(sys.argv) < 2:
+        raise ValueError(
+            "Usage: python deploy_snowflake_app.py <project_directory>")
+
+    directory_path = sys.argv[1]
+    os.chdir(directory_path)
+
+    required_vars = [
+        "SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD",
+        "SNOWFLAKE_ROLE", "SNOWFLAKE_WAREHOUSE", "SNOWFLAKE_DATABASE"
+    ]
+
+    validate_env_vars(required_vars)
+    print_env_summary(required_vars)
+
+    # Build the Snowpark project
+    run_command(["snow", "snowpark", "build"], "Building Snowpark project")
+
+    # Deploy with full connection parameters
+    deploy_cmd = [
+        "snow", "snowpark", "deploy", "--replace", "--temporary-connection",
+        "--account", os.environ["SNOWFLAKE_ACCOUNT"],
+        "--user", os.environ["SNOWFLAKE_USER"],
+        "--password", os.environ["SNOWFLAKE_PASSWORD"],
+        "--role", os.environ["SNOWFLAKE_ROLE"],
+        "--warehouse", os.environ["SNOWFLAKE_WAREHOUSE"],
+        "--database", os.environ["SNOWFLAKE_DATABASE"]
+    ]
+    run_command(deploy_cmd, "Deploying Snowpark app")
+
+
+if __name__ == "__main__":
+    main()
