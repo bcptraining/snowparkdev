@@ -4,7 +4,7 @@
   "features": {
     "ghcr.io/devcontainers/features/conda:1": {}
   },
-  "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && echo '✅ Environment ready!'",
+  "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && echo '✅ Environment ready!' && wget https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowflake-cli-1.2.0.deb && sudo dpkg -i snowflake-cli-1.2.0.deb && snow --version",
   "remoteUser": "root",
   "overrideCommand": true,
   "customizations": {
@@ -12,9 +12,7 @@
       "settings": {
         "python.defaultInterpreterPath": "/opt/conda/envs/py311_env/bin/python"
       },
-      "extensions": [
-        "ms-python.python"
-      ]
+      "extensions": ["ms-python.python"]
     }
   }
 }
