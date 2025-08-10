@@ -33,7 +33,7 @@ jobs:
 
       - name: Remove conflicting CLIs
         run: |
-          pip uninstall -y snowflake-cli snowcli click
+          pip uninstall -y snowcli snowflake-cli click
 
       - name: Install modern SnowCLI
         run: |
