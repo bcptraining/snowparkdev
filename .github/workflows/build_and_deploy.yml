@@ -64,6 +64,7 @@ jobs:
       - name: Deploy Snowpark Apps
         run: python first_snowpark_project/deploy_snowflake_app.py first_snowpark_project
         env:
+          SNOWCLI_CONFIG_PATH: ~/.snowflake/config.toml
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD_DEV }}
