@@ -1,7 +1,5 @@
-# Triggering deployment for devenv branch
-
 name: Deploy Snowpark Apps
-
+# --delete
 on:
   push:
     branches:
