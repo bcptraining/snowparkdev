@@ -43,17 +43,20 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           snow --version
 
-      - name: Configure SnowCLI connection
+      - name: Write SnowCLI config manually
         run: |
-          snow connection add --connection-name default \
-            --accountname "$SNOWFLAKE_ACCOUNT" \
-            --username "$SNOWFLAKE_USER" \
-            --rolename "$SNOWFLAKE_ROLE" \
-            --warehouse "$SNOWFLAKE_WAREHOUSE" \
-            --dbname "$SNOWFLAKE_DATABASE" \
-            --schemaname PUBLIC \
-            --authenticator password \
-            --default
+          mkdir -p ~/.snowflake
+          cat <<EOF > ~/.snowflake/config.toml
+          [connections.default]
+          accountname = "${SNOWFLAKE_ACCOUNT}"
+          username = "${SNOWFLAKE_USER}"
+          password = "${SNOWFLAKE_PASSWORD}"
+          rolename = "${SNOWFLAKE_ROLE}"
+          warehouse = "${SNOWFLAKE_WAREHOUSE}"
+          dbname = "${SNOWFLAKE_DATABASE}"
+          schemaname = "PUBLIC"
+          authenticator = "password"
+          EOF
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
