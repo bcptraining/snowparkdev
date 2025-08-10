@@ -41,20 +41,16 @@ jobs:
         env:
           UNMASKED_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
 
-      - name: Create Snowflake config
+      - name: Initialize SnowCLI config
         run: |
-          mkdir -p ~/.snowflake
-          cat <<EOF > ~/.snowflake/config.toml
-          [connections.default]
-          account = "${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}"
-          user = "${{ secrets.SNOWFLAKE_USER_DEV }}"
-          password = "${{ secrets.SNOWFLAKE_PASSWORD_DEV }}"
-          role = "${{ secrets.SNOWFLAKE_ROLE_DEV }}"
-          warehouse = "${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}"
-          database = "${{ secrets.SNOWFLAKE_DATABASE_DEV }}"
-          schema = "PUBLIC"
-          EOF
-          chmod 0600 ~/.snowflake/config.toml
+          snow config init --connection default \
+            --account ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }} \
+            --user ${{ secrets.SNOWFLAKE_USER_DEV }} \
+            --password ${{ secrets.SNOWFLAKE_PASSWORD_DEV }} \
+            --role ${{ secrets.SNOWFLAKE_ROLE_DEV }} \
+            --warehouse ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }} \
+            --database ${{ secrets.SNOWFLAKE_DATABASE_DEV }} \
+            --schema PUBLIC
 
       - name: Debug file structure
         run: |
