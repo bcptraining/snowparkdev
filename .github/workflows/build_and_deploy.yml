@@ -35,10 +35,12 @@ jobs:
         run: |
           pip uninstall -y snowcli snowflake-cli click
 
-      - name: Install SnowCLI via .deb
+      - name: Install SnowCLI
         run: |
-          wget https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowflake-cli-1.2.0.deb
-          sudo dpkg -i snowflake-cli-1.2.0.deb
+          curl -sSL https://install.snowflake.com/snowcli/install.sh | bash
+          echo 'export PATH="$HOME/.snowflake/bin:$PATH"' >> ~/.bashrc
+          export PATH="$HOME/.snowflake/bin:$PATH"
+          snow --version
 
       - name: Verify SnowCLI
         run: snow --version
