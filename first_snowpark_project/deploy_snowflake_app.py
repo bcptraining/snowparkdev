@@ -25,12 +25,13 @@ for var in required_vars:
 # Make sure all 6 SNOWFLAKE_ environment variables are set
 # SnowCLI accesses the passowrd directly from the SNOWFLAKE_PASSWORD environmnet variable
 os.system(f"snow snowpark build")
-os.system(
-    f"snow snowpark deploy --replace --temporary-connection "
-    f"--account {os.environ['SNOWFLAKE_ACCOUNT']} "
-    f"--user {os.environ['SNOWFLAKE_USER']} "
-    f"--password {os.environ['SNOWFLAKE_PASSWORD']} "
-    f"--role {os.environ['SNOWFLAKE_ROLE']} "
-    f"--warehouse {os.environ['SNOWFLAKE_WAREHOUSE']} "
-    f"--database {os.environ['SNOWFLAKE_DATABASE']}"
-)
+os.system("snow snowpark deploy --replace")
+# os.system(
+#     f"snow snowpark deploy --replace --temporary-connection "
+#     f"--account {os.environ['SNOWFLAKE_ACCOUNT']} "
+#     f"--user {os.environ['SNOWFLAKE_USER']} "
+#     f"--password {os.environ['SNOWFLAKE_PASSWORD']} "
+#     f"--role {os.environ['SNOWFLAKE_ROLE']} "
+#     f"--warehouse {os.environ['SNOWFLAKE_WAREHOUSE']} "
+#     f"--database {os.environ['SNOWFLAKE_DATABASE']}"
+# )
