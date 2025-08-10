@@ -4,7 +4,7 @@
   "features": {
     "conda": "latest"
   },
-  "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && curl -sSL https://install.snowflake.com/snowcli/install.sh | bash && echo 'export PATH=\"$HOME/.snowflake/bin:$PATH\"' >> ~/.bashrc && export PATH=\"$HOME/.snowflake/bin:$PATH\" && chmod +x .devcontainer/setup.sh && .devcontainer/setup.sh",
+  "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && pip install pipx && pipx ensurepath && pipx install snowflake-cli && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.bashrc && export PATH=\"$HOME/.local/bin:$PATH\" && chmod +x .devcontainer/setup.sh && .devcontainer/setup.sh",
 
   "customizations": {
     "vscode": {

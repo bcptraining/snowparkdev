@@ -35,11 +35,13 @@ jobs:
         run: |
           pip uninstall -y snowcli snowflake-cli click
 
-      - name: Install SnowCLI
+      - name: Install SnowCLI via pipx
         run: |
-          curl -sSL https://install.snowflake.com/snowcli/install.sh | bash
-          echo 'export PATH="$HOME/.snowflake/bin:$PATH"' >> ~/.bashrc
-          export PATH="$HOME/.snowflake/bin:$PATH"
+          pip install pipx
+          pipx ensurepath
+          pipx install snowflake-cli
+          echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+          export PATH="$HOME/.local/bin:$PATH"
           snow --version
 
       - name: Verify SnowCLI
