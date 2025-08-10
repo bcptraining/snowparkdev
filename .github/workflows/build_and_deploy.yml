@@ -32,7 +32,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Install SnowCLI
-        run: pip install --upgrade snowflake-cli
+        run: pip install --upgrade snowcli
+v
 
       - name: Check SnowCLI version
         run: snow --version
