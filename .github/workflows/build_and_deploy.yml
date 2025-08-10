@@ -52,7 +52,7 @@ jobs:
             --warehouse "$SNOWFLAKE_WAREHOUSE" \
             --dbname "$SNOWFLAKE_DATABASE" \
             --schemaname PUBLIC \
-            --authenticator env \
+            --auth-type password \
             --default
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
