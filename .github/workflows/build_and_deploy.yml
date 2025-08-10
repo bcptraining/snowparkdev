@@ -34,6 +34,9 @@ jobs:
       - name: Install SnowCLI
         run: pip install --upgrade snowcli
 
+      - name: Fix SnowCLI dependencies
+        run: pip install click --upgrade
+
       - name: Check SnowCLI version
         run: snow --version
 
