@@ -3,8 +3,9 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "features": {
     "ghcr.io/devcontainers/features/conda:1": {}
-  },
-  "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && echo '✅ Environment ready!' && wget https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowflake-cli-1.2.0.deb && sudo dpkg -i snowflake-cli-1.2.0.deb && snow --version",
+  },  ,
+  "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && echo '✅ Environment ready!' && curl -sSL https://install.snowflake.com/snowcli/install.sh | bash && echo \"$HOME/.snowflake/bin\" >> ~/.bashrc && export PATH=\"$HOME/.snowflake/bin:$PATH\" && snow --version"
+
   "remoteUser": "root",
   "overrideCommand": true,
   "customizations": {
