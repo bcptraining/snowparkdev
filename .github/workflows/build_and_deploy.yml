@@ -32,8 +32,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Remove conflicting CLIs
-        run: |
-          pip uninstall -y snowcli snowflake-cli click
+        run: pip uninstall -y snowcli snowflake-cli click || true
 
       - name: Install SnowCLI via pipx
         run: |
@@ -44,14 +43,20 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           snow --version
 
-      - name: Verify SnowCLI
-        run: snow --version
+      - name: Configure SnowCLI connection
+        run: |
+          snow connection add --connection-name default \
+            --account-name ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }} \
+            --username ${{ secrets.SNOWFLAKE_USER_DEV }} \
+            --password ${{ secrets.SNOWFLAKE_PASSWORD_DEV }} \
+            --role-name ${{ secrets.SNOWFLAKE_ROLE_DEV }} \
+            --warehouse-name ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }} \
+            --database-name ${{ secrets.SNOWFLAKE_DATABASE_DEV }} \
+            --schema-name PUBLIC \
+            --set-default
 
-      # - name: Fix SnowCLI dependencies
-      #   run: pip install click --upgrade
-
-      - name: Check SnowCLI version
-        run: snow --version
+      - name: Verify SnowCLI connection
+        run: snow sql -q "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();"
 
       - name: Print warehouse hash
         run: |
@@ -59,17 +64,6 @@ jobs:
           echo "WAREHOUSE hash: $(echo -n $UNMASKED_WAREHOUSE | sha256sum)"
         env:
           UNMASKED_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
-
-      - name: Initialize SnowCLI config
-        run: |
-          snow config init --connection default \
-            --account ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }} \
-            --user ${{ secrets.SNOWFLAKE_USER_DEV }} \
-            --password ${{ secrets.SNOWFLAKE_PASSWORD_DEV }} \
-            --role ${{ secrets.SNOWFLAKE_ROLE_DEV }} \
-            --warehouse ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }} \
-            --database ${{ secrets.SNOWFLAKE_DATABASE_DEV }} \
-            --schema PUBLIC
 
       - name: Debug file structure
         run: |
@@ -79,7 +73,6 @@ jobs:
       - name: Deploy Snowpark Apps
         run: python first_snowpark_project/deploy_snowflake_app.py first_snowpark_project
         env:
-          SNOWCLI_CONFIG_PATH: ~/.snowflake/config.toml
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD_DEV }}
