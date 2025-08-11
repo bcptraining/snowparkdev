@@ -1,4 +1,8 @@
 {
   "python.defaultInterpreterPath": "/opt/conda/envs/py311_env/bin/python",
-  "python.terminal.activateEnvironment": true
+  "python.terminal.activateEnvironment": true,
+  "yaml.schemas": {
+  "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+  }
+
 }
