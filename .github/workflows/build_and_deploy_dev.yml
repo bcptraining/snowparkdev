@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - dev
-      - devenv
 
   workflow_dispatch:
     inputs:
@@ -70,7 +69,7 @@ jobs:
         run: chmod 0600 ~/.snowflake/config.toml
 
       - name: Verify SnowCLI connection
-        run: snow sql -q "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();"
+        run: snow sql -q "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE(), CURRENT_ACCOUNT();"
 
       - name: Print warehouse hash
         run: |
