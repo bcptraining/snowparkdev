@@ -1,55 +1,41 @@
-#!/usr/bin/env bash
+#!/bin/bash
+set -e  # Exit on error
 
-set -e
+echo "🔧 Initializing Conda for bash..."
+conda init bash
 
-echo "🔍 Validating Snowflake environment variables..."
+echo "🔁 Restarting shell to apply Conda init..."
+source ~/.bashrc
 
-REQUIRED_VARS=(
-  SNOWFLAKE_ACCOUNT
-  SNOWFLAKE_USER
-  SNOWFLAKE_PASSWORD
-  SNOWFLAKE_ROLE
-  SNOWFLAKE_WAREHOUSE
-  SNOWFLAKE_DATABASE
-)
+echo "🐍 Creating Conda environment from environment.yml..."
+conda config --set channel_priority flexible
+conda env create -f environment.yml
 
-for var in "${REQUIRED_VARS[@]}"; do
-  if [[ -z "${!var}" ]]; then
-    echo "❌ Missing required environment variable: $var"
-    exit 1
-  fi
-done
+echo "🚀 Activating Conda environment..."
+source activate py311_env
 
-echo "✅ All required variables are set."
+echo "📦 Installing pipx and Snowflake CLI..."
+pip install pipx
+pipx ensurepath
+pipx install snowflake-cli
 
-echo "🧪 Running test query via SnowCLI..."
-snow sql --connection default -q "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE();"
+echo "🔧 Updating PATH..."
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+export PATH="$HOME/.local/bin:$PATH"
 
-echo "📦 Creating stage if it doesn't exist..."
-snow sql --connection default -q "CREATE STAGE IF NOT EXISTS dev_stage;"
+echo "📄 Loading environment variables from .env..."
+export $(grep -v '^#' .env | xargs)
 
-echo "📤 Uploading files to stage..."
-snow storage upload --connection default --stage dev_stage --source ./data --overwrite
+echo "📤 Uploading $DATA_FILE to stage @$DATA_STAGE..."
+snow sql --connection default -q "
+PUT file:///workspaces/snowparkdev/first_snowpark_project/data/$DATA_FILE
+    @$DATA_STAGE
+    OVERWRITE = TRUE;
+"
 
-echo "🐍 Running Snowpark Python job..."
+echo "📋 Verifying contents of @$DATA_STAGE..."
+snow sql --connection default -q "
+LIST @$DATA_STAGE;
+"
 
-python <<EOF
-from snowflake.snowpark import Session
-import os
-
-connection_parameters = {
-    "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-    "user": os.getenv("SNOWFLAKE_USER"),
-    "password": os.getenv("SNOWFLAKE_PASSWORD"),
-    "role": os.getenv("SNOWFLAKE_ROLE"),
-    "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
-    "database": os.getenv("SNOWFLAKE_DATABASE"),
-    "schema": os.getenv("SNOWFLAKE_SCHEMA", "PUBLIC")
-}
-
-session = Session.builder.configs(connection_parameters).create()
-df = session.sql("SELECT CURRENT_VERSION()").collect()
-print("✅ Snowpark connected. Version:", df[0][0])
-EOF
-
-echo "🎉 Setup complete!"
+echo "✅ Setup complete! Data is staged and ready for use in table: $OUTPUT_TABLE"
