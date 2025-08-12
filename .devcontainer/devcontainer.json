@@ -2,9 +2,13 @@
   "name": "Snowpark Dev",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "features": {
-    "conda": "latest"
+    "ghcr.io/devcontainers/features/conda:1": {
+    "installMiniconda": true,
+    "pythonVersion": "3.11"
+  }
+
   },
-  "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && pip install pipx && pipx ensurepath && pipx install snowflake-cli && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.bashrc && export PATH=\"$HOME/.local/bin:$PATH\" && chmod +x .devcontainer/setup.sh && .devcontainer/setup.sh",
+  "postCreateCommand": ".devcontainer/setup.sh",
 
   "customizations": {
     "vscode": {
