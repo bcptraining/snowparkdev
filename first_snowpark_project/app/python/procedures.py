@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import sys
 
-from common import print_hello
+from first_snowpark_project.app.python.common import print_hello
 from snowflake.snowpark import Session
 
 
-def hello_procedure(session: Session, name: str) -> str:
+def hello_procedure(session: Session, name="World") -> str:
     return print_hello(name)
 
 
