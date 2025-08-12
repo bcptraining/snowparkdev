@@ -13,7 +13,7 @@ entities:
     type: function
     identifier:
       name: hello_function
-    handler: python.functions.hello_function
+    handler: app.python.functions.hello_function
     signature:
       - name: name
         type: string
@@ -26,7 +26,7 @@ entities:
     type: procedure
     identifier:
       name: hello_procedure
-    handler: python.procedures.hello_procedure
+    handler: app.python.procedures.hello_procedure
     signature:
       - name: name
         type: string
@@ -39,7 +39,7 @@ entities:
     type: procedure
     identifier:
       name: test_procedure
-    handler: python.procedures.test_procedure
+    handler: app.python.procedures.test_procedure
     signature: []
     returns: string
     meta:
