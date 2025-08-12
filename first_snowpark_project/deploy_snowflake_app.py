@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import zipfile
 
 
 def validate_env_vars(required_vars):
@@ -30,6 +31,24 @@ def run_command(command, description):
         print(result.stdout)
 
 
+def zip_source_code():
+    print("Preparing artifacts for source code")
+    source_dir = os.path.join("app", "python")
+    zip_path = "app.zip"
+
+    if not os.path.isdir(source_dir):
+        raise FileNotFoundError(f"Source directory not found: {source_dir}")
+
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(source_dir):
+            for file in files:
+                full_path = os.path.join(root, file)
+                relative_path = os.path.relpath(full_path, source_dir)
+                zipf.write(full_path, os.path.join("python", relative_path))
+
+    print(f"✅ Created zip at {zip_path}")
+
+
 def main():
     if len(sys.argv) < 2:
         raise ValueError(
@@ -46,17 +65,14 @@ def main():
     validate_env_vars(required_vars)
     print_env_summary(required_vars)
 
-    # Build the Snowpark project
-    # run_command(["snow", "snowpark", "build"], "Building Snowpark project")
-    # run_command(["snow", "snowpark", "build", "--connection",
-    #             "default"], "Building Snowpark project")
     run_command([
         "snow", "snowpark", "build",
         "--connection", "default",
         "--warehouse", os.environ["SNOWFLAKE_WAREHOUSE"]
     ], "Building Snowpark project")
 
-    # Deploy with full connection parameters
+    zip_source_code()  # ✅ Add this step before deployment
+
     deploy_cmd = [
         "snow", "snowpark", "deploy", "--replace", "--temporary-connection",
         "--account", os.environ["SNOWFLAKE_ACCOUNT"],
