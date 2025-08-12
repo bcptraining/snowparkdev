@@ -1,0 +1,717 @@
+Stock,Date,Party,Category,Txntype,Quantity,Value traded,Avgtradeprice
+Wipro Ltd,4/26/2017,Sreeprakash Narayanan,Insider - Employee,Buy,1,6.86 L,"686,413.90"
+ITC Ltd,5/17/2016,Arun Kumar Srivastava,Insider - Employee,Sell,2,16.50 L,"825,237.50"
+MPS Infotecnics Ltd,2/21/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,1,1.35
+MPS Infotecnics Ltd,8/23/2021,TOPGAIN FINANCE PRIVATE LIMITED,Bulk,Buy,1,0,0.25
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,1,"2,654","2,654.00"
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,1,"2,655","2,655.00"
+Uttam Value Steels Ltd,10/30/2020,TOPGAIN FINANCE PRIVATE LIMITED,Bulk,Sell,2,0,0.25
+JSW Steel Ltd,8/1/2022,JSW Steel Employees Welfare Trust û ESOP OPJ Samruddhi Plan 2021 A/c,Insider - Other,Sell,1,638,638
+Reliance Industries Ltd,2/12/2016,Ajit Jayantilal Vyas,Insider - Other,Sell,2,"1,793",896.5
+ITC Ltd,3/29/2017,Prabal Kumar Mahapatra,Insider - Employee,Sell,6,17.00 L,"283,300.00"
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,2,"5,310","2,655.00"
+Indus Towers Ltd,12/10/2017,Ravinder Hooda,Insider - Employee,Buy,1,376,376
+Housing Development Finance Corporation Ltd,9/23/2021,SANCHIT GARG,Insider - Designated Person,Sell,1,"2,751","2,751.00"
+ITC Ltd,2/2/2016,Malay Kumar Saha,Insider - Employee,Buy,7,9.98 L,"142,542.86"
+Housing Development Finance Corporation Ltd,12/31/2018,ARPIT TANDON,Insider - Employee,Sell,1,"1,969","1,969.00"
+Housing Development Finance Corporation Ltd,6/26/2018,NEHA TRIPATHI,Insider - Employee,Sell,1,"1,915","1,915.00"
+Housing Development Finance Corporation Ltd,5/9/2018,YASHITA PATIL,Insider - Immediate Relative,Buy,1,"1,890","1,890.00"
+Wipro Ltd,8/24/2017,Vikas Srivastava,Insider - Employee,Buy,4,"1,535",383.76
+Housing Development Finance Corporation Ltd,12/6/2017,Hari Shankar Prasad,Insider - Employee,Sell,1,"1,649","1,649.00"
+Housing Development Finance Corporation Ltd,5/22/2017,Pradeep Kumar S,Insider - Employee,Sell,1,"1,520","1,520.00"
+Housing Development Finance Corporation Ltd,5/4/2016,Sony George,Insider - Immediate Relative,Buy,1,"1,162","1,162.00"
+JSW Steel Ltd,12/8/2022,JSW Steel Employees Welfare Trust û OPJ Samruddhi Plan 2021 A/c PAN: AABTJ3861D Regd. Add.: Dr. G. Deshmukh Marg 5/A Mumbai - 400026 Contact No.: 022-42861001,Insider - Other,Sell,2,"1,490",745
+JSW Steel Ltd,6/17/2022,JSW Steel Employees Welfare Trust û JSWSL OPJ Samruddhi Plan 2021 A/c,Insider - Other,Sell,2,"1,113",556.5
+JSW Steel Ltd,6/8/2022,JSW Steel Employees Welfare Trust û JSWSL OPJ Samruddhi Plan 2021 A/c,Insider - Other,Sell,2,"1,157",578.5
+Larsen & Toubro Ltd,3/17/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,1,"2,195","2,195.00"
+Larsen & Toubro Ltd,12/1/2022,SRAVANKUMAR Y V S,Insider - Designated Person,Sell,1,"2,106","2,106.00"
+Larsen & Toubro Ltd,8/2/2019,SANTHOSH KP,Insider - Designated Person,Sell,1,"1,370","1,370.00"
+Larsen & Toubro Ltd,5/3/2017,Surendra Babu P R,Insider - Employee,Sell,1,"1,711","1,711.00"
+Mahindra and Mahindra Ltd,11/18/2022,GIJU KURIAN,Insider - Designated Person,Sell,1,"1,229","1,229.00"
+Mahindra and Mahindra Ltd,1/19/2022,Vijay Ramswaroop Nakra,Insider - Designated Person,Sell,1,889,889
+Godrej Consumer Products Ltd,3/28/2019,NG Children Trust,Insider - Promoter Group,Buy,1,693,693
+Godrej Consumer Products Ltd,3/29/2019,PG Children Trust,Insider - Promoter Group,Buy,1,685,685
+Godrej Consumer Products Ltd,3/28/2019,NBG Family Trust,Insider - Promoter Group,Buy,1,693,693
+Godrej Consumer Products Ltd,3/28/2019,BNG Family Trust,Insider - Promoter Group,Buy,1,693,693
+Godrej Consumer Products Ltd,3/28/2019,BNG Lineage Trust,Insider - Promoter Group,Buy,1,692,692
+Godrej Consumer Products Ltd,3/28/2019,SGC Family Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,ABG Family Trust,Insider - Promoter Group,Buy,1,693,693
+Godrej Consumer Products Ltd,3/29/2019,RNG Family Trust,Insider - Promoter Group,Buy,1,685,685
+Godrej Consumer Products Ltd,3/28/2019,NJG Family Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,NVC Children Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,RJG Family Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,SNG Lineage Trust,Insider - Promoter Group,Buy,1,692,692
+Godrej Consumer Products Ltd,3/28/2019,JNG Family Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,PG Lineage Trust,Insider - Promoter Group,Buy,1,693,693
+Godrej Consumer Products Ltd,3/28/2019,PJG Family Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,Navroze Lineage Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,Raika Lineage Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,FVC Children Trust,Insider - Promoter Group,Buy,1,695,695
+Godrej Consumer Products Ltd,3/28/2019,SNG Family Trust,Insider - Promoter Group,Buy,1,692,692
+Godrej Consumer Products Ltd,3/28/2019,TAD Children Trust,Insider - Promoter Group,Buy,1,693,693
+Godrej Consumer Products Ltd,3/28/2019,VMC Family Trust,Insider - Promoter Group,Buy,1,695,695
+Shalimar Productions Ltd,6/6/2022,SPARK FINANCE,Bulk,Buy,1,0,0.62
+Shalimar Productions Ltd,5/27/2022,TOPGAIN FINANCE PRIVATE LIMITED,Bulk,Buy,1,0,0.68
+SBI Cards and Payment Services Ltd,8/2/2021,Majid Asadullah,Insider - Designated Person,Sell,1,"1,040","1,040.00"
+SBI Cards and Payment Services Ltd,10/26/2020,Amit Kalra,Insider - Designated Person,Sell,1,805,805
+SBI Cards and Payment Services Ltd,11/4/2020,Gopal Prasad Malakar,Insider - Designated Person,Sell,1,815,815
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,4,"10,614","2,653.50"
+Tech Mahindra Ltd,8/29/2018,Siddharth Dey,Insider - Employee,Sell,1,738,738
+Siti Networks Ltd,11/4/2020,VORA PRITESH PRAVINCHANDRA (HUF),Bulk,Sell,1,0,0.55
+Siti Networks Ltd,1/6/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,4,4.5
+Rasoya Proteins Ltd,5/21/2015,BP FINTRADE PRIVATE LIMITED,Bulk,Sell,2,0,0.2
+Housing Development Finance Corporation Ltd,11/29/2018,RANJEET ANNI SHETTY,Insider - Employee,Sell,2,"3,856","1,928.00"
+Housing Development Finance Corporation Ltd,12/31/2018,ARPIT TANDON,Insider - Employee,Sell,2,"3,938","1,969.00"
+Housing Development Finance Corporation Ltd,6/26/2018,NEHA TRIPATHI,Insider - Employee,Sell,2,"3,827","1,913.50"
+Housing Development Finance Corporation Ltd,12/7/2018,JAISHANKER T A,Insider - Employee,Sell,2,"3,800","1,900.00"
+ITC Ltd,11/30/2015,Narottam Thanvi,Insider - Employee,Buy,15,36.42 L,"242,820.00"
+Housing Development Finance Corporation Ltd,11/3/2017,Hari Shankar Prasad,Insider - Employee,Sell,2,"3,559","1,779.50"
+Housing Development Finance Corporation Ltd,3/12/2018,Mrinal Sharma,Insider - Employee,Sell,2,"3,690","1,845.00"
+Housing Development Finance Corporation Ltd,12/13/2017,Anjali Maria Vaz,Insider - Employee,Sell,2,"3,414","1,707.00"
+Housing Development Finance Corporation Ltd,3/15/2017,Sudha V,Insider - Employee,Sell,2,"2,847","1,423.50"
+Housing Development Finance Corporation Ltd,3/15/2017,Supriya Bhasin,Insider - Employee,Sell,2,"2,841","1,420.50"
+Housing Development Finance Corporation Ltd,9/28/2016,Rohit Varma,Insider - Employee,Sell,2,"2,859","1,429.50"
+Housing Development Finance Corporation Ltd,2/6/2017,Nehalbhai V Thakker,Insider - Immediate Relative,Sell,2,"2,796","1,398.00"
+JSW Steel Ltd,6/11/2019,Beaufield Holdings Limited,Insider - Promoter Group,Sell,4,"1,096",274
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,5,"14,041","2,808.20"
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,5,"13,270","2,654.00"
+Larsen & Toubro Ltd,3/17/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,2,"4,390","2,195.00"
+Larsen & Toubro Ltd,3/17/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,2,"4,391","2,195.50"
+Larsen & Toubro Ltd,12/4/2020,RANJAN Y TRIVEDI,Insider - Immediate Relative,Sell,2,"2,309","1,154.50"
+Larsen & Toubro Ltd,3/12/2019,A NAVEEN KUMAR,Insider - Designated Person,Sell,2,"2,703","1,351.50"
+Larsen & Toubro Ltd,7/26/2016,BHARGAVA MUKESH CMDR,Insider - Employee,Sell,2,"3,162","1,581.00"
+Larsen & Toubro Ltd,9/15/2015,Hemant H Jadhav,Insider - Employee,Sell,2,"3,140","1,570.00"
+Larsen & Toubro Ltd,9/8/2015,Hemant H Jadhav,Insider - Employee,Sell,2,"3,064","1,532.00"
+IIFL Finance Ltd,10/7/2015,Upendra Jaiswal,Insider - Other,Sell,1,189,189
+Crompton Greaves Consumer Electricals Ltd,11/11/2019,SHAJI ABRAHAM,Insider - Designated Person,Sell,1,262,262
+Avenue Supermarts Ltd,7/13/2018,Ashwin Patel,Insider - Employee,Sell,1,"1,759","1,759.00"
+Avenue Supermarts Ltd,7/16/2018,Ashwin Patel,Insider - Employee,Buy,1,"1,562","1,562.00"
+Avenue Supermarts Ltd,7/16/2018,Ashwin Patel,Insider - Employee,Sell,1,"1,568","1,568.00"
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,1,"1,490","1,490.00"
+Indusind Bank Ltd,2/12/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,1,"1,498","1,498.00"
+Biocon Ltd,12/21/2021,INDRANIL SEN,Insider - Designated Person,Sell,2,711,355.5
+Aurobindo Pharma Ltd,10/27/2016,Ravindranadha Reddy Meka,Insider - Employee,Sell,1,21.21 L,"2,120,737.00"
+UNO Minda Ltd,8/30/2022,Alok Sharma,Insider - Designated Person,Sell,1,580,580
+UNO Minda Ltd,11/28/2022,Sanjay Kumar Aggarwal,Insider - Designated Person,Sell,1,555,555
+NCL Research and Financial Services Ltd,2/4/2022,MANSI SHARE & STOCK ADVISORS PRIVATE LIMITED,Bulk,Sell,1,2,2.25
+NCL Research and Financial Services Ltd,12/30/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,1,1,1.61
+NCL Research and Financial Services Ltd,2/23/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,1,1.54
+HDFC Bank Ltd,3/23/2020,Omkar Gadekar,Insider - Designated Person,Buy,10,"7,710",771
+HDFC Bank Ltd,1/27/2020,Sunil Maydeo,Insider - Designated Person,Buy,10,"12,349","1,234.90"
+MPS Infotecnics Ltd,1/24/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,7,10,1.5
+Housing Development Finance Corporation Ltd,3/15/2017,Chatterjee Sourish,Insider - Employee,Sell,3,"4,284","1,428.00"
+Housing Development Finance Corporation Ltd,9/6/2016,Aditi Gutgutia,Insider - Employee,Sell,3,"4,356","1,452.00"
+Housing Development Finance Corporation Ltd,3/15/2017,Supriya Bhasin,Insider - Employee,Sell,3,"4,268","1,422.67"
+Housing Development Finance Corporation Ltd,2/6/2017,Alavani Raghunandan M,Insider - Employee,Sell,3,"4,230","1,410.00"
+HDFC Bank Ltd,12/23/2016,Raveesh Kumar Bhatia,Insider - Employee,Buy,10,42.61 L,"426,105.00"
+Indian Infotech and Software Ltd,2/23/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,2,8,4.22
+Reliance Home Finance Ltd,4/17/2020,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,1,1
+Brightcom Group Ltd,6/24/2020,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,9,9.95
+Indus Towers Ltd,3/18/2016,Prashant Veer Singh,Insider - Employee,Sell,4,19.33 L,"483,368.35"
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,8,"21,232","2,654.00"
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,8,"21,240","2,655.00"
+Larsen & Toubro Ltd,3/17/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,3,"6,586","2,195.33"
+Larsen & Toubro Ltd,3/17/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,3,"6,585","2,195.00"
+Larsen & Toubro Ltd,3/22/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,3,"6,657","2,219.00"
+ITC Ltd,8/17/2018,LAKSHMANAN CHITTUR CHANDRASEKHARAN,Insider - Employee,Sell,28,"8,684",310.14
+Bharti Airtel Ltd,2/25/2020,Rohit Relan,Insider - Designated Person,Sell,10,"5,333",533.3
+ICICI Bank Ltd,11/2/2018,Vikash Sharma,Insider - Employee,Buy,14,32.92 L,"221,342.18"
+Virtual Global Education Ltd,1/17/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,3,3.2
+HDFC Bank Ltd,9/7/2016,Ram C Sonar,Insider - Employee,Sell,12,"14,700","1,225.00"
+Housing Development Finance Corporation Ltd,12/31/2018,ARPIT TANDON,Insider - Employee,Sell,4,"7,877","1,969.25"
+Housing Development Finance Corporation Ltd,11/16/2018,PATHARE VISHAL,Insider - Employee,Sell,4,"7,564","1,891.00"
+Housing Development Finance Corporation Ltd,5/26/2017,Shikha Khattar,Insider - Employee,Sell,4,"6,246","1,561.50"
+Housing Development Finance Corporation Ltd,9/11/2017,Hemant Shankar Mokashi,Insider - Employee,Sell,4,"7,148","1,787.00"
+Housing Development Finance Corporation Ltd,1/12/2017,Patel Darshan,Insider - Employee,Sell,4,"4,971","1,242.75"
+Infosys Ltd,3/1/2021,Shaji Mathew,Insider - Designated Person,Buy,11,"22,811","2,073.73"
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,10,"26,725","2,672.50"
+ITC Ltd,7/29/2016,Rajiv Bansal,Insider - Employee,Buy,32,35.92 L,"111,384.87"
+Greencrest Financial Services Ltd,11/22/2022,VIBRANT SECURITIES PRIVATE LIMITED,Bulk,Sell,1,2,2.82
+Greencrest Financial Services Ltd,11/7/2022,MOHD ANEES KHAN,Bulk,Sell,1,2,2.35
+MFL India Ltd,8/31/2021,TOPGAIN FINANCE PRIVATE LIMITED,Bulk,Buy,1,0,0.32
+Yes Bank Ltd,6/30/2016,Kapil Bali,Insider - Director,Sell,6,"6,300","1,050.00"
+Larsen & Toubro Ltd,7/10/2015,BHARGAVA MUKESH CMDR,Insider - Employee,Buy,4,"7,508","1,877.00"
+Raj Rayon Industries Ltd,6/16/2020,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,1,0,0.3
+HDFC Bank Ltd,5/24/2016,Ramchandra Sonawane,Insider - Designated Person,Sell,15,"16,550","1,103.33"
+HDFC Bank Ltd,5/24/2016,Ashok Khanna,Insider - Designated Person,Sell,15,"16,650","1,110.00"
+Godrej Industries Ltd,9/30/2019,TANYA DUBASH AND PIROJSHA GODREJTRUSTEES OF TAD CHILDREN TRUST,Insider - Promoter Group,Buy,1,411,411
+Godrej Industries Ltd,9/30/2019,NADIR GODREJ HORMAZD GODREJ AND BURJIS GODREJ TRUSTEES OF BNG LINEAGE TRUST,Insider - Promoter Group,Buy,1,410,410
+Godrej Industries Ltd,9/30/2019,PIROJSHA GODREJ AND NISABA GODREJ TRUSTEES OF PG CHILDREN TRUST,Insider - Promoter Group,Buy,1,411,411
+Godrej Industries Ltd,9/30/2019,JAMSHYD GODREJPHEROZA GODREJ AND NAVROZE GODREJ TRUSTEES OF PJG FAMILY TRUST,Insider - Promoter Group,Buy,1,414,414
+Godrej Industries Ltd,9/30/2019,NISABA GODREJ AND PIROJSHA GODREJ TRUSTEES OF NG CHILDREN TRUST,Insider - Promoter Group,Buy,1,411,411
+Godrej Industries Ltd,9/30/2019,NADIR GODREJHORMAZD GODREJ AND RATI GODREJTRUSTEES OF RNG FAMILY TRUST,Insider - Promoter Group,Buy,1,410,410
+Godrej Industries Ltd,9/30/2019,JAMSHYD GODREJ PHEROZA GODREJ AND NAVROZE GODREJ TRUSTEES OF NJG FAMILY TRUST,Insider - Promoter Group,Buy,1,414,414
+Godrej Industries Ltd,9/30/2019,SMITA GODREJ CRISHNA FREYAN CRISHNA BIERI AND NYRIKA HOLKAR TRUSTEES OF FVC CHILDREN TRUST,Insider - Promoter Group,Buy,1,414,414
+Godrej Industries Ltd,9/30/2019,PIROJSHA GODREJ AND NISABA GODREJTRUSTEES OF PG LINEAGE TRUST,Insider - Promoter Group,Buy,1,411,411
+Godrej Industries Ltd,9/30/2019,NADIR GODREJ HORMAZD GODREJ AND RATI GODREJ TRUSTEES OF BNG SUCCESSOR TRUST,Insider - Promoter Group,Buy,1,410,410
+Godrej Industries Ltd,9/30/2019,NADIR GODREJ HORMAZD GODREJ AND RATI GODREJ TRUSTEES OF SNG SUCCESSOR TRUST,Insider - Promoter Group,Buy,1,410,410
+Godrej Industries Ltd,9/30/2019,SMITA GODREJ CRISHNA VIJAY MOHAN CRISHNA FREYAN CRISHNA BIERI AND NYRIKA HOLKAR TRUSTEES OF VMC FAMILY TRUST,Insider - Promoter Group,Buy,1,414,414
+Godrej Industries Ltd,9/30/2019,NADIR GODREJ HORMAZD GODREJ AND SOHRAB GODREJ TRUSTEES OF SNG LINEAGE TRUST,Insider - Promoter Group,Buy,1,410,410
+Godrej Industries Ltd,9/30/2019,JAMSHYD GODREJ PHEROZA GODREJ AND NAVROZE GODREJ TRUSTEES OF RJG FAMILY TRUST,Insider - Promoter Group,Buy,1,414,414
+Godrej Industries Ltd,9/30/2019,SMITA GODREJ CRISHNA FREYAN CRISHNA BIERI AND NYRIKA HOLKAR TRUSTEES OF NVC CHILDREN TRUST,Insider - Promoter Group,Buy,1,414,414
+Tata Consultancy Services Ltd,8/5/2021,Suresh Gopinathan Menon,Insider - Designated Person,Sell,11,"36,357","3,305.18"
+Punj Lloyd Ltd,2/20/2019,J M GLOBAL EQUITIES PRIVATE LIMITED,Bulk,Buy,1,1,1.8
+Housing Development Finance Corporation Ltd,8/10/2018,POOJA HEMANT SHAH,Insider - Employee,Sell,5,"9,900","1,980.00"
+Housing Development Finance Corporation Ltd,12/31/2018,ARPIT TANDON,Insider - Employee,Sell,5,"9,845","1,969.00"
+Housing Development Finance Corporation Ltd,11/14/2018,SOMA SUNDAR B T,Insider - Employee,Sell,5,"9,175","1,835.00"
+Housing Development Finance Corporation Ltd,8/10/2018,POOJA HEMANT SHAH,Insider - Employee,Sell,5,"9,880","1,976.00"
+Sel Manufacturing Company Ltd,8/11/2015,RKR INVESTMENTS SERVICES,Bulk,Buy,1,4,4.23
+Biogen Pharmachem Industries Ltd,7/8/2021,PARESH DHIRAJLAL SHAH,Bulk,Buy,2,1,0.58
+Zee Learn Ltd,1/7/2022,MANSI SHARES & STOCK ADVISORS PVT LTD,Bulk,Buy,1,18,18.5
+Housing Development Finance Corporation Ltd,7/31/2017,Shashank Khare,Insider - Employee,Sell,5,"8,910","1,782.00"
+Housing Development Finance Corporation Ltd,7/20/2017,KRISHNARAO RAMCHANDRA YADAV,Insider - Immediate Relative,Sell,5,"8,240","1,648.00"
+Housing Development Finance Corporation Ltd,2/2/2018,Nilesh Janardan Mange,Insider - Employee,Buy,5,"9,544","1,908.80"
+Housing Development Finance Corporation Ltd,5/30/2017,Deepika Gupta,Insider - Employee,Sell,5,"7,978","1,595.60"
+Housing Development Finance Corporation Ltd,3/13/2018,JITENDRA SAI KOMMINENI,Insider - Employee,Sell,5,"9,350","1,870.00"
+Crompton Greaves Consumer Electricals Ltd,11/11/2019,SHAJI ABRAHAM,Insider - Designated Person,Sell,2,518,259
+Hindustan Unilever Ltd,3/30/2021,Chandrasekaran Singaravelu,Insider - Employee,Sell,7,"16,654","2,379.14"
+GV Films Ltd,1/10/2022,MANSI SHARE & STOCK ADVISORS PRIVATE LIMITED,Bulk,Buy,3,3,1.26
+AU Small Finance Bank Ltd,5/15/2020,Ravleen Kaur saluja,Insider - Immediate Relative,Sell,1,436,436
+AU Small Finance Bank Ltd,8/25/2020,Pankaj Sharma,Insider - Designated Person,Sell,1,738,738
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,2,"2,980","1,490.00"
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,2,"2,979","1,489.50"
+AU Small Finance Bank Ltd,3/18/2020,Pankaj Sharma,Insider - Designated Person,Sell,1,806,806
+Bajaj Auto Ltd,2/26/2021,K S GRIHAPATHY,Insider - Designated Person,Sell,1,"3,906","3,906.00"
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,1,686,686
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,1,690,690
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,1,687,687
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,1,693,693
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,1,689,689
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,1,690,690
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,1,685,685
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,1,687,687
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,1,691,691
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,1,688,688
+Larsen & Toubro Ltd,9/1/2022,ASOK KUMAR K,Insider - Designated Person,Sell,5,"9,520","1,904.00"
+NCL Research and Financial Services Ltd,1/12/2022,MANSI SHARE & STOCK ADVISORS PRIVATE LIMITED,Bulk,Buy,2,4,2.32
+ITC Ltd,7/17/2018,K.R. ARUN,Insider - Employee,Sell,45,"12,182",270.71
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,14,"37,148","2,653.43"
+Housing Development Finance Corporation Ltd,3/28/2018,Tarun Bibra,Insider - Employee,Sell,6,"10,932","1,822.00"
+Housing Development Finance Corporation Ltd,3/8/2018,ANILKUMAR A S,Insider - Employee,Sell,6,"10,800","1,800.00"
+UNO Minda Ltd,9/15/2020,ARVIND KUMAR AGARWAL,Insider - Designated Person,Buy,1,250,250
+UNO Minda Ltd,9/15/2020,DINESH SAINI,Insider - Designated Person,Buy,1,250,250
+Housing Development Finance Corporation Ltd,9/29/2016,Vishal Shivnathrao Kuche,Insider - Employee,Sell,6,"8,408","1,401.33"
+Vikas Proppant & Granite Ltd,1/6/2022,MANSI SHARE & STOCK ADVISORS PRIVATE LIMITED,Bulk,Sell,2,5,2.85
+HDFC Bank Ltd,5/17/2017,Anil Verghese,Insider - Employee,Sell,20,"30,200","1,510.00"
+Urja Global Ltd,12/18/2017,BP FINTRADE PRIVATE LIMITED,Bulk,Sell,2,7,3.83
+Relaxo Footwears Ltd,11/30/2020,Pankaj Bhalla,Insider - Employee,Sell,1,710,710
+Shalimar Productions Ltd,12/28/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,4,2,0.52
+ITC Ltd,8/14/2018,HARIT SHROFF,Insider - Employee,Sell,50,"15,488",309.76
+ITC Ltd,1/10/2019,HARIT SHROFF,Insider - Employee,Sell,50,"14,600",292
+ITC Ltd,1/15/2019,HARIT SHROFF,Insider - Employee,Sell,50,"14,750",295
+ITC Ltd,3/12/2019,D. JOHN ROBERT,Insider - Employee,Sell,50,"14,715",294.3
+Relaxo Footwears Ltd,3/8/2019,Amit Maindola,Insider - Employee,Sell,1,754,754
+Axis Bank Ltd,5/16/2016,Chanchal Bhattacharya,Insider - Employee,Buy,10,"2,889",288.96
+Reliance Industries Ltd,3/1/2017,R S Bhatt,Insider - Other,Buy,25,"25,000","1,000.00"
+Pil Italica Lifestyle Ltd,1/12/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,16,16
+HCL Technologies Ltd,2/3/2016,Vineet Sood,Insider - Employee,Sell,12,"10,500",875
+ICICI Lombard General Insurance Company Ltd,8/10/2021,SUDHANSHU WALIA,Insider - Designated Person,Sell,2,"2,900","1,450.00"
+Housing Development Finance Corporation Ltd,3/20/2017,Nikhil Khanna,Insider - Employee,Sell,7,"10,171","1,453.00"
+HDFC Bank Ltd,3/12/2020,Kamini Jain,Insider - Designated Person,Buy,25,"25,880","1,035.20"
+Mahindra and Mahindra Ltd,1/24/2019,Kinnar Rathod,Insider - Employee,Sell,5,"3,475",695
+Godrej Properties Ltd,3/28/2019,NBG Family Trust,Insider - Promoter Group,Buy,1,867,867
+Godrej Properties Ltd,3/28/2019,SNG Successor Trust,Insider - Promoter Group,Buy,1,867,867
+Godrej Properties Ltd,3/28/2019,SNG Lineage Trust,Insider - Promoter Group,Buy,1,867,867
+Godrej Properties Ltd,3/28/2019,NJG Family Trust,Insider - Promoter Group,Buy,1,869,869
+Godrej Properties Ltd,3/28/2019,ABG Family Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/28/2019,TAD Children Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/29/2019,RNG Family Trust,Insider - Promoter Group,Buy,1,826,826
+Godrej Properties Ltd,3/28/2019,JNG Family Trust,Insider - Promoter Group,Buy,1,870,870
+Godrej Properties Ltd,3/28/2019,FVC Children Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/29/2019,PG Children Trust,Insider - Promoter Group,Buy,1,825,825
+Godrej Properties Ltd,3/28/2019,VMC Family Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/28/2019,NVC Children Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/28/2019,NG Children Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/28/2019,PG Lineage Trust,Insider - Promoter Group,Buy,1,867,867
+Godrej Properties Ltd,3/28/2019,PJG Family Trust,Insider - Promoter Group,Buy,1,870,870
+Godrej Properties Ltd,3/28/2019,BNG Successor Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/28/2019,BNG Lineage Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/28/2019,RJG Family Trust,Insider - Promoter Group,Buy,1,868,868
+Godrej Properties Ltd,3/28/2019,SGC Family Trust,Insider - Promoter Group,Buy,1,868,868
+HDFC Bank Ltd,12/24/2018,prajith Chandrasekhar,Insider - Designated Person,Sell,24,"46,800","1,950.00"
+V Guard Industries Ltd,8/3/2020,T B SRIKKANTH,Insider - Designated Person,Buy,2,333,166.5
+Orient Electric Ltd,3/29/2023,RAKESH KHANNA,Insider - Director,Sell,1,274,274
+HDFC Life Insurance Company Ltd,12/2/2022,PANKAJ GUPTA,Insider - Designated Person,Sell,10,"5,910",591
+Brigade Enterprises Ltd,7/16/2021,HEMAVATHI V,Insider - Employee,Buy,1,345,345
+Brigade Enterprises Ltd,8/20/2021,HEMAVATHI V,Insider - Employee,Sell,1,319,319
+Brigade Enterprises Ltd,7/20/2021,HEMAVATHI V,Insider - Employee,Sell,1,318,318
+HDFC Asset Management Company Ltd,9/4/2018,RAJBIR SINGH,Insider - Employee,Sell,1,"1,759","1,759.00"
+Housing Development Finance Corporation Ltd,11/28/2018,SATISH BARAGI DEVANNA,Insider - Employee,Sell,8,"15,416","1,927.00"
+Housing Development Finance Corporation Ltd,3/13/2019,SASHANK DRONADULA,Insider - Employee,Sell,8,"14,944","1,868.00"
+HDFC Bank Ltd,9/18/2017,Jignesh Jayantilal Doshi,Insider - Employee,Sell,25,"42,000","1,680.00"
+HDFC Bank Ltd,9/20/2017,Jignesh Jayantilal Doshi,Insider - Employee,Sell,25,"42,000","1,680.00"
+HDFC Bank Ltd,9/21/2017,Shaji Balakrishnan,Insider - Employee,Sell,25,"45,172","1,806.88"
+HDFC Bank Ltd,3/15/2017,Jignesh Jayantilal Doshi,Insider - Employee,Sell,25,"35,000","1,400.00"
+Larsen & Toubro Ltd,9/12/2022,PRATIMA MEHTA,Insider - Immediate Relative,Sell,7,"13,720","1,960.00"
+Ujaas Energy Ltd,2/2/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,5,5.9
+Ujaas Energy Ltd,6/9/2021,GUNDLAPALLI SHOWRAIAH BABU,Bulk,Buy,1,3,3.45
+Indusind Bank Ltd,6/8/2017,M.K Madhavan,Insider - Employee,Sell,3,"4,590","1,530.00"
+Housing Development Finance Corporation Ltd,2/7/2017,Saurav,Insider - Employee,Sell,8,"11,264","1,408.00"
+Vikas Ecotech Ltd,7/20/2021,TOPGAIN FINANCE PRIVATE LIMITED,Bulk,Buy,2,3,1.97
+Godrej Agrovet Ltd,9/30/2019,JNG Family Trust,Insider - Promoter Group,Buy,1,474,474
+Godrej Agrovet Ltd,9/30/2019,PJG Family Trust,Insider - Promoter Group,Buy,1,474,474
+Godrej Agrovet Ltd,9/30/2019,RJG Family Trust,Insider - Promoter Group,Buy,1,474,474
+Godrej Agrovet Ltd,9/30/2019,BNG Successor Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,PG Lineage Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,NBG Family Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,SNG Successor Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,RNG Family Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,SNG Lineage Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,NG Children Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,ABG Family Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,NVC Children Trust,Insider - Promoter Group,Buy,1,474,474
+Godrej Agrovet Ltd,9/30/2019,TAD Children Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,PG Children Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,NJG Family Trust,Insider - Promoter Group,Buy,1,474,474
+Godrej Agrovet Ltd,9/30/2019,VMC Family Trust,Insider - Promoter Group,Buy,1,474,474
+Godrej Agrovet Ltd,9/30/2019,BNG Lineage Trust,Insider - Promoter Group,Buy,1,476,476
+Godrej Agrovet Ltd,9/30/2019,FVC Children Trust,Insider - Promoter Group,Buy,1,474,474
+Godrej Agrovet Ltd,9/30/2019,SGC Family Trust,Insider - Promoter Group,Buy,1,474,474
+Yes Bank Ltd,10/8/2018,Gautam Jain,Insider - Employee,Buy,12,"2,652",221
+Axis Bank Ltd,6/15/2023,MORGAN STANLEY INVESTMENT FUNDS COUNTERPOINT GLOBAL FUND,Block,Buy,16,"15,488",968
+HCL Technologies Ltd,7/4/2017,C Ranganayaki,Insider - Immediate Relative,Sell,15,"15,000","1,000.00"
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,20,"53,320","2,666.00"
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,20,"53,087","2,654.35"
+Mphasis Ltd,9/14/2020,Kathryn Airth Terry,Insider - Designated Person,Sell,1,"1,188","1,188.00"
+Indus Towers Ltd,10/12/2017,Ravinder Hooda,Insider - Employee,Sell,10,"4,188",418.8
+Infosys Ltd,3/13/2019,Andrew Groth,Insider - Designated Person,Sell,24,"17,778",740.75
+Housing Development Finance Corporation Ltd,1/12/2022,ANITHA RAMABHADRAN,Insider - Immediate Relative,Buy,10,"27,375","2,737.50"
+Housing Development Finance Corporation Ltd,12/6/2017,Hari Shankar Prasad,Insider - Employee,Sell,9,"14,837","1,648.56"
+Larsen & Toubro Ltd,9/8/2022,PRATIMA MEHTA,Insider - Immediate Relative,Sell,8,"15,704","1,963.00"
+Prakash Steelage Ltd,8/1/2012,HARIDARSHAN SALES PVT LTD,Bulk,Buy,1,155,155.45
+HDFC Bank Ltd,2/14/2019,Prajith Chandrasekhar,Insider - Employee,Sell,30,"58,500","1,950.00"
+Axis Bank Ltd,6/15/2023,MORGAN STANLEY INVESTMENT FUNDS COUNTERPOINT GLOBAL FUND,Block,Buy,18,"17,424",968
+HDFC Life Insurance Company Ltd,11/1/2021,DHAVALRAI TRIVEDI,Insider - Immediate Relative,Buy,12,"8,275",689.58
+Suncare Traders Ltd,5/19/2021,ALKA RAWAT,Bulk,Sell,1,0,0.6
+PNB Housing Finance Ltd,6/2/2021,DIPPIKA A SHARMA,Insider - Designated Person,Sell,1,670,670
+Mahindra and Mahindra Financial Services Ltd,3/25/2019,Suresh Shanmugam,Insider - Designated Person,Sell,6,"2,479",413.17
+Housing Development Finance Corporation Ltd,5/24/2018,SUDIPTO KUMAR DAS,Insider - Employee,Sell,10,"18,031","1,803.10"
+Housing Development Finance Corporation Ltd,5/15/2018,DEEPAK B,Insider - Employee,Sell,10,"19,368","1,936.80"
+Housing Development Finance Corporation Ltd,5/15/2018,DEEPAK B,Insider - Employee,Sell,10,"19,400","1,940.00"
+Housing Development Finance Corporation Ltd,6/26/2018,NEHA TRIPATHI,Insider - Employee,Sell,10,"19,152","1,915.20"
+Housing Development Finance Corporation Ltd,11/5/2018,SANDEEP SATSANGI,Insider - Employee,Sell,10,"17,794","1,779.40"
+Housing Development Finance Corporation Ltd,11/27/2018,ADITI AGARWAL,Insider - Employee,Sell,10,"19,020","1,902.00"
+Housing Development Finance Corporation Ltd,11/26/2018,GOWTAM KANNURI,Insider - Employee,Sell,10,"18,850","1,885.00"
+Housing Development Finance Corporation Ltd,11/28/2018,GOWTAM KANNURI,Insider - Employee,Sell,10,"19,160","1,916.00"
+Housing Development Finance Corporation Ltd,12/31/2018,ARPIT TANDON,Insider - Employee,Sell,10,"19,692","1,969.20"
+Housing Development Finance Corporation Ltd,11/27/2018,ADITI GUPTA,Insider - Employee,Sell,10,"19,250","1,925.00"
+Housing Development Finance Corporation Ltd,11/12/2018,SANJIV KUMAR SINHA,Insider - Employee,Sell,10,"17,901","1,790.10"
+Housing Development Finance Corporation Ltd,11/28/2018,GOWTAM KANNURI,Insider - Employee,Sell,10,"19,220","1,922.00"
+Housing Development Finance Corporation Ltd,3/13/2019,SHYAM KUMAR V,Insider - Employee,Sell,10,"19,550","1,955.00"
+Housing Development Finance Corporation Ltd,11/16/2018,SOMA SUNDAR B T,Insider - Employee,Sell,10,"18,890","1,889.00"
+Housing Development Finance Corporation Ltd,11/19/2018,SOMA SUNDAR B T,Insider - Employee,Sell,10,"19,050","1,905.00"
+Housing Development Finance Corporation Ltd,6/22/2018,DEEPAK B,Insider - Employee,Sell,10,"18,750","1,875.00"
+Housing Development Finance Corporation Ltd,11/29/2018,ROHIT HARISHCHANDRA PATIL,Insider - Employee,Sell,10,"19,650","1,965.00"
+Housing Development Finance Corporation Ltd,5/3/2018,SUHANI UPADHYAY,Insider - Immediate Relative,Buy,10,"19,249","1,924.90"
+Housing Development Finance Corporation Ltd,11/6/2018,DEEPANKAR JOSHI,Insider - Employee,Sell,10,"18,106","1,810.60"
+Housing Development Finance Corporation Ltd,11/28/2018,GOWTAM KANNURI,Insider - Employee,Sell,10,"19,050","1,905.00"
+Housing Development Finance Corporation Ltd,5/28/2018,PRASANNA K C,Insider - Employee,Sell,10,"18,300","1,830.00"
+Housing Development Finance Corporation Ltd,11/13/2018,ABHINAV MEHRA,Insider - Employee,Sell,10,"18,200","1,820.00"
+Housing Development Finance Corporation Ltd,11/21/2018,ADITI AGARWAL,Insider - Employee,Sell,10,"18,840","1,884.00"
+Housing Development Finance Corporation Ltd,11/28/2018,GOWTAM KANNURI,Insider - Employee,Sell,10,"19,300","1,930.00"
+Housing Development Finance Corporation Ltd,3/11/2019,JITENDRA SAI KOMMINENI,Insider - Employee,Sell,10,"18,970","1,897.00"
+Housing Development Finance Corporation Ltd,5/8/2018,SUJIR UDAYANAND,Insider - Designated Person,Sell,10,"19,006","1,900.60"
+Housing Development Finance Corporation Ltd,7/4/2018,MANECK MADHOK,Insider - Immediate Relative,Sell,10,"19,080","1,908.00"
+Housing Development Finance Corporation Ltd,5/14/2018,DEEPAK B,Insider - Employee,Sell,10,"19,230","1,923.00"
+Housing Development Finance Corporation Ltd,5/14/2018,DEEPAK B,Insider - Employee,Sell,10,"19,350","1,935.00"
+Housing Development Finance Corporation Ltd,6/21/2018,DEEPAK B,Insider - Employee,Sell,10,"18,750","1,875.00"
+HDFC Bank Ltd,12/29/2015,Suraj Rangnekar,Insider - Employee,Sell,30,"31,500","1,050.00"
+Johnson Pharmacare Ltd,1/24/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,3,3,1.28
+Bajaj Finance Ltd,3/9/2016,Ratikanta Satapathy,Insider - Designated Person,Sell,3,"18,735","6,245.00"
+Biogen Pharmachem Industries Ltd,6/17/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,4,1,0.34
+ITC Ltd,8/12/2016,Arindam Mukherjee,Insider - Employee,Buy,75,4.99 L,"6,652.00"
+ITC Ltd,9/1/2016,Arindam Mukherjee,Insider - Employee,Sell,75,7.71 L,"10,282.23"
+Religare Enterprises Ltd,6/21/2023,Pawan Seth,Insider - Employee,Sell,2,350,175
+Housing Development Finance Corporation Ltd,3/9/2018,ADITI DONGARE,Insider - Employee,Sell,10,"18,181","1,818.10"
+Housing Development Finance Corporation Ltd,2/21/2018,Deepak B,Insider - Employee,Sell,10,"18,250","1,825.00"
+Housing Development Finance Corporation Ltd,6/12/2017,Bhatt Devi Prasad,Insider - Employee,Sell,10,"16,510","1,651.00"
+Housing Development Finance Corporation Ltd,3/9/2018,ADITI DONGARE,Insider - Employee,Sell,10,"18,250","1,825.00"
+Housing Development Finance Corporation Ltd,8/3/2017,Bhumika Mahendru,Insider - Employee,Sell,10,"17,425","1,742.50"
+Housing Development Finance Corporation Ltd,8/23/2017,Deepak B,Insider - Employee,Sell,10,"17,620","1,762.00"
+Housing Development Finance Corporation Ltd,2/9/2018,Sivakumar T,Insider - Employee,Sell,10,"17,666","1,766.60"
+Housing Development Finance Corporation Ltd,3/6/2018,ADITI DONGARE,Insider - Employee,Sell,10,"18,150","1,815.00"
+Housing Development Finance Corporation Ltd,2/19/2018,SIVAKUMAR T,Insider - Employee,Sell,10,"18,165","1,816.50"
+Housing Development Finance Corporation Ltd,2/27/2018,VENKATARAMANI M,Insider - Employee,Sell,10,"18,320","1,832.00"
+Housing Development Finance Corporation Ltd,3/8/2018,ADITI DONGARE,Insider - Employee,Sell,10,"17,900","1,790.00"
+Housing Development Finance Corporation Ltd,12/11/2017,SANJIV KUMAR SINHA,Insider - Employee,Sell,10,"17,000","1,700.00"
+Housing Development Finance Corporation Ltd,11/23/2017,KAVITHA MAHESH PATKI,Insider - Employee,Sell,10,"17,150","1,715.00"
+Housing Development Finance Corporation Ltd,3/27/2018,Deepak B,Insider - Employee,Sell,10,"18,400","1,840.00"
+Housing Development Finance Corporation Ltd,6/12/2017,Patel Ghanshyam J,Insider - Employee,Sell,10,"16,425","1,642.50"
+Housing Development Finance Corporation Ltd,3/8/2018,ADITI DONGARE,Insider - Employee,Sell,10,"18,017","1,801.70"
+Housing Development Finance Corporation Ltd,3/26/2018,Bhosale Rohit Ramesh,Insider - Employee,Sell,10,"17,836","1,783.60"
+Housing Development Finance Corporation Ltd,3/13/2018,JITENDRA SAI KOMMINENI,Insider - Employee,Sell,10,"18,660","1,866.00"
+Housing Development Finance Corporation Ltd,9/8/2017,Bhavik Dilipbhai Daxini,Insider - Employee,Sell,10,"17,888","1,788.80"
+Housing Development Finance Corporation Ltd,3/9/2018,ADITI DONGARE,Insider - Employee,Sell,10,"18,189","1,818.90"
+Housing Development Finance Corporation Ltd,3/21/2018,Deepak B,Insider - Employee,Sell,10,"18,250","1,825.00"
+Alka India Ltd,1/4/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,4,13,3.47
+Housing Development Finance Corporation Ltd,9/29/2016,Senthil Kumar G,Insider - Employee,Sell,10,"13,831","1,383.10"
+Housing Development Finance Corporation Ltd,2/9/2017,Vimmi Batra,Insider - Employee,Sell,10,"14,160","1,416.00"
+Housing Development Finance Corporation Ltd,6/21/2016,Anubhab Maitra,Insider - Designated Person,Sell,10,"12,386","1,238.60"
+Housing Development Finance Corporation Ltd,2/15/2017,Deepak B,Insider - Employee,Sell,10,"14,000","1,400.00"
+Housing Development Finance Corporation Ltd,3/15/2017,Sudha V,Insider - Employee,Sell,10,"14,236","1,423.60"
+Housing Development Finance Corporation Ltd,3/15/2017,Aneesh R L,Insider - Employee,Sell,10,"14,350","1,435.00"
+Housing Development Finance Corporation Ltd,8/31/2016,Gajananprasad Ratnakar Anekar,Insider - Employee,Sell,10,"14,091","1,409.10"
+Housing Development Finance Corporation Ltd,12/12/2016,Vedant Girdhari Lal Bhandari,Insider - Employee,Sell,10,"12,758","1,275.80"
+Housing Development Finance Corporation Ltd,3/21/2017,Deepak B,Insider - Employee,Sell,10,"14,670","1,467.00"
+Housing Development Finance Corporation Ltd,3/28/2017,Deepak B,Insider - Employee,Sell,10,"14,950","1,495.00"
+Housing Development Finance Corporation Ltd,12/7/2016,SHAH MAHESH H,Insider - Employee,Sell,10,"12,790","1,279.00"
+Housing Development Finance Corporation Ltd,2/9/2017,Ameet Ravindranath Vedpathak,Insider - Employee,Sell,10,"14,030","1,403.00"
+Housing Development Finance Corporation Ltd,3/15/2017,Nayak Lata K,Insider - Employee,Sell,10,"14,350","1,435.00"
+Housing Development Finance Corporation Ltd,2/17/2017,P Vijayan Xavier,Insider - Employee,Sell,10,"14,210","1,421.00"
+Tata Consultancy Services Ltd,1/24/2018,Nitya Jain,Insider - Designated Person,Sell,25,"80,707","3,228.28"
+Tata Consultancy Services Ltd,1/29/2018,Rohit Kumar Jain,Insider - Immediate Relative,Sell,25,"80,475","3,219.00"
+Housing Development Finance Corporation Ltd,3/10/2016,Chandra Anurag,Insider - Designated Person,Sell,10,"11,550","1,155.00"
+Mahindra and Mahindra Ltd,12/27/2018,Kinnar Rathod,Insider - Employee,Buy,7,"5,566",795.14
+Antarctica Ltd,8/29/2023,MULTIPLIER SHARE & STOCK ADVISORS PRIVATE LIMITED,Bulk,Buy,1,1,1
+Sturdy Industries Ltd,1/4/2023,MULTIPLIER SHARE & STOCK ADVISORS PRIVATE LIMITED,Bulk,Buy,1,0,0.67
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,4,"5,959","1,489.75"
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,4,"5,961","1,490.25"
+ITC Ltd,5/11/2018,KAUSHIK MUKHERJEE,Insider - Employee,Sell,83,"23,514",283.3
+Max Ventures and Industries Ltd,8/18/2020,Atul Lall,Insider - Employees Immediate Relative,Buy,1,38,38
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,2,"1,371",685.5
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,2,"1,374",687
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,2,"1,380",690
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,2,"1,407",703.5
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,2,"1,372",686
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,2,"1,370",685
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,2,"1,377",688.5
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,2,"1,379",689.5
+Tata Consultancy Services Ltd,5/22/2020,Sukanya Lakshminarayanan,Insider - Designated Person,Buy,26,"51,604","1,984.77"
+Housing Development Finance Corporation Ltd,3/27/2017,Kartik Radhakrishnan,Insider - Employee,Sell,11,"16,036","1,457.82"
+Housing Development Finance Corporation Ltd,3/28/2017,Abhimanyu Kukreja,Insider - Employee,Sell,11,"16,557","1,505.18"
+AU Small Finance Bank Ltd,12/7/2018,Kamaljeet Singh,Insider - Employee,Sell,2,"1,215",607.5
+ITC Ltd,11/22/2019,SAMRAT BANERJEE,Insider - Employee,Sell,86,"21,328",248
+Uttam Galva Steels Ltd,6/29/2021,ANKITA VISHAL SHAH,Bulk,Sell,1,5,5.35
+Uttam Galva Steels Ltd,7/6/2021,PARTH INFIN BROKERS PVT. LTD.,Bulk,Buy,1,4,4.13
+Larsen & Toubro Ltd,3/17/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,10,"21,953","2,195.30"
+Larsen & Toubro Ltd,3/22/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,10,"22,191","2,219.10"
+Larsen & Toubro Ltd,2/17/2023,AKASH JAIN,Insider - Designated Person,Sell,10,"22,250","2,225.00"
+Larsen & Toubro Ltd,1/18/2021,SANDEEP DIPANKAR,Insider - Designated Person,Buy,10,"13,371","1,337.10"
+Larsen & Toubro Ltd,1/29/2021,SANDEEP DIPANKAR,Insider - Designated Person,Buy,10,"13,367","1,336.70"
+Larsen & Toubro Ltd,1/19/2021,SANDEEP DIPANKAR,Insider - Designated Person,Sell,10,"13,651","1,365.10"
+Larsen & Toubro Ltd,10/26/2018,GAGANDEEP KAUR,Insider - Immediate Relative,Buy,10,"12,052","1,205.20"
+Larsen & Toubro Ltd,11/28/2018,GAGANDEEP KAUR,Insider - Immediate Relative,Sell,10,"14,157","1,415.70"
+UltraTech Cement Ltd,7/8/2019,Birla Group Holdings Private Limited,Insider - Promoter,Buy,2,168,84
+Eicher Motors Ltd,3/6/2018,Samrat Som,Insider - Employee,Sell,2,"55,400","27,700.00"
+Surana Telecom and Power Ltd,9/30/2017,Narender Surana,Insider - Promoter & Director,Buy,1,5,5
+Yes Bank Ltd,9/12/2018,Shiva Lodhi,Insider - Employee,Buy,17,"5,323",313.12
+Star Housing Finance Ltd,3/21/2023,Nirmal Kumar Jain,Insider - Promoter,Sell,1,46,46
+Star Housing Finance Ltd,5/5/2023,Nirmal Kumar Jain,Insider - Promoter,Sell,1,47,47
+Jubilant Foodworks Ltd,9/3/2018,PUSHKAR MALHOTRA,Insider - Designated Person,Sell,1,"1,551","1,551.00"
+Tata Consultancy Services Ltd,11/6/2020,Arun Kumar Malik,Insider - Immediate Relative,Buy,29,"78,453","2,705.28"
+Wipro Ltd,8/9/2016,Keyur Maniar,Insider - Employee,Sell,51,"28,050",550
+Housing Development Finance Corporation Ltd,11/5/2018,C L SRILEKHA,Insider - Employee,Sell,13,"23,144","1,780.31"
+Reliance Industries Ltd,9/5/2020,Sanjeev Vijayvargia,Insider - Designated Person,Sell,50,1.10 L,"2,190.00"
+Larsen & Toubro Ltd,3/17/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,11,"24,151","2,195.55"
+RBL Bank Ltd,8/31/2020,PALLAV SINHA,Insider - Designated Person,Sell,4,784,196
+Reliance Capital Ltd,6/28/2021,MANSI SHARES & STOCK ADVISORS PVT LTD,Bulk,Sell,2,51,25.65
+Samvardhana Motherson International Ltd,11/1/2018,ALOK GOEL,Insider - KMP,Buy,25,"4,383",175.32
+Indian Infotech and Software Ltd,7/30/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,8,11,1.46
+Crompton Greaves Consumer Electricals Ltd,11/11/2019,SHAJI ABRAHAM,Insider - Designated Person,Sell,5,"1,291",258.2
+HDFC Bank Ltd,11/24/2015,Suraj Rangnekar,Insider - Employee,Sell,40,"42,000","1,050.00"
+Tata Consultancy Services Ltd,5/28/2020,Sukanya Lakshminarayanan,Insider - Designated Person,Buy,30,"59,794","1,993.13"
+Rollatainers Ltd,10/8/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,2,5,2.63
+RITES Ltd,7/2/2018,Pawan Kr. Mishra,Insider - Employee,Sell,2,443,221.5
+Johnson Pharmacare Ltd,1/5/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,4,2,0.74
+RITES Ltd,7/17/2018,Pawan Kr. Mishra,Insider - Employee,Buy,2,389,194.7
+Johnson Pharmacare Ltd,2/4/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,4,5,1.38
+Ashika Credit Capital Ltd,11/6/2017,INDRA PRATAP SINGH (HUF),Bulk,Sell,5,134,26.9
+Reliance Naval and Engineering Ltd,5/18/2020,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,6,6,1.06
+Housing Development Finance Corporation Ltd,8/7/2017,DUTTA DIPTA,Insider - Employee,Sell,13,"22,441","1,726.23"
+ITC Ltd,9/25/2018,SURJEET SINGH RORIA,Insider - Employee,Sell,100,"30,075",300.75
+ITC Ltd,4/19/2018,DHANANJOY SAMANTA,Insider - Employee,Sell,100,"27,770",277.7
+ITC Ltd,8/3/2018,R. RAJASEKHAR,Insider - Employee,Sell,100,"30,424",304.24
+ITC Ltd,1/11/2019,HARIT SHROFF,Insider - Employee,Sell,100,"29,498",294.98
+ITC Ltd,8/13/2018,RAJESH AGARWAL,Insider - Employee,Sell,100,"30,625",306.25
+ITC Ltd,7/25/2018,D. JOHN ROBERT,Insider - Employee,Sell,100,"28,600",286
+ITC Ltd,8/2/2018,D. JOHN ROBERT,Insider - Employee,Sell,100,"30,115",301.15
+ITC Ltd,8/10/2018,HARIT SHROFF,Insider - Employee,Sell,100,"30,650",306.5
+ITC Ltd,9/10/2018,MADHUSUDHANA RAO TUNUGUNTLA,Insider - Employee,Sell,100,"30,600",306
+ITC Ltd,4/5/2018,ANMOL SINGH GREWAL,Insider - Employee,Sell,100,"25,870",258.7
+ITC Ltd,8/17/2018,MADHUSUDHANA RAO TUNUGUNTLA,Insider - Employee,Sell,100,"31,500",315
+ITC Ltd,8/14/2018,R. RAJASEKHAR,Insider - Employee,Sell,100,"30,922",309.22
+ITC Ltd,8/20/2018,D. JOHN ROBERT,Insider - Employee,Sell,100,"31,400",314
+ITC Ltd,2/28/2019,VIVEK PATNI,Insider - Employee,Sell,100,"27,575",275.75
+ITC Ltd,3/11/2019,SANJEEV K. NAYAR,Insider - Employee,Sell,100,"29,312",293.12
+ITC Ltd,3/11/2019,D. JOHN ROBERT,Insider - Employee,Sell,100,"29,300",293
+ITC Ltd,8/6/2018,D. JOHN ROBERT,Insider - Employee,Sell,100,"30,525",305.25
+ITC Ltd,8/17/2018,R. RAJASEKHAR,Insider - Employee,Sell,100,"31,421",314.21
+ITC Ltd,1/11/2019,V.V. SUBRAMANYAM,Insider - Employee,Sell,100,"29,600",296
+ITC Ltd,8/9/2018,DHANANJOY SAMANTA,Insider - Employee,Sell,100,"30,450",304.5
+ITC Ltd,8/17/2018,RAMASAMY SAMBASIVAM ANNADURAI,Insider - Employee,Sell,100,"31,365",313.65
+ITC Ltd,4/2/2018,DHANANJOY SAMANTA,Insider - Employee,Sell,100,"25,800",258
+ITC Ltd,3/12/2019,SANJEEV K. NAYAR,Insider - Employee,Sell,100,"29,412",294.12
+ITC Ltd,3/20/2019,PRASHANT MISHRA,Insider - Employee,Sell,100,"30,000",300
+ITC Ltd,1/9/2018,D. JOHN ROBERT,Insider - Employee,Sell,100,"26,800",268
+ITC Ltd,7/19/2017,KHALID HUSAIN KHAN,Insider - Employee,Sell,100,"28,942",289.42
+ITC Ltd,1/18/2018,SURJEET SINGH RORIA,Insider - Employee,Sell,100,"27,215",272.15
+ITC Ltd,3/13/2018,SURJEET SINGH RORIA,Insider - Employee,Sell,100,"27,040",270.4
+ITC Ltd,1/15/2018,Hitesh Jain,Insider - Employee,Sell,100,"27,000",270
+ITC Ltd,1/8/2018,D. JOHN ROBERT,Insider - Employee,Sell,100,"26,600",266
+ITC Ltd,1/31/2017,D. John Robert,Insider - Employee,Sell,100,"25,850",258.5
+Kwality Ltd,11/2/2018,SWAPNIL MEHTA,Bulk,Sell,2,12,6.23
+Mahindra and Mahindra Ltd,11/22/2017,Rajesh Upadhyay,Insider - Employee,Sell,9,1.65 L,"18,340.37"
+Housing Development Finance Corporation Ltd,2/24/2022,VENKATESHWARAN N,Insider - Designated Person,Sell,15,"35,184","2,345.60"
+Housing Development Finance Corporation Ltd,2/23/2022,VENKATESHWARAN N,Insider - Designated Person,Sell,15,"36,630","2,442.00"
+Housing Development Finance Corporation Ltd,3/9/2022,VENKATESHWARAN N,Insider - Designated Person,Sell,15,"32,580","2,172.00"
+MFL India Ltd,12/6/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,3,1,0.58
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,5,"7,449","1,489.80"
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,5,"7,448","1,489.60"
+Indusind Bank Ltd,2/21/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,5,"7,397","1,479.40"
+Bajaj Finance Ltd,2/17/2021,Shri Digesh Dave,Insider - Designated Person,Sell,5,"28,675","5,735.00"
+Bajaj Finance Ltd,3/10/2021,Shri Digesh Dave,Insider - Designated Person,Sell,5,"27,800","5,560.00"
+Bajaj Finance Ltd,3/16/2021,Shri Digesh Dave,Insider - Designated Person,Sell,5,"27,476","5,495.20"
+Reliance Industries Ltd,3/23/2020,Ritesh Shiyal,Insider - Designated Person,Buy,50,"46,250",925
+Reliance Industries Ltd,6/12/2018,Sanjeev Moreshwar Dandekar,Insider - Employee,Sell,50,"49,950",999
+Reliance Industries Ltd,1/25/2019,Sanjeev Vijayvargia,Insider - Other,Sell,50,"62,350","1,247.00"
+Reliance Industries Ltd,1/30/2019,Sanjeev Vijayvargia,Insider - Other,Sell,50,"62,350","1,247.00"
+Reliance Industries Ltd,6/15/2018,Pankaj Kumar Shrivastava,Insider - Designated Person,Sell,50,"51,100","1,022.00"
+Reliance Industries Ltd,6/15/2018,Pankaj Kumar Shrivastava,Insider - Designated Person,Sell,50,"50,985","1,019.70"
+Reliance Industries Ltd,6/16/2017,Surinder Singh Saini,Insider - Other,Sell,50,"69,500","1,390.00"
+Reliance Industries Ltd,7/6/2017,Naresh Kumar Narang,Insider - Other,Sell,50,"72,303","1,446.06"
+Reliance Industries Ltd,10/19/2017,Surinder Singh Saini,Insider - Other,Sell,50,"45,768",915.36
+Reliance Industries Ltd,7/25/2017,Naresh Kumar Narang,Insider - Other,Sell,50,"80,500","1,610.00"
+Axis Bank Ltd,3/8/2017,Maxim Pinto,Insider - Employee,Buy,20,5.85 L,"29,240.50"
+Mahindra and Mahindra Ltd,10/4/2016,Mr. Sanjay Narayan Galwankar,Insider - Employee,Sell,10,"14,480","1,448.00"
+Mahindra and Mahindra Ltd,1/7/2016,Sunil Chahure,Insider - Employee,Buy,10,"11,900","1,190.00"
+Axis Bank Ltd,6/15/2023,MORGAN STANLEY INSTITUTIONAL FUND INC. COUNTERPOINT GLOBAL PORTFOLIO,Block,Buy,26,"25,168",968
+Hindustan Unilever Ltd,8/3/2023,Gajendra Pal Singh,Insider - Designated Person,Buy,20,"50,780","2,539.00"
+BCL Enterprises Ltd,4/20/2022,ZEEL PRADIPKUMAR SHAH,Bulk,Buy,1,4,4.65
+Larsen & Toubro Ltd,7/10/2015,BHARGAVA MUKESH CMDR,Insider - Employee,Sell,12,"22,334","1,861.17"
+HDFC Bank Ltd,3/25/2019,Pranesh A Rao,Insider - Employee,Sell,45,1.00 L,"2,230.00"
+India Pesticides Ltd,9/15/2022,Adhiraj Swarup Agarwal,Insider - Immediate Relative,Sell,1,304,304
+Housing Development Finance Corporation Ltd,12/13/2019,VENKATESHWARAN N,Insider - Designated Person,Sell,15,"35,401","2,360.07"
+Bajaj Electricals Ltd,4/26/2022,ADARSH KUMAR SINGHAL,Insider - Designated Person,Sell,1,"1,070","1,070.00"
+Apollo Tyres Limited,10/15/2018,CLASSIC AUTOTUBES LTD.,Insider - Promoter Group,Buy,5,"1,088",217.6
+UNO Minda Ltd,8/17/2022,Ramneek Jain,Insider - Employee,Buy,5,"2,800",560
+HCL Technologies Ltd,6/15/2017,Amit Roy,Insider - Employee,Sell,25,"21,035",841.4
+Grasim Industries Ltd,1/9/2017,Sanjay Kumar Verma,Insider - Employee,Buy,5,"2,279",455.8
+Housing Development Finance Corporation Ltd,2/2/2017,Ayon Fouzdar,Insider - Employee,Sell,14,"19,517","1,394.07"
+Housing Development Finance Corporation Ltd,3/17/2017,Sudha V,Insider - Employee,Sell,14,"20,339","1,452.79"
+HDFC Bank Ltd,12/23/2016,Biju Jones C,Insider - Employee,Buy,45,4.08 L,"9,066.67"
+Godrej Industries Ltd,3/7/2017,R. V. Dubhashi,Insider - Employee,Sell,3,"1,437",479
+Housing Development Finance Corporation Ltd,12/3/2018,TRIVEDI AMIT P,Insider - Employee,Sell,15,"30,255","2,017.00"
+Housing Development Finance Corporation Ltd,11/29/2018,SAJIT S NAIR,Insider - Employee,Sell,15,"29,280","1,952.00"
+Housing Development Finance Corporation Ltd,5/25/2018,PAULOMI BRAGANZA,Insider - Employee,Sell,15,"27,206","1,813.73"
+Housing Development Finance Corporation Ltd,2/1/2019,SREENATH S,Insider - Employee,Sell,15,"29,355","1,957.00"
+Housing Development Finance Corporation Ltd,12/13/2018,RAGHU SHARADHA,Insider - Designated Person,Sell,15,"29,385","1,959.00"
+Housing Development Finance Corporation Ltd,5/3/2018,UTKARSH MACHHINDRA DEOKAR,Insider - Employee,Sell,15,"28,935","1,929.00"
+Housing Development Finance Corporation Ltd,11/14/2018,SANJIV KUMAR SINHA,Insider - Employee,Sell,15,"27,641","1,842.73"
+Housing Development Finance Corporation Ltd,12/21/2018,CHINTANKUMAR PRADIPKUMAR DAVE,Insider - Employee,Sell,15,"29,669","1,977.93"
+Tech Mahindra Ltd,2/17/2020,Vikas Gupta,Insider - Designated Person,Sell,8,"6,625",828.13
+NCL Research and Financial Services Ltd,12/15/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,5,7,1.54
+NCL Research and Financial Services Ltd,12/13/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,5,8,1.67
+Axis Bank Ltd,6/15/2023,MORGAN STANLEY INSTITUTIONAL FUND INC. COUNTERPOINT GLOBAL PORTFOLIO,Block,Buy,28,"27,104",968
+Viaan Industries Ltd,12/4/2019,NAYSAA SECURITIES PRIVATE LIMITED,Bulk,Sell,1,3,3.29
+Biogen Pharmachem Industries Ltd,7/7/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,6,3,0.56
+Mahindra and Mahindra Ltd,1/24/2019,Kinnar Rathod,Insider - Employee,Buy,10,"6,951",695.1
+Mahindra and Mahindra Ltd,8/16/2018,Ashok Kumar Singh,Insider - Employee,Sell,10,"9,600",960
+Larsen & Toubro Ltd,5/3/2017,Surendra Babu P R,Insider - Employee,Sell,13,"22,245","1,711.15"
+Larsen & Toubro Ltd,7/18/2016,BHARGAVA MUKESH CMDR,Insider - Employee,Sell,13,"20,566","1,582.00"
+Orient Green Power Company Ltd,7/6/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,7,19,2.81
+Tata Consultancy Services Ltd,5/18/2020,Sukanya Lakshminarayanan,Insider - Designated Person,Buy,35,"67,126","1,917.89"
+Kotak Mahindra Bank Ltd,12/31/2019,Rajiv Thakker,Insider - Employee,Buy,18,"22,878","1,271.00"
+Virtual Global Education Ltd,12/27/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,4,7,1.91
+Housing Development Finance Corporation Ltd,8/14/2017,Abhay Kumar Singh,Insider - Employee,Sell,15,"26,072","1,738.13"
+Housing Development Finance Corporation Ltd,2/20/2017,Vyas Deepak L,Insider - Employee,Sell,15,"20,910","1,394.00"
+Housing Development Finance Corporation Ltd,3/15/2017,Sudha V,Insider - Employee,Sell,15,"21,353","1,423.53"
+Housing Development Finance Corporation Ltd,9/6/2016,Uday Sharadrao Patil,Insider - Employee,Sell,15,"21,900","1,460.00"
+Housing Development Finance Corporation Ltd,2/6/2017,Aditi Agarwal,Insider - Employee,Sell,15,"21,117","1,407.80"
+Housing Development Finance Corporation Ltd,2/6/2017,Mangalam Vijay,Insider - Employee,Sell,15,"20,985","1,399.00"
+HDFC Asset Management Company Ltd,9/6/2018,VIJAY SHIVAPPA PRABHU,Insider - Employee,Sell,2,"3,368","1,684.00"
+Housing Development Finance Corporation Ltd,12/10/2015,Kikim H Gurung,Insider - Employee,Sell,15,"5,875",391.72
+Yes Bank Ltd,9/10/2018,Shiva Lodhi,Insider - Employee,Buy,22,"7,180",326.36
+Bajaj Electricals Ltd,9/28/2018,Abhishek Vasudev Singh,Insider - Employee,Sell,1,508,508
+Avenue Supermarts Ltd,12/5/2017,Mangesh Narayan Ghorpade,Insider - Employee,Sell,6,"6,756","1,126.00"
+Avenue Supermarts Ltd,12/4/2017,Mangesh Narayan Ghorpade,Insider - Employee,Buy,6,"6,674","1,112.33"
+HDFC Bank Ltd,5/25/2018,Yonus Mangoli,Insider - Employee,Sell,50,"97,500","1,950.00"
+HDFC Bank Ltd,3/18/2019,Jignesh Jayantilal Doshi,Insider - Employee,Sell,50,1.12 L,"2,230.00"
+Axis Bank Ltd,10/30/2019,Manish Jain,Insider - Other,Buy,25,"14,793",591.72
+GV Films Ltd,1/14/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,9,13,1.45
+Tata Consultancy Services Ltd,5/27/2020,Sukanya Lakshminarayanan,Insider - Designated Person,Buy,37,"72,462","1,958.43"
+HDFC Bank Ltd,3/28/2017,Jignesh Jayantilal Doshi,Insider - Employee,Sell,50,"70,000","1,400.00"
+HDFC Bank Ltd,12/15/2016,Arijit Sarkar,Insider - Employee,Sell,50,"59,000","1,180.00"
+HDFC Bank Ltd,12/22/2016,Arijit Sarkar,Insider - Employee,Sell,50,"59,000","1,180.00"
+HDFC Bank Ltd,1/30/2017,Shrikant G Sharma,Insider - Employee,Sell,50,"62,500","1,250.00"
+HDFC Bank Ltd,3/30/2017,Jignesh Jayantilal Doshi,Insider - Employee,Sell,50,"70,000","1,400.00"
+HDFC Bank Ltd,2/21/2017,Jignesh Jayantilal Doshi,Insider - Employee,Sell,50,"70,000","1,400.00"
+HDFC Bank Ltd,12/23/2016,Arijit Sarkar,Insider - Employee,Sell,50,"59,000","1,180.00"
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,6,"8,937","1,489.50"
+Bajaj Finance Ltd,3/28/2016,Ankoor S Kulkarni,Insider - Designated Person,Sell,5,"34,431","6,886.20"
+Reliance Industries Ltd,10/23/2019,Pankaj Kumar Shrivastava,Insider - Designated Person,Sell,60,"85,199","1,419.98"
+Reliance Industries Ltd,2/5/2019,Salil Kumar Mishra,Insider - Other,Sell,60,"78,000","1,300.00"
+Housing Development Finance Corporation Ltd,6/19/2017,Kankane Abhishek,Insider - Employee,Sell,16,"26,400","1,650.00"
+Andhra Cements Ltd,6/29/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,3,48,16.25
+Reliance Home Finance Ltd,8/10/2023,MULTIPLIER SHARE & STOCK ADVISORS PRIVATE LIMITED,Bulk,Buy,5,10,2.1
+Infosys Ltd,5/26/2021,Infosys Employee Benefits Trust,Insider - Trust,Buy,44,"60,764","1,381.00"
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,3,"2,078",692.67
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,3,"2,072",690.67
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,3,"2,055",685
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,3,"2,069",689.67
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,3,"2,067",689
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,3,"2,056",685.33
+Axis Bank Ltd,3/31/2017,Lalit Mohan Sharma,Insider - Employee,Sell,25,"12,430",497.2
+AJR Infra and Tolling Ltd,5/25/2021,MANSI SHARES & STOCK ADVISORS PVT LTD,Bulk,Buy,10,14,1.4
+SBI Cards and Payment Services Ltd,10/27/2020,Mishi Iqbal,Insider - Designated Person,Sell,10,"8,075",807.5
+Housing Development Finance Corporation Ltd,3/22/2018,SHUBHADEEP SAHA,Insider - Employee,Sell,17,"31,034","1,825.53"
+Larsen & Toubro Ltd,3/7/2018,Elayaraja R,Insider - Employee,Sell,15,6.06 L,"40,403.20"
+Housing Development Finance Corporation Ltd,5/15/2018,DEEPAK B,Insider - Employee,Sell,18,"34,938","1,941.00"
+Larsen & Toubro Ltd,10/7/2015,Hemant H Jadhav,Insider - Employee,Sell,15,"23,158","1,543.87"
+Housing Development Finance Corporation Ltd,8/2/2016,Amruta Amod Pethe,Insider - Designated Person,Sell,17,"23,042","1,355.41"
+Indian Infotech and Software Ltd,12/13/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,11,47,4.3
+JSW Steel Ltd,11/18/2022,JSW Steel Employees Welfare Trust û OPJ ESOP Plan 2021 A/c PAN: AABTJ3861D Regd. Add.: Dr. G. Deshmukh Marg 5/A Mumbai - 400026 Contact No.: 022-42861000,Insider - Other,Sell,33,"23,268",705.09
+Yes Bank Ltd,5/25/2017,Yogesh Budhiraja,Insider - Employee,Sell,25,"37,279","1,491.16"
+Yes Bank Ltd,6/13/2017,Yogesh Budhiraja,Insider - Employee,Sell,25,"37,452","1,498.08"
+ICICI Lombard General Insurance Company Ltd,8/10/2020,AMITABH JAIN,Insider - Designated Person,Sell,5,"7,020","1,404.00"
+ICICI Lombard General Insurance Company Ltd,2/19/2019,AMITABH JAIN Revised,Insider - Designated Person,Buy,5,"4,590",918
+Divi's Laboratories Ltd,10/15/2020,Veeranjaneyulu Gudivada,Insider - Designated Person,Sell,3,"9,243","3,081.00"
+Divi's Laboratories Ltd,10/15/2020,Veeranjaneyulu Gudivada,Insider - Designated Person,Buy,3,"9,228","3,076.00"
+Tata Consultancy Services Ltd,5/19/2021,Krishnan Ramanujam,Insider - Designated Person,Sell,42,1.31 L,"3,115.60"
+ITC Ltd,1/4/2019,HARIT SHROFF,Insider - Employee,Sell,140,"39,522",282.3
+ITC Ltd,7/23/2018,R. RAJASEKHAR,Insider - Employee,Sell,140,"39,801",284.29
+Tech Mahindra Ltd,6/15/2020,Bhupathi Raju L,Insider - Designated Person,Sell,10,"5,495",549.5
+Larsen & Toubro Ltd,7/14/2015,Hemant H Jadhav,Insider - Employee,Sell,16,"29,824","1,864.00"
+Housing Development Finance Corporation Ltd,6/9/2020,SANKET SUHAS KOLHATKAR,Insider - Designated Person,Sell,20,"36,400","1,820.00"
+Housing Development Finance Corporation Ltd,12/1/2020,GUPTA DIPTA BHANU,Insider - Designated Person,Sell,20,"46,120","2,306.00"
+HDFC Bank Ltd,3/18/2019,P Shreekanth,Insider - Employee,Sell,60,1.34 L,"2,230.00"
+Burnpur Cement Ltd,10/10/2016,GOUTAM CHORARIA,Bulk,Sell,1,15,15.75
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,7,"10,429","1,489.86"
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,7,"10,427","1,489.57"
+Colorchips New Media Ltd,8/22/2023,BP EQUITIES PVT. LTD.,Bulk,Sell,1,6,6.82
+Infosys Ltd,2/19/2021,Infosys Employee Benefits Trust,Insider - Designated Person,Buy,50,"64,650","1,293.00"
+Reliance Capital Ltd,3/12/2021,HSQUARE GLOBETRADE LLP,Bulk,Sell,3,41,13.9
+Bharat Road Network Ltd,6/22/2018,AYODHYA GORAKHPUR SMS TOLLS PRIVATE LIMITED,Bulk,Sell,1,167,167
+Housing Development Finance Corporation Ltd,5/9/2018,SANJIV KUMAR SINHA,Insider - Employee,Sell,20,"37,960","1,898.00"
+Housing Development Finance Corporation Ltd,5/15/2018,UTKARSH MACHHINDRA DEOKAR,Insider - Employee,Sell,20,"38,820","1,941.00"
+Housing Development Finance Corporation Ltd,6/20/2018,ROY HIRANMOY,Insider - Employee,Sell,20,"36,392","1,819.60"
+Housing Development Finance Corporation Ltd,11/6/2018,ADITI DONGARE,Insider - Employee,Sell,20,"36,051","1,802.55"
+Housing Development Finance Corporation Ltd,12/12/2018,UDAY SHARADRAO PATIL,Insider - Employee,Sell,20,"38,930","1,946.50"
+Housing Development Finance Corporation Ltd,5/14/2018,DEEPAK B,Insider - Employee,Sell,20,"38,600","1,930.00"
+Housing Development Finance Corporation Ltd,3/12/2019,RAJE ASHISH ARVIND,Insider - Employee,Sell,20,"38,080","1,904.00"
+Housing Development Finance Corporation Ltd,11/21/2018,ADITI AGARWAL,Insider - Employee,Sell,20,"37,680","1,884.00"
+Housing Development Finance Corporation Ltd,3/19/2019,GOWTAM KANNURI,Insider - Employee,Sell,20,"39,460","1,973.00"
+Housing Development Finance Corporation Ltd,5/3/2018,ARADHANA UPADHYAY,Insider - Immediate Relative,Buy,20,"38,498","1,924.90"
+Housing Development Finance Corporation Ltd,9/4/2018,JOSHI MAYUR G,Insider - Employee,Sell,20,"38,926","1,946.30"
+Housing Development Finance Corporation Ltd,11/21/2018,ADITI AGARWAL,Insider - Employee,Sell,20,"37,600","1,880.00"
+Housing Development Finance Corporation Ltd,12/31/2018,ARPIT TANDON,Insider - Employee,Sell,20,"39,383","1,969.15"
+Housing Development Finance Corporation Ltd,2/21/2019,JITENDRA SAI KOMMINENI,Insider - Employee,Sell,20,"37,498","1,874.90"
+Housing Development Finance Corporation Ltd,3/20/2019,GOWTAM KANNURI,Insider - Employee,Sell,20,"39,640","1,982.00"
+Housing Development Finance Corporation Ltd,11/30/2018,RADHAYYA S M,Insider - Employee,Sell,20,"39,933","1,996.65"
+Housing Development Finance Corporation Ltd,12/3/2018,UDAY SHARADRAO PATIL,Insider - Employee,Sell,20,"40,291","2,014.55"
+Housing Development Finance Corporation Ltd,12/6/2017,Hari Shankar Prasad,Insider - Employee,Sell,19,"31,322","1,648.53"
+Chambal Fertilisers and Chemicals Ltd,5/18/2017,Raj Kumar Khunteta,Insider - Employee,Sell,5,585,117
+Larsen & Toubro Ltd,3/22/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,17,"37,724","2,219.06"
+Srestha Finvest Ltd,1/13/2022,RAJESH KHANDWE,Bulk,Buy,1,2,2.27
+Panafic Industrials Ltd,12/20/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,1,1,1.68
+Biogen Pharmachem Industries Ltd,8/18/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,8,6,0.81
+Biogen Pharmachem Industries Ltd,7/29/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,8,8,1.04
+ITC Ltd,4/11/2018,ANMOL SINGH GREWAL,Insider - Employee,Sell,150,"39,713",264.75
+ITC Ltd,8/21/2018,GANESH GOPAL,Insider - Employee,Sell,150,"46,915",312.77
+ITC Ltd,3/8/2019,D. JOHN ROBERT,Insider - Employee,Sell,150,"43,826",292.17
+Pmc Fincorp Ltd,1/16/2018,BP FINTRADE PRIVATE LIMITED,Bulk,Buy,6,3,0.65
+HDFC Life Insurance Company Ltd,5/18/2018,SHWETA KHATTRI,Insider - Employees Immediate Relative,Buy,25,"12,271",490.84
+Relaxo Footwears Ltd,1/7/2019,Vinay Kumar Bajaj,Insider - Employee,Sell,3,"2,253",751
+Sterlite Technologies Ltd,11/21/2018,Nikhil Puri,Insider - Employee,Buy,5,"1,713",342.6
+Sterlite Technologies Ltd,10/22/2018,Mr. Nikhil Puri,Insider - Employee,Buy,5,"1,626",325.2
+Sterlite Technologies Ltd,10/30/2018,Abhinav Srivastava,Insider - Employee,Buy,5,"1,918",383.6
+Reliance Industries Ltd,6/11/2020,S Rajagopal,Insider - Designated Person,Buy,80,"25,140",314.25
+Tata Consultancy Services Ltd,5/15/2020,Sukanya Lakshminarayanan,Insider - Designated Person,Buy,47,"88,221","1,877.04"
+Housing Development Finance Corporation Ltd,12/31/2018,ARPIT TANDON,Insider - Employee,Sell,21,"41,352","1,969.14"
+Housing Development Finance Corporation Ltd,8/29/2017,Sanjiv Kumar Sinha,Insider - Employee,Sell,20,"34,880","1,744.00"
+Housing Development Finance Corporation Ltd,11/28/2017,Viswanath Chandrasekar Iyer,Insider - Employee,Sell,20,"34,639","1,731.95"
+Housing Development Finance Corporation Ltd,12/27/2017,Sanjiv Kumar Sinha,Insider - Employee,Sell,20,"34,121","1,706.05"
+Housing Development Finance Corporation Ltd,3/22/2018,Deepak B,Insider - Employee,Sell,20,"36,700","1,835.00"
+Housing Development Finance Corporation Ltd,2/14/2018,Uday Sharadrao Patil,Insider - Employee,Sell,20,"36,580","1,829.00"
+Housing Development Finance Corporation Ltd,3/8/2018,ADITI DONGARE,Insider - Employee,Sell,20,"35,697","1,784.85"
+Housing Development Finance Corporation Ltd,3/26/2018,Deepak B,Insider - Employee,Sell,20,"36,500","1,825.00"
+Housing Development Finance Corporation Ltd,6/23/2017,Kankane Abhishek,Insider - Employee,Sell,20,"33,102","1,655.10"
+Housing Development Finance Corporation Ltd,9/8/2017,Sudipto Kumar Das,Insider - Employee,Sell,20,"35,656","1,782.80"
+Housing Development Finance Corporation Ltd,11/21/2017,SANJIV KUMAR SINHA,Insider - Employee,Sell,20,"33,940","1,697.00"
+Housing Development Finance Corporation Ltd,2/20/2018,RITU SHARMA,Insider - Employee,Sell,20,"36,533","1,826.65"
+Housing Development Finance Corporation Ltd,5/29/2017,Gaurav Narang,Insider - Employee,Sell,20,"32,000","1,600.00"
+Housing Development Finance Corporation Ltd,2/12/2018,HARSHIL NAYAN PARIKH,Insider - Employee,Sell,20,"36,510","1,825.50"
+Housing Development Finance Corporation Ltd,11/3/2017,Uday Sharadrao Patil,Insider - Employee,Sell,20,"35,800","1,790.00"
+Housing Development Finance Corporation Ltd,12/5/2017,Paul Santiswarup,Insider - Employee,Sell,20,"33,428","1,671.40"
+Housing Development Finance Corporation Ltd,2/12/2018,HARSHIL NAYAN PARIKH,Insider - Employee,Sell,20,"36,030","1,801.50"
+Persistent Systems Ltd,2/12/2020,Rama-Purushottam Foundation,Insider - Promoter Group,Sell,1,701,701
+Housing Development Finance Corporation Ltd,2/6/2017,Shameer Attupurathu Siddique,Insider - Employee,Sell,20,"28,036","1,401.80"
+Housing Development Finance Corporation Ltd,2/2/2017,Aditi Agarwal,Insider - Employee,Sell,20,"28,000","1,400.00"
+Housing Development Finance Corporation Ltd,3/16/2017,Payal Tukaram Sawarikar,Insider - Employee,Sell,20,"28,924","1,446.20"
+Housing Development Finance Corporation Ltd,3/20/2017,Deepak B,Insider - Employee,Sell,20,"29,240","1,462.00"
+Housing Development Finance Corporation Ltd,2/22/2017,Purnima Vibhandik,Insider - Employee,Sell,20,"28,211","1,410.55"
+Housing Development Finance Corporation Ltd,3/6/2017,Babu Baskar,Insider - Employee,Sell,20,"27,291","1,364.55"
+Housing Development Finance Corporation Ltd,3/29/2017,Deepak B,Insider - Employee,Sell,20,"30,200","1,510.00"
+Housing Development Finance Corporation Ltd,8/12/2016,Gurpreet Singh Arora,Insider - Employee,Sell,20,"27,546","1,377.30"
+Housing Development Finance Corporation Ltd,2/17/2017,Naveen Sharma,Insider - Employee,Sell,20,"28,331","1,416.55"
+Housing Development Finance Corporation Ltd,9/2/2016,Gajananprasad Ratnakar Anekar,Insider - Employee,Sell,20,"28,730","1,436.50"
+Housing Development Finance Corporation Ltd,12/23/2016,Jitendra Kumar Jaiswal,Insider - Employee,Buy,20,6.36 L,"31,775.00"
+Housing Development Finance Corporation Ltd,2/7/2017,Rahul Ramchandra Rane,Insider - Employee,Sell,20,"28,000","1,400.00"
+Housing Development Finance Corporation Ltd,3/17/2017,Deepak B,Insider - Employee,Sell,20,"29,060","1,453.00"
+Housing Development Finance Corporation Ltd,3/27/2017,Deepak B,Insider - Employee,Sell,20,"29,360","1,468.00"
+Mahindra and Mahindra Ltd,2/17/2016,Anil Jagga,Insider - Employee,Sell,15,"17,982","1,198.81"
+Tata Consultancy Services Ltd,1/29/2018,Nitya Jain,Insider - Designated Person,Sell,50,1.60 L,"3,198.48"
+Tata Consultancy Services Ltd,1/31/2018,Rohit Kumar Jain Spouse,Insider - Immediate Relative,Sell,50,1.55 L,"3,109.82"
+Tata Consultancy Services Ltd,1/22/2018,Rohit Kumar Jain,Insider - Immediate Relative,Sell,50,1.51 L,"3,016.30"
+Housing Development Finance Corporation Ltd,12/30/2015,Daniel Peter Anthony,Insider - Designated Person,Sell,20,"24,800","1,240.00"
+Housing Development Finance Corporation Ltd,3/8/2016,Shantanu Dilip Khokale,Insider - Designated Person,Sell,20,"22,800","1,140.00"
+HDFC Bank Ltd,8/1/2016,Aparna Kumar,Insider - Employee,Sell,65,1.16 L,"1,790.00"
+Larsen & Toubro Ltd,10/8/2015,Hemant H Jadhav,Insider - Employee,Sell,18,"27,424","1,523.56"
+Samvardhana Motherson International Ltd,11/1/2018,LAKSH VAAMAN SEHGAL,Insider - Promoter & Director,Buy,41,"7,116",173.56
+Yes Bank Ltd,9/11/2018,Shiva Lodhi,Insider - Employee,Buy,30,"9,469",315.63
+Kotak Mahindra Bank Ltd,6/8/2020,Pavan Manchala,Insider - Employee,Sell,25,"33,838","1,353.52"
+HDFC Bank Ltd,6/13/2017,Sunil Gupta,Insider - Employee,Sell,67,1.08 L,"1,610.00"
+Housing Development Finance Corporation Ltd,12/31/2018,ARPIT TANDON,Insider - Employee,Sell,22,"43,321","1,969.14"
+Cressanda Solutions Ltd,1/3/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,4,27,6.79
+Indusind Bank Ltd,2/13/2019,SUNDAR RAJA MANI,Insider - Employee,Sell,8,"11,916","1,489.50"
+Zensar Technologies Ltd,11/20/2017,Pushpall Kapadia,Insider - Employee,Sell,3,"2,654",884.99
+Larsen & Toubro Ltd,3/22/2023,CYRUS J DADACHANJI,Insider - Designated Person,Sell,19,"42,165","2,219.21"
+Mahindra and Mahindra Ltd,2/15/2016,Anil Jagga,Insider - Employee,Sell,16,"18,806","1,175.44"
+Axis Bank Ltd,2/28/2020,United India Insurance Company Limited,Insider - Promoter,Buy,35,"24,454",698.69
+MIC Electronics Ltd,1/17/2022,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,3,96,32.25
+Housing Development Finance Corporation Ltd,6/26/2018,NEHA TRIPATHI,Insider - Employee,Sell,23,"44,011","1,913.52"
+Bajaj Auto Ltd,2/6/2023,Zanzari Kailash J,Insider - Designated Person,Sell,4,"15,416","3,854.00"
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,4,"2,740",685
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,4,"2,753",688.25
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,4,"2,741",685.25
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,4,"2,769",692.25
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,4,"2,745",686.25
+Varun Beverages Ltd,6/26/2020,DEVYANI JAIPURIA,Insider - Promoter Group,Sell,4,"2,758",689.5
+Varun Beverages Ltd,6/26/2020,RAVI KANT JAIPURIA AND SONS HUF,Insider - Promoter,Sell,4,"2,753",688.25
+Tata Consultancy Services Ltd,5/29/2020,Sukanya Lakshminarayanan,Insider - Designated Person,Buy,52,1.03 L,"1,980.06"
+Housing Development Finance Corporation Ltd,8/9/2021,SHETTY SATISH,Insider - Designated Person,Sell,25,"65,375","2,615.00"
+Housing Development Finance Corporation Ltd,2/7/2017,Shibu S.B.,Insider - Employee,Sell,22,"30,960","1,407.27"
+Housing Development Finance Corporation Ltd,2/15/2017,Krishnaprem Nehalbhai Thakker,Insider - Employee,Sell,22,"30,776","1,398.91"
+Housing Development Finance Corporation Ltd,3/15/2017,Sudha V,Insider - Employee,Sell,22,"31,312","1,423.27"
+ITC Ltd,11/20/2018,D.V.R. RAJIV MOHAN,Insider - Employee,Sell,170,"48,586",285.8
+CRISIL Ltd,11/8/2017,Reena Rodrigues,Insider - Employee,Sell,1,"1,820","1,820.00"
+Tata Consultancy Services Ltd,11/4/2020,Arun Kumar Malik,Insider - Immediate Relative,Buy,53,1.43 L,"2,698.96"
+HDFC Asset Management Company Ltd,9/4/2018,RAJBIR SINGH,Insider - Employee,Sell,3,"5,277","1,759.00"
+HDFC Asset Management Company Ltd,9/6/2018,VIJAY SHIVAPPA PRABHU,Insider - Employee,Sell,3,"5,051","1,683.67"
+HDFC Asset Management Company Ltd,9/10/2018,KUMAR RITESH,Insider - Employee,Sell,3,"4,980","1,660.00"
+Larsen & Toubro Ltd,10/1/2018,GAGANDEEP KAUR,Insider - Immediate Relative,Buy,20,"24,700","1,235.00"
+Larsen & Toubro Ltd,12/18/2018,KUMARESAN T,Insider - Designated Person,Sell,20,"28,436","1,421.80"
+Larsen & Toubro Ltd,10/9/2018,GAGANDEEP KAUR,Insider - Immediate Relative,Buy,20,"24,595","1,229.75"
+Swasti Vinayaka Synthetics Ltd,2/17/2021,ALPHA LEON ENTERPRISES LLP,Bulk,Sell,1,8,8.5
+Vikas Ecotech Ltd,8/20/2020,ALPHA LEON ENTERPRISES LLP,Bulk,Buy,4,43,10.81
+Larsen & Toubro Ltd,7/26/2016,BHARGAVA MUKESH CMDR,Insider - Employee,Sell,20,"31,621","1,581.05"
+Larsen & Toubro Ltd,4/20/2016,Hemant H Jadhav,Insider - Employee,Sell,20,"25,118","1,255.90"
+Housing Development Finance Corporation Ltd,6/1/2020,SANKET SUHAS KOLHATKAR,Insider - Designated Person,Sell,25,"44,061","1,762.44"
+Housing Development Finance Corporation Ltd,6/8/2017,Shameer Attupurathu Siddique,Insider - Employee,Sell,23,"37,417","1,626.83"
+Housing Development Finance Corporation Ltd,9/12/2017,Vepa Shravan,Insider - Employee,Sell,23,"41,262","1,794.00"
+Gravita India Ltd,3/3/2021,RAJAT AGRAWAL,Insider - Promoter,Buy,1,110,110
+Gravita India Ltd,8/13/2021,Vijendra Singh Tanwar,Insider - Other,Sell,1,187,187
+Tata Consultancy Services Ltd,11/10/2020,Sonali Malik,Insider - Immediate Relative,Buy,55,1.46 L,"2,654.85"
+HDFC Bank Ltd,2/1/2020,Abhilasha Sancheti,Insider - Designated Person,Buy,80,"97,748","1,221.85"
+Newgen Software Technologies Ltd,2/22/2019,ATUL KUMAR PHARASI,Insider - Employee,Sell,1,299,299
+HCL Technologies Ltd,9/13/2021,ANUP DUTTA,Insider - Designated Person,Sell,40,"48,432","1,210.80"
+ITC Ltd,3/22/2019,V.V. SUBRAMANYAM,Insider - Employee,Sell,180,"53,982",299.9
+ITC Ltd,11/8/2017,MANISH MODI,Insider - Employee,Sell,180,"47,781",265.45
+Infibeam Avenues Ltd,8/2/2017,Parag J Raval,Insider - Other,Sell,8,"11,752","1,469.00"
+Housing Development Finance Corporation Ltd,5/4/2018,HARSHIL NAYAN PARIKH,Insider - Employee,Sell,25,"47,750","1,910.00"
+Housing Development Finance Corporation Ltd,8/27/2018,ASHISH KUMAR MAHESHWARI,Insider - Employee,Sell,25,"48,250","1,930.00"
+Housing Development Finance Corporation Ltd,6/26/2018,NEHA TRIPATHI,Insider - Employee,Sell,25,"47,838","1,913.52"
+Housing Development Finance Corporation Ltd,11/16/2018,ADITI DONGARE,Insider - Employee,Sell,25,"46,545","1,861.80"
+Housing Development Finance Corporation Ltd,11/26/2018,BHAVIK DILIPBHAI DAXINI,Insider - Employee,Sell,25,"47,200","1,888.00"
+Housing Development Finance Corporation Ltd,11/19/2018,SOOD PANKAJ,Insider - Employee,Sell,25,"47,550","1,902.00"
+Housing Development Finance Corporation Ltd,11/29/2018,MANSI TARUSH GORADIA,Insider - Employee,Sell,25,"48,750","1,950.00"
+Housing Development Finance Corporation Ltd,12/19/2018,MANSI TARUSH GORADIA,Insider - Employee,Sell,25,"49,375","1,975.00"
