@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from first_snowpark_project.app.python.common import print_hello
+from app.python.common import print_hello
 from snowflake.snowpark import Session
 
 

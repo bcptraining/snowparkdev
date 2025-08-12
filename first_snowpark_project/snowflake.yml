@@ -40,7 +40,7 @@ entities:
     identifier:
       name: test_procedure
     handler: python.procedures.test_procedure
-    signature: ''
+    signature: []
     returns: string
     meta:
       use_mixins:
