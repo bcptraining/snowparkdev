@@ -19,13 +19,21 @@ stock_value_summary_schema = StructType([
 ])
 
 
-def upload_file_to_stage(session, local_path, stage_path):
-    session.file.put(
-        local_path,
-        stage_path,
-        overwrite=True
+def clean_numeric_column(col):
+    # Remove commas, strip units like 'L', 'Cr', etc., and convert to float
+    return (
+        col.replace({r"[^\d\.]": ""}, regex=True)
+        .replace("", pd.NA)
+        .astype(float)
     )
-    print(f"✅ Uploaded {local_path} to @{stage_path}")
+
+# def upload_file_to_stage(session, local_path, stage_path):
+#     session.file.put(
+#         local_path,
+#         stage_path,
+#         overwrite=True
+#     )
+#     print(f"✅ Uploaded {local_path} to @{stage_path}")
 
 
 def main():
