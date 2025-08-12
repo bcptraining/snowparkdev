@@ -14,6 +14,10 @@ def test_procedure(session: Session) -> str:
     return "Test procedure"
 
 
+def test_procedure_two(session: Session) -> str:
+    return "Test procedure"
+
+
 # For local debugging
 # Beware you may need to type-convert arguments if you add input parameters
 if __name__ == "__main__":
