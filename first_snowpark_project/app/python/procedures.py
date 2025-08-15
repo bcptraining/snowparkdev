@@ -24,9 +24,9 @@ def test_procedure_two(session: Session) -> str:
     return "Test procedure"
 
 
-# For local debugging
-# Beware you may need to type-convert arguments if you add input parameters
-if __name__ == "__main__":
-    # Create a local Snowpark session
-    with Session.builder.config("local_testing", True).getOrCreate() as session:
-        print(hello_procedure(session, *sys.argv[1:]))  # type: ignore
+# # For local debugging
+# # Beware you may need to type-convert arguments if you add input parameters
+# if __name__ == "__main__":
+#     # Create a local Snowpark session
+#     with Session.builder.config("local_testing", True).getOrCreate() as session:
+#         print(hello_procedure(session, *sys.argv[1:]))  # type: ignore
