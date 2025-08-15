@@ -33,8 +33,12 @@ def run_command(command, description):
 
 def zip_source_code():
     print("Preparing artifacts for source code")
-    source_dir = os.path.join(os.getcwd(), "first_snowpark_project")
-    zip_path = "app.zip"
+
+    # Dynamically resolve path relative to this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    source_dir = os.path.join(
+        script_dir, "first_snowpark_project")  # ✅ Adjusted
+    zip_path = os.path.join(script_dir, "app.zip")
 
     if not os.path.isdir(source_dir):
         raise FileNotFoundError(f"Source directory not found: {source_dir}")
