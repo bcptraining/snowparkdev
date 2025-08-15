@@ -33,7 +33,7 @@ def run_command(command, description):
 
 def zip_source_code():
     print("Preparing artifacts for source code")
-    source_dir = "first_snowpark_project"  # ✅ Top-level project folder
+    source_dir = os.path.join(os.getcwd(), "first_snowpark_project")
     zip_path = "app.zip"
 
     if not os.path.isdir(source_dir):
@@ -44,7 +44,6 @@ def zip_source_code():
             for file in files:
                 full_path = os.path.join(root, file)
                 relative_path = os.path.relpath(full_path, source_dir)
-                # ✅ Preserve full path
                 zipf.write(full_path, os.path.join(
                     "first_snowpark_project", relative_path))
 
