@@ -26,7 +26,8 @@ entities:
     type: procedure
     identifier:
       name: hello_procedure
-    handler: first_snowpark_project/app.python.procedures.hello_procedure
+    handler: first_snowpark_project.app.python.procedures.hello_procedure
+
     signature:
       - name: name
         type: string
