@@ -34,19 +34,18 @@ def run_command(command, description):
 def zip_source_code():
     print("Preparing artifacts for source code")
 
-    # Dynamically resolve path relative to this script
+    # Get the directory of the current script
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    source_dir = os.path.join(
-        script_dir, "first_snowpark_project")  # ✅ Adjusted
-    zip_path = os.path.join(script_dir, "app.zip")
 
-    if not os.path.isdir(source_dir):
-        raise FileNotFoundError(f"Source directory not found: {source_dir}")
+    # Target the parent directory of this script
+    source_dir = script_dir  # This is /workspaces/snowparkdev/first_snowpark_project
+    zip_path = os.path.join(script_dir, "app.zip")
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for root, _, files in os.walk(source_dir):
             for file in files:
                 full_path = os.path.join(root, file)
+                # Preserve the full relative path from source_dir
                 relative_path = os.path.relpath(full_path, source_dir)
                 zipf.write(full_path, os.path.join(
                     "first_snowpark_project", relative_path))
