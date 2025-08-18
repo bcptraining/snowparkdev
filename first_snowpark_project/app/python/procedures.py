@@ -1,12 +1,11 @@
 from __future__ import annotations
-
-import sys
-
-# from app.python.common import print_hello
-from snowflake.snowpark import Session
 from first_snowpark_project.app.python.common import print_hello
-
 from snowflake.snowpark import Session
+import sys
+# Dynamically add the project root to sys.path
+sys.path.append(os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "../../../..")))
+# from app.python.common import print_hello
 
 
 # def hello_procedure(session: Session, name: str) -> str:

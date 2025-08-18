@@ -40,7 +40,8 @@ entities:
     type: procedure
     identifier:
       name: test_procedure
-    handler: first_snowpark_project/app.python.procedures.test_procedure
+    handler: first_snowpark_project.app.python.procedures.test_procedure
+
     signature: []
     returns: string
     meta:

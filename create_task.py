@@ -39,7 +39,7 @@ my_task = Task(
 my_task_with_args = Task(
     name="my_task_with_args",
     definition=StoredProcedureCall(
-        procedures.hello_procedure,
+        procedures.hello_procedure2,
         args=["__world_with_args__"],  # ✅ Pass args here
         stage_location="@dev_deployment",
         return_type=StringType()
