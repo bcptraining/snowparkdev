@@ -12,7 +12,7 @@ from snowflake.snowpark import Session
 # def hello_procedure(session: Session, name: str) -> str:
 #     return f"Hello, {name}"
 
-def hello_procedure(session: Session, name="World") -> str:
+def hello_procedure2(session: Session, name="World") -> str:
     return print_hello(name)
 
 
