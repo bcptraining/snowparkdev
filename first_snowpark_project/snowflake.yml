@@ -1,0 +1,60 @@
+definition_version: '2'
+
+mixins:
+  snowpark_shared:
+    artifacts:
+      - dest: "my_snowpark_project"
+        src: app/
+    stage: dev_deployment
+
+entities:
+
+  hello_function:
+    type: function
+    identifier:
+      name: hello_function
+    handler: app.python.functions.hello_function
+    signature:
+      - name: name
+        type: string
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+
+  hello_procedure:
+    type: procedure
+    identifier:
+      name: hello_procedure2
+    handler: first_snowpark_project.app.python.procedures.hello_procedure2
+    signature:
+      - name: name
+        type: string
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+
+  test_procedure:
+    type: procedure
+    identifier:
+      name: test_procedure
+    handler: first_snowpark_project.app.python.procedures.test_procedure
+
+    signature: []
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+  
+  test_procedure_two:
+    type: procedure
+    identifier:
+      name: test_procedure
+    handler: first_snowpark_project/app.python.procedures.test_procedure_two
+    signature: []
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+
