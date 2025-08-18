@@ -37,42 +37,51 @@ my_task = Task(
 
 # Create a task #2 with args that wraps the hello_procedure
 my_task_with_args = Task(
-    name="my_task_with_args",
-    definition=StoredProcedureCall(
-        procedures.hello_procedure2,
-        args=["__world_with_args__"],  # ✅ Pass args here
-        stage_location="@dev_deployment",
-        return_type=StringType()
-    ),
+    "my_task_with_args",
+    StoredProcedureCall(procedures.hello_procedure2, args=["__world_with_args__"],  # ✅ Pass args here
+                        stage_location="@dev_deployment",
+                        return_type=StringType()
+                        ),
     schedule=timedelta(hours=4)
 )
+print("Task name:", my_task_with_args.name)
+print("Task type:", type(my_task_with_args))
+
+
+#         args=["__world_with_args__"],  # ✅ Pass args here
+#         stage_location="@dev_deployment",
+#         return_type=StringType()
+#     ),
+#     schedule=timedelta(hours=4)
+# )
 
 
 tasks = root.databases["demo_db"].schemas["public"].tasks
-tasks.create(my_task, mode=CreateMode.or_replace)
+tasks.create(my_task_with_args, mode=CreateMode.or_replace)
 
 # Define DAG procedure wrappers
 
-with DAG("my_dag", schedule=timedelta(days=1)) as dag:
-    dag_task_1 = DAGTask(
-        name="my_hello_task",
-        # 👈 SQL string
-        definition="CALL DEMO_DB.PUBLIC.HELLO_PROCEDURE('Canucks')"
-        # warehouse="COMPUTE_WH"
-    )
+# with DAG("my_dag", schedule=timedelta(days=1)) as dag:
+#     dag_task_1 = DAGTask(
+#         name="my_hello_task",
+#         # 👈 SQL string
+#         definition="CALL DEMO_DB.PUBLIC.HELLO_PROCEDURE('Canucks')"
+#         # warehouse="COMPUTE_WH"
+#     )
 
-    dag_task_2 = DAGTask(
-        name="my_test_task",
-        # 👈 SQL string
-        definition="CALL DEMO_DB.PUBLIC.TEST_PROCEDURE()"
-        # warehouse="COMPUTE_WH"
-    )
+#     dag_task_2 = DAGTask(
+#         name="my_test_task",
+#         # 👈 SQL string
+#         definition="CALL DEMO_DB.PUBLIC.TEST_PROCEDURE()"
+#         # warehouse="COMPUTE_WH"
+#     )
 
-    dag_task_1 >> dag_task_2
+#     dag_task_1 >> dag_task_2
 
-    schema = root.databases["demo_db"].schemas["public"]
-    dag_op = DAGOperation(schema)
-    dag_op.deploy(dag, CreateMode.or_replace)
+#     schema = root.databases["demo_db"].schemas["public"]
+#     dag_op = DAGOperation(schema)
+#     dag_op.deploy(dag, CreateMode.or_replace)
+# commentblock below
 # def call_hello_procedure_dag(session):
 #     return session.call("DEMO_DB.PUBLIC.HELLO_PROCEDURE", ["world"])
 
