@@ -27,7 +27,6 @@ entities:
     identifier:
       name: hello_procedure2
     handler: first_snowpark_project.app.python.procedures.hello_procedure2
-
     signature:
       - name: name
         type: string
