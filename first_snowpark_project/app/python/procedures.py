@@ -4,16 +4,16 @@ import sys
 
 # from app.python.common import print_hello
 from snowflake.snowpark import Session
-# from first_snowpark_project.app import print_hello
+from first_snowpark_project.app.python.common import print_hello
 
 from snowflake.snowpark import Session
 
 
-def hello_procedure(session: Session, name: str) -> str:
-    return f"Hello, {name}"
+# def hello_procedure(session: Session, name: str) -> str:
+#     return f"Hello, {name}"
 
-# def hello_procedure(session: Session, name="World") -> str:
-#     return print_hello(name)
+def hello_procedure(session: Session, name="World") -> str:
+    return print_hello(name)
 
 
 def test_procedure(session: Session) -> str:
