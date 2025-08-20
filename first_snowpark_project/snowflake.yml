@@ -13,7 +13,7 @@ entities:
     type: function
     identifier:
       name: hello_function
-    handler: app.python.functions.hello_function
+    handler: my_snowpark_project.python.functions.hello_function
     signature:
       - name: name
         type: string
@@ -26,7 +26,7 @@ entities:
     type: procedure
     identifier:
       name: hello_procedure2
-    handler: first_snowpark_project.app.python.procedures.hello_procedure2
+    handler: my_snowpark_project.python.procedures.hello_procedure2
     signature:
       - name: name
         type: string
@@ -39,7 +39,7 @@ entities:
     type: procedure
     identifier:
       name: test_procedure
-    handler: first_snowpark_project.app.python.procedures.test_procedure
+    handler: my_snowpark_project.python.procedures.test_procedure
 
     signature: []
     returns: string
@@ -50,8 +50,8 @@ entities:
   test_procedure_two:
     type: procedure
     identifier:
-      name: test_procedure
-    handler: first_snowpark_project/app.python.procedures.test_procedure_two
+      name: test_procedure_two
+    handler: my_snowpark_project.python.procedures.test_procedure_two
     signature: []
     returns: string
     meta:

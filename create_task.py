@@ -36,13 +36,21 @@ my_task = Task(
 )
 
 # Create a task #2 with args that wraps the hello_procedure
+# my_task_with_args = Task(
+#     name="my_task_with_args",
+#     definition=StoredProcedureCall(procedures.hello_procedure2, args=["__world_with_args__"],  # ✅ Pass args here
+#                                    stage_location="@dev_deployment",
+#                                    return_type=StringType()
+#                                    ),
+#     schedule=timedelta(hours=4)
+# )
+
 my_task_with_args = Task(
-    "my_task_with_args",
-    StoredProcedureCall(procedures.hello_procedure2, args=["__world_with_args__"],  # ✅ Pass args here
-                        stage_location="@dev_deployment",
-                        return_type=StringType()
-                        ),
+    name="y_task_with_args",
+    # 👈 SQL string
+    definition="CALL DEMO_DB.PUBLIC.HELLO_PROCEDURE2('Canucks_args')",
     schedule=timedelta(hours=4)
+    # warehouse="COMPUTE_WH"
 )
 print("Task name:", my_task_with_args.name)
 print("Task type:", type(my_task_with_args))
