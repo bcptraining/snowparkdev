@@ -117,7 +117,7 @@ def main():
     }).create()
 
     # This guarantees the zip is refreshed in the stage before deployment.
-    session.file.put("app.zip", "@dev_deployment/app/", overwrite=True)
+    # session.file.put("app.zip", "@dev_deployment/app/", overwrite=True)
 
     # Step 6: Deploy Snowpark app
     deploy_cmd = [
