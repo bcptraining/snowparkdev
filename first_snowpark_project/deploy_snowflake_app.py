@@ -44,6 +44,7 @@ def zip_source_code(project_dir):
         for root, _, files in os.walk(app_dir):
             for file in files:
                 full_path = os.path.join(root, file)
+                # ✅ Preserve 'app/' in the zip structure
                 relative_path = os.path.relpath(full_path, project_dir)
                 zipf.write(full_path, relative_path)
 
@@ -102,6 +103,21 @@ def main():
     # os.chdir(directory_path)
     print(f"Changed directory to {directory_path}")
     zip_source_code(directory_path)
+
+    from snowflake.snowpark import Session
+
+    session = Session.builder.configs({
+        "account": account,
+        "user": user,
+        "password": password,
+        "role": role,
+        "warehouse": warehouse,
+        "database": database,
+        "schema": "PUBLIC"
+    }).create()
+
+    # This guarantees the zip is refreshed in the stage before deployment.
+    # session.file.put("app.zip", "@dev_deployment/app/", overwrite=True)
 
     # Step 6: Deploy Snowpark app
     deploy_cmd = [

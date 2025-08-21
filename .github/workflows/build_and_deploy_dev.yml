@@ -87,7 +87,8 @@ jobs:
         run: snow sql -q "USE WAREHOUSE $SNOWFLAKE_WAREHOUSE"
         env:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
-
+            
+      
       - name: Deploy Snowpark Apps
         run: python first_snowpark_project/deploy_snowflake_app.py ${{ github.workspace }}/first_snowpark_project
         env:
@@ -97,3 +98,6 @@ jobs:
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE_DEV }}
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
+     
+      - name: Inspect app.zip contents
+        run: unzip -l ${{ github.workspace }}/first_snowpark_project/app.zip
