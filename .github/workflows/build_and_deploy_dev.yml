@@ -89,7 +89,8 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
       
       - name: Inspect app.zip contents
-        run: unzip -l first_snowpark_project/app.zip
+        run: unzip -l ${{ github.workspace }}/first_snowpark_project/app.zip
+
 
       - name: Deploy Snowpark Apps
         run: python first_snowpark_project/deploy_snowflake_app.py ${{ github.workspace }}/first_snowpark_project
