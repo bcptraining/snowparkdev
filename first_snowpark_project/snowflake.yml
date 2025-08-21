@@ -7,7 +7,7 @@ mixins:
         src: app/
     stage: dev_deployment
     imports:
-      - app.zip
+      - '@DEMO_DB.PUBLIC.DEV_DEPLOYMENT/app/app.zip'
 
 entities:
 
