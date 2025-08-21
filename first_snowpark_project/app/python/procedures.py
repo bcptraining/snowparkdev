@@ -21,7 +21,7 @@ sys.path.append(os.path.abspath(os.path.join(
 # def hello_procedure(session: Session, name: str) -> str:
 #     return f"Hello, {name}"
 # @procedure(name="HELLO_PROCEDURE2", is_permanent=True, stage_location="@dev_deployment", return_type=StringType())
-def hello_procedure2(session: Session, name="World") -> str:
+def hello_procedure2(session: Session, name="World2") -> str:
     return print_hello(name)
 
 
