@@ -104,6 +104,21 @@ def main():
     print(f"Changed directory to {directory_path}")
     zip_source_code(directory_path)
 
+    from snowflake.snowpark import Session
+
+    session = Session.builder.configs({
+        "account": account,
+        "user": user,
+        "password": password,
+        "role": role,
+        "warehouse": warehouse,
+        "database": database,
+        "schema": "PUBLIC"
+    }).create()
+
+    # This guarantees the zip is refreshed in the stage before deployment.
+    session.file.put("app.zip", "@dev_deployment/app/", overwrite=True)
+
     # Step 6: Deploy Snowpark app
     deploy_cmd = [
         "snow", "snowpark", "deploy", "--replace", "--temporary-connection",
