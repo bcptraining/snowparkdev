@@ -31,60 +31,88 @@ def run_command(command, description):
         print(result.stdout)
 
 
-def zip_source_code():
+def zip_source_code(project_dir):
     print("Preparing artifacts for source code")
 
-    # Get the directory of the current script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Target the parent directory of this script
-    source_dir = script_dir  # This is /workspaces/snowparkdev/first_snowpark_project
-    zip_path = os.path.join(script_dir, "app.zip")
+    app_dir = os.path.join(project_dir, "app")
+    zip_path = os.path.join(project_dir, "app.zip")
+    if not os.path.exists(app_dir):
+        raise FileNotFoundError(
+            f"Expected app directory at {app_dir}, but it was not found.")
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(source_dir):
+        for root, _, files in os.walk(app_dir):
             for file in files:
                 full_path = os.path.join(root, file)
-                # Preserve the full relative path from source_dir
-                relative_path = os.path.relpath(full_path, source_dir)
-                zipf.write(full_path, os.path.join(
-                    "first_snowpark_project", relative_path))
+                relative_path = os.path.relpath(full_path, project_dir)
+                zipf.write(full_path, relative_path)
 
     print(f"✅ Created zip at {zip_path}")
 
 
 def main():
-    if len(sys.argv) < 2:
-        raise ValueError(
-            "Usage: python deploy_snowflake_app.py <project_directory>")
-
-    directory_path = sys.argv[1]
-    os.chdir(directory_path)
-
+    # Step 1: Definitions
     required_vars = [
         "SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD",
         "SNOWFLAKE_ROLE", "SNOWFLAKE_WAREHOUSE", "SNOWFLAKE_DATABASE"
     ]
 
+    directory_path = sys.argv[1]
+    os.chdir(directory_path)
+
+    account = os.environ["SNOWFLAKE_ACCOUNT"]
+    user = os.environ["SNOWFLAKE_USER"]
+    password = os.environ["SNOWFLAKE_PASSWORD"]
+    role = os.environ["SNOWFLAKE_ROLE"]
+    warehouse = os.environ["SNOWFLAKE_WAREHOUSE"]
+    database = os.environ["SNOWFLAKE_DATABASE"]
+
+    # Step 2: Validate environment variables
     validate_env_vars(required_vars)
     print_env_summary(required_vars)
 
-    run_command([
+   # Step 3: Check command line arguments
+    if len(sys.argv) < 2:
+        raise ValueError(
+            "Usage: python deploy_snowflake_app.py <project_directory>")
+
+    # run_command([
+    #     "snow", "snowpark", "build",
+    #     "--connection", "default",
+    #     "--warehouse", os.environ["SNOWFLAKE_WAREHOUSE"]
+    # ], "Building Snowpark project")
+
+    # Step 4: Build Snowpark Project
+    build_cmd = [
         "snow", "snowpark", "build",
-        "--connection", "default",
-        "--warehouse", os.environ["SNOWFLAKE_WAREHOUSE"]
-    ], "Building Snowpark project")
+        "--temporary-connection",
+        "--account", account,
+        "--user", user,
+        "--password", password,
+        "--role", role,
+        "--warehouse", warehouse,
+        "--database", database,
+        "--schema", "PUBLIC"
+    ]
 
-    zip_source_code()  # ✅ Add this step before deployment
+    run_command(build_cmd, "Building Snowpark project")
 
+    # Step 5: Zip source code
+    # directory_path = sys.argv[1]
+    # os.chdir(directory_path)
+    print(f"Changed directory to {directory_path}")
+    zip_source_code(directory_path)
+
+    # Step 6: Deploy Snowpark app
     deploy_cmd = [
         "snow", "snowpark", "deploy", "--replace", "--temporary-connection",
-        "--account", os.environ["SNOWFLAKE_ACCOUNT"],
-        "--user", os.environ["SNOWFLAKE_USER"],
-        "--password", os.environ["SNOWFLAKE_PASSWORD"],
-        "--role", os.environ["SNOWFLAKE_ROLE"],
-        "--warehouse", os.environ["SNOWFLAKE_WAREHOUSE"],
-        "--database", os.environ["SNOWFLAKE_DATABASE"]
+        "--account", account,
+        "--user", user,
+        "--password", password,
+        "--role", role,
+        "--warehouse", warehouse,
+        "--database", database,
+        "--schema", "PUBLIC"
     ]
     run_command(deploy_cmd, "Deploying Snowpark app")
 
