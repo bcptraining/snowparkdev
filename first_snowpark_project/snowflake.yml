@@ -7,7 +7,7 @@ mixins:
         src: app/
     stage: dev_deployment
     imports:
-      - path: app.zip
+      - app.zip
 
 entities:
 
