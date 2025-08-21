@@ -44,8 +44,8 @@ def zip_source_code(project_dir):
         for root, _, files in os.walk(app_dir):
             for file in files:
                 full_path = os.path.join(root, file)
-                relative_path = os.path.relpath(
-                    full_path, app_dir)  # <-- FIXED
+                # ✅ Preserve 'app/' in the zip structure
+                relative_path = os.path.relpath(full_path, project_dir)
                 zipf.write(full_path, relative_path)
 
     print(f"✅ Created zip at {zip_path}")
