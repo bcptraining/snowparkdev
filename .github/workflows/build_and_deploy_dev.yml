@@ -88,18 +88,7 @@ jobs:
         env:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
             
-      - name: Upload app.zip to Snowflake stage
-        run: |
-          snow file put first_snowpark_project/app.zip @DEV_DEPLOYMENT/app/ --overwrite
-            --temporary-connection 
-            --account ${{ secrets.SNOWFLAKE_ACCOUNT }} 
-            --user ${{ secrets.SNOWFLAKE_USER }} 
-            --password ${{ secrets.SNOWFLAKE_PASSWORD }} 
-            --role ${{ secrets.SNOWFLAKE_ROLE }} 
-            --warehouse ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
-            --database ${{ secrets.SNOWFLAKE_DATABASE }} 
-            --schema PUBLIC
-
+      
       - name: Deploy Snowpark Apps
         run: python first_snowpark_project/deploy_snowflake_app.py ${{ github.workspace }}/first_snowpark_project
         env:
