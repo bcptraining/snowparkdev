@@ -3,7 +3,7 @@ definition_version: '2'
 mixins:
   snowpark_shared:
     artifacts:
-      - dest: "my_snowpark_project"
+      - dest: "app"
         src: app/
     stage: dev_deployment
 
@@ -25,8 +25,8 @@ entities:
   hello_procedure:
     type: procedure
     identifier:
-      name: hello_procedure
-    handler: app.python.procedures.hello_procedure
+      name: hello_procedure2
+    handler: app.python.procedures.hello_procedure2
     signature:
       - name: name
         type: string
@@ -40,6 +40,18 @@ entities:
     identifier:
       name: test_procedure
     handler: app.python.procedures.test_procedure
+
+    signature: []
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+  
+  test_procedure_two:
+    type: procedure
+    identifier:
+      name: test_procedure_two
+    handler: app.python.procedures.test_procedure_two
     signature: []
     returns: string
     meta:
