@@ -87,8 +87,7 @@ jobs:
         run: snow sql -q "USE WAREHOUSE $SNOWFLAKE_WAREHOUSE"
         env:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
-      - name: Upload app.zip to Snowflake stage
-      
+            
       - name: Upload app.zip to Snowflake stage
         run: |
           snow file put first_snowpark_project/app.zip @DEV_DEPLOYMENT/app/ --overwrite
