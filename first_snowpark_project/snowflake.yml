@@ -19,9 +19,9 @@ entities:
       - name: name
         type: string
     returns: string
-    meta:
-      use_mixins:
-        - snowpark_shared
+    # meta:   <-- Not supported for tasks
+    #   use_mixins:
+    #     - snowpark_shared
 
   hello_procedure:
     type: procedure
