@@ -7,13 +7,6 @@ mixins:
         src: app/
     stage: dev_deployment
   
-  # snowpark_task: {}
-  # Leave empty or add only task-supported fields
-  # meta:
-  #   use_mixins:
-  #     - snowpark_task
-
-
 entities:
 
   hello_function:
