@@ -6,7 +6,13 @@ mixins:
       - dest: "app"
         src: app/
     stage: dev_deployment
-    
+  
+  snowpark_task: {}
+  # Leave empty or add only task-supported fields
+  meta:
+    use_mixins:
+      - snowpark_task
+
 
 entities:
 
@@ -19,10 +25,7 @@ entities:
       - name: name
         type: string
     returns: string
-    # meta:   <-- Not supported for tasks
-    #   use_mixins:
-    #     - snowpark_shared
-
+  
   hello_procedure:
     type: procedure
     identifier:
