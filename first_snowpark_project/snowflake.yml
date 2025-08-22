@@ -17,7 +17,7 @@ mixins:
 entities:
 
   hello_function:
-  type: function
+    type: function
   identifier:
     name: hello_function
   handler: app.python.functions.hello_function
