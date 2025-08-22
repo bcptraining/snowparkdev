@@ -18,16 +18,17 @@ entities:
 
   hello_function:
     type: function
-  identifier:
-    name: hello_function
-  handler: app.python.functions.hello_function
-  signature:
-    - name: name
-      type: string
-  returns: string
-  meta:
-    use_mixins:
-      - snowpark_shared
+    identifier:
+      name: hello_function
+    handler: app.python.functions.hello_function
+    signature:
+      - name: name
+        type: string
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+
   
   hello_procedure:
     type: procedure
