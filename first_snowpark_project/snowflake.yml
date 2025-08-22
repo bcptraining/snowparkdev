@@ -61,7 +61,9 @@ entities:
     signature: []
     returns: string
     meta:
-      use_mixins:[snowpark_shared]
+      use_mixins:
+        - snowpark_task
+
 
 
   test_procedure:
