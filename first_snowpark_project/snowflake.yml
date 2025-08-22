@@ -23,18 +23,18 @@ entities:
       use_mixins:
         - snowpark_shared
 
-    hello_procedure:
-    type: procedure
-    identifier:
-      name: hello_procedure
-    handler: app.python.procedures.hello_procedure
-    signature:
-      - name: name
-        type: string
-    returns: string
-    meta:
-      use_mixins:
-        - snowpark_shared
+  hello_procedure:
+  type: procedure
+  identifier:
+    name: hello_procedure
+  handler: app.python.procedures.hello_procedure
+  signature:
+    - name: name
+      type: string
+  returns: string
+  meta:
+    use_mixins:
+      - snowpark_shared
     
   hello_procedure2:
     type: procedure
@@ -66,7 +66,6 @@ entities:
     identifier:
       name: test_procedure
     handler: app.python.procedures.test_procedure
-
     signature: []
     returns: string
     meta:
