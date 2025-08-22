@@ -1,4 +1,4 @@
-projectdefinition_version: '2'
+definition_version: '2'
 
 mixins:
   snowpark_shared:
