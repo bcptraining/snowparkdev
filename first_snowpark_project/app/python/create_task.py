@@ -1,28 +1,53 @@
-from first_snowpark_project.app.python.session import get_session
-from snowflake.core import Root
-import snowflake.connector
-# from app.python.session import get_session
-from dotenv import load_dotenv
-from datetime import timedelta
 from snowflake.snowpark.types import StringType
-# from app.python import procedures
-from first_snowpark_project.app.python import procedures
+from snowflake.snowpark.task import Task
+from snowflake.snowpark.stored_procedure import StoredProcedureCall
+from datetime import timedelta
 
-from snowflake.core.task import Task, StoredProcedureCall
-from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation, CreateMode
-import sys
-import os
-# from first_snowpark_project.app.python.common import print_hello
+from procedures import hello_procedure  # Python-wrapped stored procedure
 
-# Add the parent of 'first_snowpark_project' to sys.path
-project_root = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../.."))
-sys.path.insert(0, project_root)
+# Create a task that runs every 4 hours and calls hello_procedure with a string argument
+my_task_GreetTheDay = Task(
+    name="my_task_GreetTheDay",
+    definition=StoredProcedureCall(
+        hello_procedure,
+        # You can replace this with dynamic logic later
+        args=["__world_with_args__"],
+        stage_location="@dev_deployment",
+        return_type=StringType()
+    ),
+    schedule=timedelta(hours=4)
+)
 
-# Now this import should work
-print("Current sys.path:")
-for p in sys.path:
-    print("  ", p)
+
+def register_tasks():
+    return [my_task_GreetTheDay]
+
+
+# from first_snowpark_project.app.python.session import get_session
+# from snowflake.core import Root
+# import snowflake.connector
+# # from app.python.session import get_session
+# from dotenv import load_dotenv
+# from datetime import timedelta
+# from snowflake.snowpark.types import StringType
+# # from app.python import procedures
+# from first_snowpark_project.app.python import procedures
+
+# from snowflake.core.task import Task, StoredProcedureCall
+# from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation, CreateMode
+# import sys
+# import os
+# # from first_snowpark_project.app.python.common import print_hello
+
+# # Add the parent of 'first_snowpark_project' to sys.path
+# project_root = os.path.abspath(os.path.join(
+#     os.path.dirname(__file__), "../../.."))
+# sys.path.insert(0, project_root)
+
+# # Now this import should work
+# print("Current sys.path:")
+# for p in sys.path:
+#     print("  ", p)
 
 # # Add the project root to sys.path
 # sys.path.append(os.path.abspath(os.path.join(
@@ -43,18 +68,19 @@ for p in sys.path:
 #     schema="PUBLIC"
 # )
 
-conn = snowflake.connector.connect(
-    # account=os.getenv("SNOWFLAKE_ACCOUNT"),
-    # user=os.getenv("SNOWFLAKE_USER"),
-    # password=os.getenv("SNOWFLAKE_PASSWORD"),
-    # role=os.getenv("SNOWFLAKE_ROLE"),
-    # warehouse=os.getenv("SNOWFLAKE_WAREHOUSE"),
-    # database=os.getenv("SNOWFLAKE_DATABASE"),
-    # schema="PUBLIC"
-)
+# conn = snowflake.connector.connect(
+# account=os.getenv("SNOWFLAKE_ACCOUNT"),
+# user=os.getenv("SNOWFLAKE_USER"),
+# password=os.getenv("SNOWFLAKE_PASSWORD"),
+# role=os.getenv("SNOWFLAKE_ROLE"),
+# warehouse=os.getenv("SNOWFLAKE_WAREHOUSE"),
+# database=os.getenv("SNOWFLAKE_DATABASE"),
+# schema="PUBLIC"
+# )
 
-root = Root(conn)
-print(root)
+
+# root = Root(conn)
+# print(root)
 
 # # Create a task that wraps the hello_procedure
 # my_task = Task(

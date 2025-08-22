@@ -1,4 +1,4 @@
-definition_version: '2'
+projectdefinition_version: '2'
 
 mixins:
   snowpark_shared:
@@ -23,7 +23,20 @@ entities:
       use_mixins:
         - snowpark_shared
 
-  hello_procedure:
+    hello_procedure:
+    type: procedure
+    identifier:
+      name: hello_procedure
+    handler: app.python.procedures.hello_procedure
+    signature:
+      - name: name
+        type: string
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+    
+  hello_procedure2:
     type: procedure
     identifier:
       name: hello_procedure2
@@ -35,6 +48,18 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
+  
+  hello_task:
+    type: task
+    identifier:
+      name: my_task_with_args
+    handler: app.python.create_task.my_task_with_args
+    signature: []
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+
 
   test_procedure:
     type: procedure

@@ -25,6 +25,10 @@ def hello_procedure2(session: Session, name="World2") -> str:
     return print_hello(name)
 
 
+def hello_procedure(session, name: str) -> str:
+    return f"Hello, {name}! Hope you're having a great day!"
+
+
 def test_procedure(session: Session) -> str:
     return "Test procedure"
 
