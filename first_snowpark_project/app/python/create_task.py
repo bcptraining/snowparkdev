@@ -1,26 +1,29 @@
+import snowflake.connector
 from snowflake.snowpark.types import StringType
-from snowflake.snowpark.task import Task
-from snowflake.snowpark.stored_procedure import StoredProcedureCall
+from snowflake.core.task import Task, StoredProcedureCall
+from . import procedures
 from datetime import timedelta
-
+from first_snowpark_project.app.python import procedures
 from procedures import hello_procedure  # Python-wrapped stored procedure
 
+conn = snowflake.connector.connect()
+
 # Create a task that runs every 4 hours and calls hello_procedure with a string argument
-my_task_GreetTheDay = Task(
-    name="my_task_GreetTheDay",
-    definition=StoredProcedureCall(
-        hello_procedure,
-        # You can replace this with dynamic logic later
-        args=["__world_with_args__"],
-        stage_location="@dev_deployment",
-        return_type=StringType()
-    ),
-    schedule=timedelta(hours=4)
-)
+# my_task_GreetTheDay = Task(
+#     name="my_task_GreetTheDay",
+#     definition=StoredProcedureCall(
+#         hello_procedure,
+#         # You can replace this with dynamic logic later
+#         args=["__world_with_args__"],
+#         stage_location="@dev_deployment",
+#         return_type=StringType()
+#     ),
+#     schedule=timedelta(hours=4)
+# )
 
 
-def register_tasks():
-    return [my_task_GreetTheDay]
+# def register_tasks():
+#     return [my_task_GreetTheDay]
 
 
 # from first_snowpark_project.app.python.session import get_session

@@ -9,22 +9,25 @@ mixins:
   
   snowpark_task: {}
   # Leave empty or add only task-supported fields
-  meta:
-    use_mixins:
-      - snowpark_task
+  # meta:
+  #   use_mixins:
+  #     - snowpark_task
 
 
 entities:
 
   hello_function:
-    type: function
-    identifier:
-      name: hello_function
-    handler: app.python.functions.hello_function
-    signature:
-      - name: name
-        type: string
-    returns: string
+  type: function
+  identifier:
+    name: hello_function
+  handler: app.python.functions.hello_function
+  signature:
+    - name: name
+      type: string
+  returns: string
+  meta:
+    use_mixins:
+      - snowpark_shared
   
   hello_procedure:
     type: procedure
@@ -52,17 +55,17 @@ entities:
       use_mixins:
         - snowpark_shared
   
-  my_task_GreetTheDay:
-    type: task
-    identifier:
-      name: my_task_GreetTheDay 
-    schedule: "USING CRON 0 */4 * * * UTC"
-    handler: app.python.create_task.my_task_with_args
-    signature: []
-    returns: string
-    meta:
-      use_mixins:
-        - snowpark_task
+  # my_task_GreetTheDay:
+  #   type: task
+  #   identifier:
+  #     name: my_task_GreetTheDay 
+  #   schedule: "USING CRON 0 */4 * * * UTC"
+  #   handler: app.python.create_task.my_task_with_args
+  #   signature: []
+  #   returns: string
+  #   meta:
+  #     use_mixins:
+  #       - snowpark_task
 
 
 
