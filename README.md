@@ -6,8 +6,8 @@ In this example, we focus on deploying a **Snowpark-based application** using **
 
 # 📚 Table of Contents
 
-- [❄️ Snowflake Connection Overview](#snowflake-connection-overview)
 - [✅ Prerequisites](#prerequisites)
+- [❄️ Snowflake Connection Overview](#snowflake-connection-overview)
 - [🚀 Environment Promotion via GitHub Workflows](#environment-promotion-via-github-workflows)
 - [🏗️ Infrastructure Setup](#infrastructure-setup)
   - [🧭 Create Environment Accounts in Snowflake](#create-environment-accounts-in-snowflake)
@@ -23,6 +23,18 @@ In this example, we focus on deploying a **Snowpark-based application** using **
   - [🧾 `snowflake.yml` Configuration](#snowflakeyml-configuration)
   - [📁 Folder Structure Diagram](#folder-structure-diagram)
 - [⚙️ Workflow Breakdown](#workflow-breakdown)
+
+## ✅ Prerequisites
+
+Before you begin, make sure you have the following:
+
+- A Snowflake trial account with **ORGADMIN** access
+- A GitHub account with access to the target repository
+- GitHub Codespaces enabled (optional, for cloud-based dev)
+- Python 3.11 and Conda (if developing locally)
+- Basic familiarity with Git workflows and CI/CD concepts
+
+---
 
 ## ❄️ Snowflake Connection Overview
 
@@ -64,18 +76,23 @@ In GitHub Actions, the connection to Snowflake happens during automated deployme
 
 ---
 
-### 🗂️ What’s the `.toml` File?
+## 🗂️ What’s the `.toml` File?
 
 The `.toml` file is a structured configuration file generated during deployment. It contains metadata about:
 
-- The target Snowflake account and role
-- The database and schema
-- The objects to deploy (e.g., functions, procedures)
-- Source paths and build settings
+- The target Snowflake account and role  
+- The database and schema  
+- The objects to deploy (e.g., functions, procedures)  
+- Source paths and build settings  
 
 This file acts as an intermediary between your `snowflake.yml` manifest and the Snowflake CLI, enabling reproducible and declarative deployments.
 
----
+> ⚠️ **Note:** This project does **not** use `.snowflake/config.toml`.  
+> That file is typically used by the Snowflake CLI for manual workflows, but it is **ignored** here.  
+> All configuration is generated dynamically by `deploy_snowflake_app.py`, so you can safely delete or ignore `.snowflake/config.toml`.
+
+The generated `.toml` file lives temporarily during the deployment process and reflects the contents of `snowflake.yml` combined with secrets injected into the environment. It ensures that the Snowflake CLI receives all necessary context without relying on persistent config files.
+
 
 ### 🔐 Authentication Summary
 
@@ -93,17 +110,6 @@ This file acts as an intermediary between your `snowflake.yml` manifest and the 
 > - CLI commands like `snowflake stage put` in `setup.sh`
 > - `.toml` generation logic in `deploy_snowflake_app.py`
 
-## ✅ Prerequisites
-
-Before you begin, make sure you have the following:
-
-- A Snowflake trial account with **ORGADMIN** access
-- A GitHub account with access to the target repository
-- GitHub Codespaces enabled (optional, for cloud-based dev)
-- Python 3.11 and Conda (if developing locally)
-- Basic familiarity with Git workflows and CI/CD concepts
-
----
 
 ## 🚀 Environment Promotion via GitHub Workflows
 
@@ -239,7 +245,7 @@ The container is defined in `.devcontainer/devcontainer.json`, which uses a **Py
 
 | GitHub Branch Activity       | Triggered Workflow File     | Target Environment |
 | ---------------------------- | --------------------------- | ------------------ |
-| Merge feature branch → `dev` | `build_and_deploy_dev.yml`  | Development        |
+| Pull request `feat`→ `dev`   | `build_and_deploy_dev.yml`  | Development        |
 | Pull request `dev` → `qa`    | `build_and_deploy_qa.yml`   | QA / Staging       |
 | Pull request `qa` → `main`   | `build_and_deploy_prod.yml` | Production         |
 
@@ -250,7 +256,7 @@ This setup ensures:
 - **Environment isolation** through scoped configs and secrets
 
 ## Project Structure
-
+```plaintext
 ├── .devcontainer
 │   ├── devcontainer.json
 │   └── setup.sh
@@ -287,7 +293,7 @@ This setup ensures:
     └── snowparkdev
         └── docs
             └── snowpark-setup.md
-
+```
 ## 📦 Scope of Snowpark Objects to Be Deployed
 
 This example CI/CD pipeline deploys the following Snowpark objects into the `DEMO_DB.PUBLIC` schema:
@@ -297,7 +303,7 @@ This example CI/CD pipeline deploys the following Snowpark objects into the `DEM
 - **Python Function**
   - `HELLO_FUNCTION`: Greets a user by name.
 - **Python Procedures**
-  - `HELLO_PROCEDURE`: Wraps the greeting logic as a procedure.
+  - `HELLO_PROCEDURE2`: Wraps the greeting logic as a procedure.
   - `TEST_PROCEDURE`: A second demo procedure.
 - **Table**
   - `STOCK_VALUE_SUMMARY`: Stores transformed CSV data.
@@ -341,7 +347,7 @@ All deployable code lives in the `app/` folder within the `first_snowpark_projec
 | Object Type         | Name(s)                             | Deployment Method         | Location                                 |
 | ------------------- | ----------------------------------- | ------------------------- | ---------------------------------------- |
 | Python Function     | `HELLO_FUNCTION`                    | Via `snowflake.yml`       | `app/python/functions/`                  |
-| Python Procedures   | `HELLO_PROCEDURE`, `TEST_PROCEDURE` | Via `snowflake.yml`       | `app/python/procedures/`                 |
+| Python Procedures   | `HELLO_PROCEDURE2`,`TEST_PROCEDURE` | Via `snowflake.yml`       | `app/python/procedures/`                 |
 | Table               | `STOCK_VALUE_SUMMARY`               | Script-driven             | Created by `process_stock_sales_data.py` |
 | Data Transformation | N/A                                 | Standalone script         | `app/python/process_stock_sales_data.py` |
 | CSV Data Files      | N/A                                 | Input/output for pipeline | `app/data/`                              |
@@ -367,8 +373,8 @@ functions:
       - snowflake-snowpark-python
 
 procedures:
-  - name: HELLO_PROCEDURE
-    file: app/python/procedures/hello_procedure.py
+  - name: HELLO_PROCEDURE2
+    file: app/python/procedures/hello_procedure2.py
     handler: hello_procedure.handler
     language: python
     runtime: 3.11
@@ -386,20 +392,22 @@ procedures:
 
 ### 📁 Folder Structure Diagram
 
+### 📁 Folder Structure Diagram
+
 ```plaintext
 first_snowpark_project/
 └── app/
     ├── python/
-    │   ├── functions/
-    │   │   └── hello_function.py
-    │   ├── procedures/
-    │   │   ├── hello_procedure.py
-    │   │   └── test_procedure.py
-    │   └── process_stock_sales_data.py
+    │   ├── functions.py              # Contains all function definitions
+    │   ├── procedures.py             # Contains all procedure definitions
+    │   ├── process_stock_sales_data.py
+    │   ├── session.py
+    │   └── test_session.py
     ├── data/
     │   ├── original_stock_data.csv
     │   └── cleaned_stock_data.csv
     └── snowflake.yml
+
 ```
 
 ## ⚙️ Workflow Breakdown
