@@ -1,5 +1,6 @@
 # assuming your DAG is defined as `dag = DAG(...)`
-from first_snowpark_project.app.python.dags import dag
+# from first_snowpark_project.app.python.dags import dag
+from app.python.dags import dag
 from first_snowpark_project.app.python.session import get_session
 from snowflake.core.task.dagv1 import DAGOperation, CreateMode
 from snowflake.core import Root
