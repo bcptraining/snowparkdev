@@ -9,6 +9,9 @@ import os
 import subprocess
 import zipfile
 
+# added dut to an import issue from first_snowpark_project
+sys.path.append('/home/runner/work/snowparkdev/snowparkdev')
+
 
 def validate_env_vars(required_vars):
     missing = [var for var in required_vars if not os.environ.get(var)]
