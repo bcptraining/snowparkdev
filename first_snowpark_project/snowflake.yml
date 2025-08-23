@@ -85,3 +85,11 @@ entities:
       use_mixins:
         - snowpark_shared
 
+  my_dag:
+      type: dag
+      identifier:
+        name: my_dag
+      handler: app.python.dags.my_dag
+      meta:
+        use_mixins:
+          - snowpark_shared
