@@ -1,6 +1,8 @@
 definition_version: '2'
 
 mixins:
+  snowpark_dag:
+    # No artifacts or stage — DAGs don’t support them
   snowpark_shared:
     artifacts:
       - dest: "app"
@@ -92,4 +94,4 @@ entities:
       handler: app.python.dags.my_dag
       meta:
         use_mixins:
-          - snowpark_shared
+          - snowpark_dag
