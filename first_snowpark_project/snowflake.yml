@@ -86,12 +86,12 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-
-  my_dag:
-      type: dag
-      identifier:
-        name: my_dag
-      handler: app.python.dags.my_dag
-      meta:
-        use_mixins:
-          - snowpark_dag
+  # As of now (Aug 2025), DAGs are not supported in Snowflake's deployment framework. 
+  # my_dag:
+  #     type: dag
+  #     identifier:
+  #       name: my_dag
+  #     handler: app.python.dags.my_dag
+  #     meta:
+  #       use_mixins:
+  #         - snowpark_dag
