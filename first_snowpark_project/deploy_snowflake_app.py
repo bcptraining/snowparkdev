@@ -1,3 +1,8 @@
+# assuming your DAG is defined as `dag = DAG(...)`
+from first_snowpark_project.app.python.dags import dag
+from first_snowpark_project.app.python.session import get_session
+from snowflake.core.task.dagv1 import DAGOperation, CreateMode
+from snowflake.core import Root
 import sys
 import os
 import subprocess
@@ -115,6 +120,7 @@ def main():
         "database": database,
         "schema": "PUBLIC"
     }).create()
+    root = Root(session)
 
     # This guarantees the zip is refreshed in the stage before deployment.
     # session.file.put("app.zip", "@dev_deployment/app/", overwrite=True)
@@ -131,6 +137,11 @@ def main():
         "--schema", "PUBLIC"
     ]
     run_command(deploy_cmd, "Deploying Snowpark app")
+
+    # ✅ Step 7: Deploy DAG manually
+    schema = root.databases["demo_db"].schemas["public"]
+    dag_op = DAGOperation(schema)
+    dag_op.deploy(dag, CreateMode.or_replace)
 
 
 if __name__ == "__main__":
