@@ -1,7 +1,5 @@
 from __future__ import annotations
-# from first_snowpark_project.app.python.common import print_hello
-# from app.python.common import print_hello
-from app.python.common import print_hello
+from first_snowpark_project.app.python.common import print_hello
 
 
 from snowflake.snowpark import Session
@@ -25,7 +23,7 @@ def hello_procedure2(session: Session, name="World2") -> str:
     return print_hello(name)
 
 
-def hello_procedure(session, name: str) -> str:
+def hello_procedure(session: Session, name: str) -> str:
     return f"Hello, {name}! Hope you're having a great day!"
 
 
