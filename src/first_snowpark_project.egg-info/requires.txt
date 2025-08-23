@@ -1,0 +1,5 @@
+snowflake-snowpark-python==1.33.0
+snowflake-core==1.5.1
+numpy
+pandas
+pyarrow
