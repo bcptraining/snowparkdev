@@ -1,16 +1,18 @@
-# assuming your DAG is defined as `dag = DAG(...)`
-# from first_snowpark_project.app.python.dags import dag
-from app.python.dags import dag
-from first_snowpark_project.app.python.session import get_session
-from snowflake.core.task.dagv1 import DAGOperation, CreateMode
+import zipfile
+import subprocess
 from snowflake.core import Root
+from snowflake.core.task.dagv1 import DAGOperation, CreateMode
+from first_snowpark_project.app.python.session import get_session
+from first_snowpark_project.app.python.dags import dag
 import sys
 import os
-import subprocess
-import zipfile
-
-# added dut to an import issue from first_snowpark_project
+# added due to an import issue from first_snowpark_project
 sys.path.append('/home/runner/work/snowparkdev/snowparkdev')
+# Dynamically add the project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# assuming your DAG is defined as `dag = DAG(...)`
+# from first_snowpark_project.app.python.dags import dag
 
 
 def validate_env_vars(required_vars):
