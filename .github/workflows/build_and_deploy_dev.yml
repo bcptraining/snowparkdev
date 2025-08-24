@@ -48,6 +48,9 @@ jobs:
           echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
           export PATH="$HOME/.local/bin:$PATH"
           snow --version
+          
+      - name: Show installed packages
+        run: pip freeze
 
       - name: Create SnowCLI config with environment variables
         run: |
