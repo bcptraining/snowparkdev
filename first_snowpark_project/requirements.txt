@@ -1,4 +1,4 @@
-snowflake-snowpark-python
+snowflake-core
 python-dotenv
 pandas
 pyarrow<19.0.0
