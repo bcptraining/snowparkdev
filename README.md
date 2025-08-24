@@ -24,6 +24,19 @@ In this example, we focus on deploying a **Snowpark-based application** using **
   - [📁 Folder Structure Diagram](#folder-structure-diagram)
 - [⚙️ Workflow Breakdown](#workflow-breakdown)
 
+## STATUS
+
+Development is currently paused.
+
+This project was designed as a learning exercise to explore Snowflake's Python SDKs and build a deployable DAG-based application. The high-water mark was successfully deploying the DAG itself—however, the task execution failed due to SDK incompatibilities.
+
+The core issue stemmed from attempting to run both the **legacy Snowpark SDK** (`snowflake.snowpark`) and the **new Core SDK** (`snowflake.core`) side by side. While both packages were installed and partially functional, they are not designed to operate in parallel. The `Session` class, for example, is only available in the Snowpark SDK, and attempts to use it from the Core SDK resulted in import errors. Additionally, mismatches in method signatures (e.g., `StoredProcedureCall(handler=...)`) revealed that the Core SDK is not yet a drop-in replacement.
+
+Rather than continue development with a brittle dual-SDK setup, the plan is to **monitor the evolution of the Core SDK** and **phase out the legacy Snowpark SDK** once full compatibility and feature parity are achieved.
+
+This project remains a valuable reference point for Snowflake app deployment and SDK experimentation. The code is close to working, and with future SDK improvements, it should be straightforward to resume and complete.
+
+
 ## ✅ Prerequisites
 
 Before you begin, make sure you have the following:
