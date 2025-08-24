@@ -1,8 +1,7 @@
 from __future__ import annotations
 from first_snowpark_project.app.python.common import print_hello
 
-
-from snowflake.snowpark import Session
+from snowflake.core import Session
 import sys
 import os
 # from snowflake.snowpark.stored_procedure import procedure
