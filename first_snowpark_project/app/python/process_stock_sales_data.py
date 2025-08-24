@@ -2,6 +2,7 @@ from app.python.session import get_session
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+
 from snowflake.snowpark.functions import col
 import pandas as pd
 
