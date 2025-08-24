@@ -1,4 +1,16 @@
 {
   "python.defaultInterpreterPath": "/opt/conda/envs/py311_env/bin/python",
-  "python.terminal.activateEnvironment": true
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.formatting.provider": "black",
+  "editor.formatOnSave": true,
+  "audioCues.terminalCommandDone": "off",
+  "audioCues.shellExit": "off",
+  "audioCues.errors": "off",
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml",
+    "https://json.schemastore.org/docker-compose.json": "docker-compose*.yml"
+  }
 }

@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/first_snowpark_project.egg-info/PKG-INFO
+src/first_snowpark_project.egg-info/SOURCES.txt
+src/first_snowpark_project.egg-info/dependency_links.txt
+src/first_snowpark_project.egg-info/requires.txt
+src/first_snowpark_project.egg-info/top_level.txt
+src/utils/hello_snowpark.py
