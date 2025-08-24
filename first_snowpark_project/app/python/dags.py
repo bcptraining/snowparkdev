@@ -44,7 +44,7 @@ with DAG("my_snowpark_dag", schedule=timedelta(days=1)) as dag:
         name="task_hello",
         dag=dag,
         definition=StoredProcedureCall(
-            "app.python.procedures.hello_procedure",
+            handler="app.python.procedures.hello_procedure",
             args=["Snowpark"],
             return_type=StringType(),
             stage_location="@dev_deployment"
@@ -55,7 +55,7 @@ with DAG("my_snowpark_dag", schedule=timedelta(days=1)) as dag:
         name="task_test",
         dag=dag,
         definition=StoredProcedureCall(
-            "app.python.procedures.test_procedure_two",
+            handler="app.python.procedures.test_procedure_two",
             args=[],
             return_type=StringType(),
             stage_location="@dev_deployment"
