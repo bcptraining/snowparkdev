@@ -1,12 +1,14 @@
 definition_version: '2'
 
 mixins:
+  snowpark_dag: {}
+    # No artifacts or stage — DAGs don’t support them
   snowpark_shared:
     artifacts:
-      - dest: "my_snowpark_project"
+      - dest: "app"
         src: app/
     stage: dev_deployment
-
+  
 entities:
 
   hello_function:
@@ -22,11 +24,12 @@ entities:
       use_mixins:
         - snowpark_shared
 
+  
   hello_procedure:
     type: procedure
     identifier:
-      name: hello_procedure2
-    handler: first_snowpark_project.app.python.procedures.hello_procedure2
+      name: hello_procedure
+    handler: app.python.procedures.hello_procedure
     signature:
       - name: name
         type: string
@@ -34,13 +37,39 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
+    
+  hello_procedure2:
+    type: procedure
+    identifier:
+      name: hello_procedure2
+    handler: app.python.procedures.hello_procedure2
+    signature:
+      - name: name
+        type: string
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+  
+  # my_task_GreetTheDay:
+  #   type: task
+  #   identifier:
+  #     name: my_task_GreetTheDay 
+  #   schedule: "USING CRON 0 */4 * * * UTC"
+  #   handler: app.python.create_task.my_task_with_args
+  #   signature: []
+  #   returns: string
+  #   meta:
+  #     use_mixins:
+  #       - snowpark_task
+
+
 
   test_procedure:
     type: procedure
     identifier:
       name: test_procedure
-    handler: first_snowpark_project.app.python.procedures.test_procedure
-
+    handler: app.python.procedures.test_procedure
     signature: []
     returns: string
     meta:
@@ -50,11 +79,19 @@ entities:
   test_procedure_two:
     type: procedure
     identifier:
-      name: test_procedure
-    handler: first_snowpark_project/app.python.procedures.test_procedure_two
+      name: test_procedure_two
+    handler: app.python.procedures.test_procedure_two
     signature: []
     returns: string
     meta:
       use_mixins:
         - snowpark_shared
-
+  # As of now (Aug 2025), DAGs are not supported in Snowflake's deployment framework. 
+  # my_dag:
+  #     type: dag
+  #     identifier:
+  #       name: my_dag
+  #     handler: app.python.dags.my_dag
+  #     meta:
+  #       use_mixins:
+  #         - snowpark_dag

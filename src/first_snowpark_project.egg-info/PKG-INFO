@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: first_snowpark_project
+Version: 0.1.0
+Summary: Snowflake Snowpark DAG project
+Author-email: Cory <bcpurkistraining@gmail.com>
+Requires-Python: >=3.11
+Requires-Dist: snowflake-snowpark-python==1.33.0
+Requires-Dist: snowflake-core==1.5.1
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: pyarrow

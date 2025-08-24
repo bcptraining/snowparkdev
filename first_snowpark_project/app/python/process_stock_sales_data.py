@@ -2,7 +2,9 @@ from app.python.session import get_session
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+
 from snowflake.snowpark.functions import col
+import pandas as pd
 
 
 from snowflake.snowpark.types import StructType, StructField, StringType, DoubleType, IntegerType
@@ -27,13 +29,14 @@ def clean_numeric_column(col):
         .astype(float)
     )
 
-# def upload_file_to_stage(session, local_path, stage_path):
-#     session.file.put(
-#         local_path,
-#         stage_path,
-#         overwrite=True
-#     )
-#     print(f"✅ Uploaded {local_path} to @{stage_path}")
+
+def upload_file_to_stage(session, local_path, stage_path):
+    session.file.put(
+        local_path,
+        stage_path,
+        overwrite=True
+    )
+    print(f"✅ Uploaded {local_path} to @{stage_path}")
 
 
 def main():
@@ -58,16 +61,6 @@ def main():
         session.sql(f"LIST @{stage}").show()
     except Exception as e:
         raise RuntimeError(f"❌ Cannot access stage @{stage}: {e}")
-
-    import pandas as pd
-
-    def clean_numeric_column(col):
-        # Remove commas, strip units like 'L', 'Cr', etc., and convert to float
-        return (
-            col.replace({r"[^\d\.]": ""}, regex=True)
-            .replace("", pd.NA)
-            .astype(float)
-        )
 
     # 1. Preprocess with pandas
     df_pd = pd.read_csv(raw_csv, thousands=",")

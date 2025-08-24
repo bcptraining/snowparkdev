@@ -89,7 +89,7 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_QA }}
 
       - name: Deploy Snowpark Apps
-        run: python first_snowpark_project/deploy_snowflake_app.py first_snowpark_project
+        run: python first_snowpark_project/deploy_snowflake_app.py ${{ github.workspace }}/first_snowpark_project
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_QA }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_QA }}
