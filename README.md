@@ -24,8 +24,33 @@ In this example, we focus on deploying a **Snowpark-based application** using **
   - [📁 Folder Structure Diagram](#folder-structure-diagram)
 - [⚙️ Workflow Breakdown](#workflow-breakdown)
 
-## STATUS
 
+# 📚 Table of Contents
+
+- [🛑 STATUS](#status)
+- [✅ Prerequisites](#prerequisites)
+- [❄️ Snowflake Connection Overview](#snowflake-connection-overview)
+- [🚀 Environment Promotion via GitHub Workflows](#environment-promotion-via-github-workflows)
+- [🏗️ Infrastructure Setup](#infrastructure-setup)
+  - [🧭 Create Environment Accounts in Snowflake](#create-environment-accounts-in-snowflake)
+  - [🔐 Configure Each Environment](#configure-each-environment)
+- [🔧 GitHub Repository & Branching](#github-repository--branching)
+  - [🔐 Secrets Configuration](#secrets-configuration)
+  - [🧪 Development Environment (Codespaces)](#development-environment-codespaces)
+- [🔄 Promotion Flow Overview](#promotion-flow-overview)
+- [📁 Project Structure](#project-structure)
+- [📦 Scope of Snowpark Objects to Be Deployed](#scope-of-snowpark-objects-to-be-deployed)
+  - [🗂️ Code Structure & Deployment Details](#code-structure--deployment-details)
+  - [📊 Summary: Object Types vs. Deployment Method](#summary-object-types-vs-deployment-method)
+  - [🧾 `snowflake.yml` Configuration](#snowflakeyml-configuration)
+  - [📁 Folder Structure Diagram](#folder-structure-diagram)
+- [⚙️ Workflow Breakdown](#workflow-breakdown)
+- [🧩 SDK Compatibility](#sdk-compatibility)
+
+
+## 🛑 STATUS
+
+**Last updated: August 23, 2025**
 Development is currently paused.
 
 This project was designed as a learning exercise to explore Snowflake's Python SDKs and build a deployable DAG-based application. The high-water mark was successfully deploying the DAG itself—however, the task execution failed due to SDK incompatibilities.
