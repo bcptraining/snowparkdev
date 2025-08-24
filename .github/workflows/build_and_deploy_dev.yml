@@ -28,14 +28,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Python Packages
-        run: 
-          pip install -r requirements.txt
+      - name: Remove conflicting packages
+        run: pip uninstall -y snowflake-snowpark-python pyarrow || true
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -e .
+          pip install -r first_snowpark_project/requirements.txt
 
       - name: Remove conflicting CLIs
         run: pip uninstall -y snowcli snowflake-cli click || true
@@ -48,7 +47,7 @@ jobs:
           echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
           export PATH="$HOME/.local/bin:$PATH"
           snow --version
-          
+
       - name: Show installed packages
         run: pip freeze
 
@@ -96,8 +95,7 @@ jobs:
         run: snow sql -q "USE WAREHOUSE $SNOWFLAKE_WAREHOUSE"
         env:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
-            
-      
+
       - name: Deploy Snowpark Apps
         run: PYTHONPATH=. python first_snowpark_project/deploy_snowflake_app.py ${{ github.workspace }}/first_snowpark_project
         env:
@@ -108,6 +106,5 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
 
-     
       - name: Inspect app.zip contents
         run: unzip -l ${{ github.workspace }}/first_snowpark_project/app.zip
