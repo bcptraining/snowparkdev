@@ -11,10 +11,10 @@
 
 set -e  # Exit on error
 
-# 🛡️ Validate required environment variables
-: "${DATA_FILE:?❌ DATA_FILE is not set. Please export it before running this script.}"
-: "${DATA_STAGE:?❌ DATA_STAGE is not set. Please export it before running this script.}"
-: "${OUTPUT_TABLE:?❌ OUTPUT_TABLE is not set. Please export it before running this script.}"
+# 🛡️ Validate required environment variables -- commented out as this is app-specific and needs to be done another way.
+# : "${DATA_FILE:?❌ DATA_FILE is not set. Please export it before running this script.}"
+# : "${DATA_STAGE:?❌ DATA_STAGE is not set. Please export it before running this script.}"
+# : "${OUTPUT_TABLE:?❌ OUTPUT_TABLE is not set. Please export it before running this script.}"
 
 echo "🔧 Initializing Conda for bash..."
 conda init bash
