@@ -1,0 +1,10 @@
+{
+  "account": "LRDSVQT-QAB04200",
+  "user": "SNOWPARK",
+  "role": "SYSADMIN",
+  "warehouse": "COMPUTE_WH",
+  "database": "DEMO_DB",
+  "schema": "PUBLIC",
+  "private_key_path": "./config/snowflake_private_key.p8"
+
+}

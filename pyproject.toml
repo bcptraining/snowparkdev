@@ -1,7 +1,7 @@
 [project]
-name = "first_snowpark_project"
+name = "snowparkdev"
 version = "0.1.0"
-description = "Snowflake Snowpark DAG project"
+description = "Snowflake Snowpark project containing multiple snowpark native apps"
 authors = [
     { name = "Cory", email = "bcpurkistraining@gmail.com" }
 ]
@@ -17,3 +17,6 @@ requires-python = ">=3.11"
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]

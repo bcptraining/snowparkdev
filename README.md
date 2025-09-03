@@ -6,28 +6,7 @@ In this example, we focus on deploying a **Snowpark-based application** using **
 
 # 📚 Table of Contents
 
-- [✅ Prerequisites](#prerequisites)
-- [❄️ Snowflake Connection Overview](#snowflake-connection-overview)
-- [🚀 Environment Promotion via GitHub Workflows](#environment-promotion-via-github-workflows)
-- [🏗️ Infrastructure Setup](#infrastructure-setup)
-  - [🧭 Create Environment Accounts in Snowflake](#create-environment-accounts-in-snowflake)
-  - [🔐 Configure Each Environment](#configure-each-environment)
-- [🔧 GitHub Repository & Branching](#github-repository--branching)
-  - [🔐 Secrets Configuration](#secrets-configuration)
-  - [🧪 Development Environment (Codespaces)](#development-environment-codespaces)
-- [🔄 Promotion Flow Overview](#promotion-flow-overview)
-- [📁 Project Structure](#project-structure)
-- [📦 Scope of Snowpark Objects to Be Deployed](#scope-of-snowpark-objects-to-be-deployed)
-  - [🗂️ Code Structure & Deployment Details](#code-structure--deployment-details)
-  - [📊 Summary: Object Types vs. Deployment Method](#summary-object-types-vs-deployment-method)
-  - [🧾 `snowflake.yml` Configuration](#snowflakeyml-configuration)
-  - [📁 Folder Structure Diagram](#folder-structure-diagram)
-- [⚙️ Workflow Breakdown](#workflow-breakdown)
-
-
-# 📚 Table of Contents
-
-- [🛑 STATUS](#status)
+<!-- - [🛑 STATUS](#status) -->
 - [✅ Prerequisites](#prerequisites)
 - [❄️ Snowflake Connection Overview](#snowflake-connection-overview)
 - [🚀 Environment Promotion via GitHub Workflows](#environment-promotion-via-github-workflows)
@@ -48,18 +27,37 @@ In this example, we focus on deploying a **Snowpark-based application** using **
 - [🧩 SDK Compatibility](#sdk-compatibility)
 
 
-## 🛑 STATUS
+## 🟡 STATUS — Partially Active
 
-**Last updated: August 23, 2025**
-Development is currently paused.
+**Last updated: August 26, 2025**
 
-This project was designed as a learning exercise to explore Snowflake's Python SDKs and build a deployable DAG-based application. The high-water mark was successfully deploying the DAG itself—however, the task execution failed due to SDK incompatibilities.
+This repository now contains **two Snowpark applications**, each with distinct scopes and development statuses:
 
-The core issue stemmed from attempting to run both the **legacy Snowpark SDK** (`snowflake.snowpark`) and the **new Core SDK** (`snowflake.core`) side by side. While both packages were installed and partially functional, they are not designed to operate in parallel. The `Session` class, for example, is only available in the Snowpark SDK, and attempts to use it from the Core SDK resulted in import errors. Additionally, mismatches in method signatures (e.g., `StoredProcedureCall(handler=...)`) revealed that the Core SDK is not yet a drop-in replacement.
+| App Name               | Purpose                                  | Status     | Notes                                                                 |
+|------------------------|------------------------------------------|------------|-----------------------------------------------------------------------|
+| `first_snowpark_project` | DAG-based Snowpark app using legacy SDK | 🔴 Paused   | Development halted due to SDK conflicts between `snowflake.core` and `snowflake.snowpark`. |
+| `DE_PROJECT_1`         | Data engineering pipeline (Snowpark Core) | 🟢 Active   | Focused on clean ingestion, transformation, and deployment of tabular data. |
 
-Rather than continue development with a brittle dual-SDK setup, the plan is to **monitor the evolution of the Core SDK** and **phase out the legacy Snowpark SDK** once full compatibility and feature parity are achieved.
+### 🔴 `first_snowpark_project`
 
-This project remains a valuable reference point for Snowflake app deployment and SDK experimentation. The code is close to working, and with future SDK improvements, it should be straightforward to resume and complete.
+This app was designed to explore DAG-style orchestration using Snowflake’s Python SDKs. While the DAG itself was successfully deployed, execution failed due to incompatibilities between the legacy `snowflake.snowpark` and the newer `snowflake.core` SDK. Key blockers included:
+
+- Conflicting `Session` class implementations  
+- Incompatible method signatures (e.g., `StoredProcedureCall(handler=...)`)  
+- Lack of feature parity between SDKs  
+
+Development is paused until the Core SDK matures enough to fully replace the legacy Snowpark SDK.
+
+### 🟢 `DE_PROJECT_1`
+
+This new app focuses on **data engineering workflows** using Snowpark and GitHub Actions. It includes:
+
+- Clean ingestion of CSV data  
+- Transformation using Pandas + Snowpark  
+- Deployment of functions, procedures, and tables via CI/CD  
+
+The app is actively maintained and serves as a reference for Snowflake-native data engineering pipelines.
+
 
 
 ## ✅ Prerequisites
