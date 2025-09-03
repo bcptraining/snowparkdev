@@ -5,10 +5,19 @@
   "python.linting.enabled": true,
   "python.linting.pylintEnabled": true,
   "python.formatting.provider": "black",
+  "python.analysis.autoImportCompletions": true,
   "editor.formatOnSave": true,
-  "audioCues.terminalCommandDone": "off",
-  "audioCues.shellExit": "off",
-  "audioCues.errors": "off",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "yaml.format.enable": true,
+  "editor.formatOnPaste": true,
+
+
+  // turn off audio cues (not applicable in codespaces)
+  // "audioCues.terminalCommandDone": "off",
+  // "audioCues.shellExit": "off",
+  // "audioCues.errors": "off",
+  // The yml configs help with auto-completion and validation for GitHub Actions and Docker Compose files
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml",
     "https://json.schemastore.org/docker-compose.json": "docker-compose*.yml"

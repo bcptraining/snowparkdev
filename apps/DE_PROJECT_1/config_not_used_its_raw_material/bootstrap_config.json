@@ -1,0 +1,10 @@
+{
+  "account": "LRDSVQT-QAB04200",
+  "user": " ",
+  "role": "PUBLIC",
+  "authenticator": "oauth",
+  "database": "DEMO_DB",
+  "schema": "PUBLIC"
+}
+
+SELECT SYSTEM$VERIFY_EXTERNAL_OAUTH_TOKEN('eyJraWQiOiI1MzY2ODQzMzk2OSIsImFsZyI6IkVTMjU2In0.eyJwIjoiMjA5NjQyMzI0OjIwOTY0MjI0OCIsImlzcyI6IlNGOjEwNDkiLCJleHAiOjE3NTM5MzQ1MzF9.-bNCBQYrEsTedzPnXkXavoWn7EEVYBZGdBxiMi67pATJtaGXdDh1u4H0mUmqqewex3E-FOdEzVuTt5OVZlpxCg

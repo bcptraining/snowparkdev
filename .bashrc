@@ -3,3 +3,5 @@
 # Optional: custom aliases or PATH tweaks
 alias ll='ls -la'
 alias snowflake='snow'
+export PATH=~/bin:$PATH
+

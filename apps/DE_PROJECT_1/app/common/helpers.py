@@ -1,0 +1,146 @@
+from snowflake.snowpark.types import StructType, StructField,   StringType, IntegerType, FloatType, DateType, BooleanType, TimestampType
+
+from typing import Optional
+import json
+from pathlib import Path
+
+# Definitions
+TYPE_MAP = {
+    "string": StringType(),
+    "date": DateType(),
+    "integer": IntegerType(),
+    "float": FloatType(),
+    "boolean": BooleanType()
+}
+
+
+def print_hello(name: str):
+    return f"Hello {name}!"
+
+
+def extract_copy_config(config: dict) -> tuple:
+    required_keys = [
+        "database_name", "schema_name", "target_table",
+        "target_columns", "on_error", "source_location", "source_file_type"
+    ]
+    missing = [key for key in required_keys if key not in config]
+    if missing:
+        raise KeyError(f"Missing required config keys: {missing}")
+
+    return (
+        config["database_name"],
+        config["schema_name"],
+        config["target_table"],
+        config["target_columns"],
+        config["on_error"],
+        config["source_location"],
+        config["source_file_type"]
+    )
+
+
+def read_source_data(session, source_location: str, source_file_type: str, schema: Optional[StructType]):
+    if source_file_type == "csv":
+        if schema is None:
+            raise ValueError("Schema must be provided for CSV source files.")
+        return session.read.schema(schema).csv(source_location)
+    else:
+        raise NotImplementedError(f"Unsupported file type: {source_file_type}")
+
+
+def get_copy_query_id(query_history) -> Optional[str]:
+    for query in query_history.queries:
+        if "COPY" in query.sql_text.upper():
+            return query.query_id
+    return None
+
+
+def copy_to_table(session, config_file, schema: Optional[StructType] = None):
+    (
+        database_name,
+        schema_name,
+        target_table,
+        target_columns,
+        on_error,
+        source_location,
+        source_file_type
+    ) = extract_copy_config(config_file)
+
+    df = read_source_data(session, source_location, source_file_type, schema)
+
+    with session.query_history() as query_history:
+        copied_into_result = df.copy_into_table(
+            f"{database_name}.{schema_name}.{target_table}",
+            target_columns=target_columns,
+            force=True,
+            on_error=on_error
+        )
+
+    qid = get_copy_query_id(query_history)
+    return copied_into_result, qid
+
+
+def load_schema_from_json(json_path: str, schema_name: str) -> StructType:
+    with open(json_path, "r") as f:
+        all_schemas = json.load(f)
+    fields = all_schemas.get(schema_name)
+    if not fields:
+        raise ValueError(f"Schema '{schema_name}' not found in {json_path}")
+    return StructType([
+        StructField(field["name"], TYPE_MAP[field["type"]])
+        for field in fields
+    ])
+
+
+def load_named_config(config_name: str, config_dir: str | Path = "app/config") -> dict:
+    config_dir = Path(config_dir)
+    config_file = config_dir / f"{config_name}.json"
+
+    if not config_file.exists():
+        raise FileNotFoundError(f"Config file not found: {config_file}")
+
+    with open(config_file, "r") as f:
+        config = json.load(f)
+
+    if not isinstance(config, dict):
+        raise ValueError(
+            f"Expected a JSON object at root of {config_file}, got {type(config)}")
+
+    return config
+
+
+def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
+    schema = load_schema_from_json(schema_file, schema_key)
+    config = load_named_config(config_name)
+    return config, schema
+
+
+#  This version was working. Refactoring to helpers.py
+#  but leaving here for reference.
+# def copy_to_table(session, config_file, schema: Optional[StructType] = None):
+#     database_name = config_file.get("database_name")
+#     schema_name = config_file.get("schema_name")
+#     target_table = config_file.get("target_table")
+#     target_columns = config_file.get("target_columns")
+#     on_error = config_file.get("on_error")
+#     source_location = config_file.get("source_location")
+
+#     if config_file.get("source_file_type") == 'csv':
+#         if schema is None:
+#             raise ValueError("Schema must be provided for CSV source files.")
+#         df = session.read.schema(schema).csv(source_location)
+
+#     with session.query_history() as query_history:
+#         copied_into_result = df.copy_into_table(
+#             f"{database_name}.{schema_name}.{target_table}",
+#             target_columns=target_columns,
+#             force=True,
+#             on_error=on_error
+#         )
+
+#     qid = None
+#     for query in query_history.queries:
+#         if "COPY" in query.sql_text:
+#             qid = query.query_id
+#             break
+
+#     return copied_into_result, qid
