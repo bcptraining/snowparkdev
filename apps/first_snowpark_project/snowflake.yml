@@ -1,14 +1,13 @@
 definition_version: '2'
 
 mixins:
-  snowpark_dag: {}
-    # No artifacts or stage — DAGs don’t support them
+  snowpark_dag: {}  # No artifacts or stage — DAGs don’t support them
   snowpark_shared:
     artifacts:
       - dest: "app"
         src: app/
     stage: dev_deployment
-  
+
 entities:
 
   hello_function:
@@ -24,7 +23,7 @@ entities:
       use_mixins:
         - snowpark_shared
 
-  
+
   hello_procedure:
     type: procedure
     identifier:
@@ -37,7 +36,7 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-    
+
   hello_procedure2:
     type: procedure
     identifier:
@@ -50,11 +49,11 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-  
+
   # my_task_GreetTheDay:
   #   type: task
   #   identifier:
-  #     name: my_task_GreetTheDay 
+  #     name: my_task_GreetTheDay
   #   schedule: "USING CRON 0 */4 * * * UTC"
   #   handler: app.python.create_task.my_task_with_args
   #   signature: []
@@ -75,7 +74,7 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-  
+
   test_procedure_two:
     type: procedure
     identifier:
@@ -86,7 +85,7 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-  # As of now (Aug 2025), DAGs are not supported in Snowflake's deployment framework. 
+  # As of now (Aug 2025), DAGs are not supported in Snowflake's deployment framework.
   # my_dag:
   #     type: dag
   #     identifier:
