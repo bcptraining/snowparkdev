@@ -1,38 +1,43 @@
-from apps.DE_PROJECT_1.app.python.procedures_auto import copy_to_table_proc
-from session import get_session
-from snowflake.snowpark.types import StringType
+import importlib
 from snowflake.snowpark import Session
-import sys
-from pathlib import Path
-
-# Add the /apps/DE_PROJECT_1/app directory to sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
-# from snowflake.snowpark import Session
-# from apps.DE_PROJECT_1.app.python.session import get_session
-# from apps.DE_PROJECT_1.app.python.procedures import copy_to_table_proc
+def register_all_procs(session: Session, app_name: str, stage_name: str, zip_name: str, include_manual: bool = False):
+    """
+    Registers both automatic and manual procedures for a Snowflake app.
 
+    Parameters:
+    - session: Snowflake session object
+    - app_name: Name of the app folder under apps/
+    - stage_name: Name of the Snowflake stage (e.g., 'dev_deployment')
+    - zip_name: Name of the zip file containing the app code
+    - include_manual: Whether to include manual procedure registration
+    """
 
-# from pathlib import Path
-# sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    # Register automatic procedures
+    try:
+        auto_module = importlib.import_module(
+            f"apps.{app_name}.app.python.procedures_auto"
+        )
+        auto_module.register_procs(session, app_name, stage_name, zip_name)
+        print("✅ Auto procedures registered successfully.")
+    except ModuleNotFoundError:
+        print("ℹ️ procedures_auto.py not found. Skipping auto registration.")
+    except AttributeError:
+        print("⚠️ procedures_auto.py exists but missing register_procs(session, app_name, stage_name, zip_name)")
 
-
-def register_all_procs(session: Session):
-    session.sproc.register(
-        func=copy_to_table_proc,
-        name="copy_to_table_proc",
-        input_types=[StringType(), StringType()],
-        return_type=StringType(),
-        is_permanent=True,
-        stage_location="@dev_deployment",
-        imports=["@dev_deployment/app.zip"],
-        packages=["snowflake-snowpark-python==1.33.0", "cloudpickle==3.0.0"],
-        replace=True
-    )
-    print("✅ Procedure registered successfully.")
-
-
-if __name__ == "__main__":
-    session = get_session()
-    register_all_procs(session)
+    # Conditionally register manual procedures
+    if include_manual:
+        try:
+            manual_module = importlib.import_module(
+                f"apps.{app_name}.app.python.procedures_man"
+            )
+            manual_module.register_manual_procs(session, stage_name)
+            print("✅ Manual procedures registered successfully.")
+        except ModuleNotFoundError:
+            print("ℹ️ procedures_man.py not found. Skipping manual registration.")
+        except AttributeError:
+            print(
+                "⚠️ procedures_man.py exists but missing register_manual_procs(session, stage_name)")
+    else:
+        print("⏭️ Manual procedure registration skipped via flag.")

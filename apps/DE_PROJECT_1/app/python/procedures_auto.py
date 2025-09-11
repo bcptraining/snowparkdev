@@ -1,116 +1,75 @@
-# from __future__ import annotations
-# from python.common.helpers import print_hello
-from ..common.helpers import print_hello
-from ..common.helpers import copy_to_table, prepare_copy_inputs
 from snowflake.snowpark import Session
-import sys
-import os
-import json
-from pathlib import Path
-# from ..config_refactored_out_not_used import configs
-# from ..schema import schemas
-from snowflake.snowpark.types import StructType, StructField, StringType, IntegerType, FloatType, DateType, BooleanType, TimestampType
-# from snowflake.snowpark.stored_procedure import procedure
-# from snowflake.snowpark import stored_procedure
-# from snowflake.snowpark.stored_procedure import procedure
+from snowflake.snowpark.functions import udf
+from snowflake.snowpark.types import StringType
 
 
-#  ---- Functions ----
+def register_procs(session: Session, app_name: str, stage_name: str, zip_name: str):
+    print(
+        f"📡 Registering auto procedures for {app_name} in stage {stage_name}")
 
+    # Procedure 1
+    def hello_procedure(name: str) -> str:
+        return f"Hello, {name}!"
 
-# def load_schema_from_json(json_path: str, schema_name: str) -> StructType:
-#     with open(json_path, "r") as f:
-#         all_schemas = json.load(f)
-#     fields = all_schemas.get(schema_name)
-#     if not fields:
-#         raise ValueError(f"Schema '{schema_name}' not found in {json_path}")
-#     return StructType([
-#         StructField(field["name"], TYPE_MAP[field["type"]])
-#         for field in fields
-#     ])
+    udf(
+        func=hello_procedure,
+        input_types=[StringType()],
+        return_type=StringType(),
+        name="hello_procedure",
+        stage_location=f"@{stage_name}",
+        replace=True
+    ).register(session)  # type: ignore[attr-defined]
 
+    # Procedure 2
+    def hello_procedure2(name: str) -> str:
+        return f"Hi there, {name}!"
 
-# def load_named_config(config_name: str, config_dir: str | Path = "app/config") -> dict:
-#     config_dir = Path(config_dir)
-#     config_file = config_dir / f"{config_name}.json"
+    udf(
+        func=hello_procedure2,
+        input_types=[StringType()],
+        return_type=StringType(),
+        name="hello_procedure2",
+        stage_location=f"@{stage_name}",
+        replace=True
+    ).register(session)  # type: ignore[attr-defined]
 
-#     if not config_file.exists():
-#         raise FileNotFoundError(f"Config file not found: {config_file}")
+    # Procedure 3
+    def test_procedure() -> str:
+        return "Test procedure executed."
 
-#     with open(config_file, "r") as f:
-#         config = json.load(f)
+    udf(
+        func=test_procedure,
+        input_types=[],
+        return_type=StringType(),
+        name="test_procedure",
+        stage_location=f"@{stage_name}",
+        replace=True
+    ).register(session)  # type: ignore[attr-defined]
 
-#     if not isinstance(config, dict):
-#         raise ValueError(
-#             f"Expected a JSON object at root of {config_file}, got {type(config)}")
+    # Procedure 4
+    def test_procedure_two() -> str:
+        return "Second test procedure executed."
 
-#     return config
+    udf(
+        func=test_procedure_two,
+        input_types=[],
+        return_type=StringType(),
+        name="test_procedure_two",
+        stage_location=f"@{stage_name}",
+        replace=True
+    ).register(session)  # type: ignore[attr-defined]
 
+    # Function
+    def hello_function(name: str) -> str:
+        return f"Echo: {name}"
 
-# def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
-#     schema = load_schema_from_json(schema_file, schema_key)
-#     config = load_named_config(config_name)
-#     return config, schema
+    udf(
+        func=hello_function,
+        input_types=[StringType()],
+        return_type=StringType(),
+        name="hello_function",
+        stage_location=f"@{stage_name}",
+        replace=True
+    ).register(session)  # type: ignore[attr-defined]
 
-
-# Step 0. Define paths and directories containing schemas and configs
-# emp_schema_path = "app/schemas/schemas.json"  # All schemas are in this file
-# config_dir = "app/config/"  # Directory containing config JSON files
-
-# Step 1. Load schema and config for employee table
-# emp_schema = load_schema_from_json(
-#     emp_schema_path, "emp_stg_schema_udemy")
-
-# copy_config = load_named_config("copy_to_snowstg_udemy")
-
-
-# Dynamically add the project root to sys.path
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../../..")))
-# from app.python.common import print_hello
-
-
-# def hello_procedure(session: Session, name: str) -> str:
-#     return f"Hello, {name}"
-# @procedure(name="HELLO_PROCEDURE2", is_permanent=True, stage_location="@dev_deployment", return_type=StringType())
-
-def hello_procedure2(session: Session, name="World2") -> str:
-    return print_hello(name)
-
-
-def hello_procedure(session: Session, name: str) -> str:
-    return f"Hello, {name}! Hope you're having a great day!"
-
-
-def test_procedure(session: Session) -> str:
-    return "Test procedure"
-
-
-def test_procedure_two(session: Session) -> str:
-    return "Test procedure"
-
-
-# @procedure(name="COPY_EMPLOYEE_PROC", is_permanent=True, stage_location="@dev_deployment", return_type=StringType)
-# def copy_employee_stg_udemy_proc(session: Session) -> str:
-#     config, schema = prepare_copy_inputs(
-#         "app/schemas/schemas.json", "emp_stg_schema_udemy", "copy_to_snowstg_udemy"
-#     )
-#     copied_into_result, qid = copy_to_table(session, config, schema)
-#     return f"✅ Copy completed. Query ID: {qid}"
-
-
-# , config_file: str, schema: str = 'NA'):
-# def copy_to_table_proc(session: Session) -> str:
-#     copied_into_result, qid = copy_to_table(
-#         # session, configs.employee_config, "EMP_STG_SCHEMA_UDEMY")
-#         session, copy_config, emp_schema)
-#     return "something"
-
-# def copy_to_table_proc(session: Session, config: dict, schema: StructType) -> str:
-
-#     copied_into_result, qid = copy_to_table(session, config, schema)
-#     return f"✅ Copy completed. Query ID: {qid}"
-
-# copy_config, emp_schema = prepare_copy_inputs(
-#     "app/schemas/schemas.json", "emp_stg_schema_udemy", "copy_to_snowstg_udemy"
-# )
+    print("✅ Auto procedures registered successfully.")

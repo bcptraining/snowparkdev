@@ -1,4 +1,4 @@
-snowflake-core
+# snowflake-core
 snowflake-snowpark-python
 python-dotenv
 pandas

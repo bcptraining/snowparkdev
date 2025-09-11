@@ -59,11 +59,14 @@ def load_app_modules(app_name):
         dags_module = importlib.import_module(
             f"apps.{app_name}.app.python.dags"
         )
-        dag = getattr(dags_module, "dag", None)
+        dag_list = getattr(dags_module, "dags", [])
+        # dag = getattr(dags_module, "dag", None)
     except ModuleNotFoundError:
-        dag = None
+        dag_list = []
 
-    return session_module.get_session, dag
+        # dag = None
+    return session_module.get_session, dag_list
+    # return session_module.get_session, dag
 
 
 def parse_cli_args():
@@ -87,6 +90,8 @@ def parse_cli_args():
                         help="Environment name (dev, qa, prod)")
     parser.add_argument("--skip-dag", action="store_true",
                         help="Skip DAG deployment")
+    parser.add_argument("--include-manual-procs", action="store_true",
+                        help="Include manual procedure registration from procedures_man.py")
 
     args = parser.parse_args()
 
@@ -132,8 +137,9 @@ def run_command(command, description):
 # Refactored zip function to accept project directory
 
 
-def zip_source_code(source_dir: Path):
+def zip_source_code(source_dir: Path, zip_name: str = "app.zip") -> Path:
     source_dir = Path(source_dir)
+    zip_path = source_dir / zip_name
 
     # Step 1. Clean up old artifacts
     for artifact in ["app.zip", "dependencies.zip"]:
@@ -146,19 +152,24 @@ def zip_source_code(source_dir: Path):
     print("Preparing artifacts for source code")
 
     app_dir = source_dir / "app"
-    zip_path = source_dir / "app.zip"
-
     if not app_dir.exists():
         raise FileNotFoundError(
             f"Expected app directory at {app_dir}, but it was not found.")
 
+    def should_include(file_path: Path) -> bool:
+        return not (
+            "__pycache__" in file_path.parts or
+            file_path.suffix in [".pyc", ".pyo"]
+        )
+
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file_path in app_dir.rglob("*"):
-            if file_path.is_file():
+            if file_path.is_file() and should_include(file_path):
                 relative_path = file_path.relative_to(source_dir)
                 zipf.write(file_path, relative_path)
 
     print(f"✅ Created zip at {zip_path}")
+    return zip_path
 
 
 def main():
@@ -168,10 +179,13 @@ def main():
     app_name = args.app
     env_name = args.env
     app_path = APPS_DIR / app_name
+    print(
+        f"🚀 Starting deployment for app: {app_name} in environment: {env_name}")
 
     # Step 1: dynamic import of session and dag from the calling app
 
-    get_session, dag = load_app_modules(args.app)
+    # get_session, dag = load_app_modules(args.app)  <-- This was only supporting a single dag
+    get_session, dag_list = load_app_modules(args.app)
 
     # Step 2: Definitions
 
@@ -197,7 +211,16 @@ def main():
     database = creds["database"]
     schema = creds["schema"]
 
-    # Step 5: Build Snowpark Project
+   # Step 5: Initialize session
+    try:
+        session = get_session()
+        session.sql(f"USE DATABASE {database}").collect()
+        root = Root(session)
+    except Exception as e:
+        print(f"❌ Failed to initialize Snowflake session: {e}")
+        sys.exit(1)
+
+    # Step 6: Build Snowpark Project
     build_cmd = [
         "snow", "snowpark", "build",
         "--project",  str(APPS_DIR / app_name),
@@ -214,23 +237,24 @@ def main():
 
     run_command(build_cmd, f"Building Snowpark project for app: {args.app}")
 
-    # Step 6: Zip source code
-
+    # Step 7: Zip source code
+    # < -- Version 2 does not support dynamic attributes right now
+    zip_file = zip_source_code(app_path, zip_name="app.zip")
     print(f"📦 Zipping source code in: {app_path}")
-    zip_source_code(app_path)
+    # zip_file = zip_source_code(app_path, zip_name=f"{app_name}_{env_name}.zip")
 
-    try:
-        session = get_session()
-    except Exception as e:
-        print(f"❌ Failed to initialize Snowflake session: {e}")
-        sys.exit(1)
-
-    root = Root(session)
+    print(f"📦 Created zip: {zip_file}")
 
     # This guarantees the zip is refreshed in the stage before deployment.
     # session.file.put("app.zip", "@dev_deployment/app/", overwrite=True)
 
-    # Step 7: Deploy Snowpark app
+    # Step 8: Upload zip BEFORE deploy
+    # session.file.put(zip_file, "@dev_deployment/app.zip", overwrite=True)
+    session.file.put(str(zip_file), "@dev_deployment/app.zip", overwrite=True)
+
+    print(f"📦 Uploaded app.zip to @dev_deployment/")
+
+    # Step 9: Deploy Snowpark app
     deploy_cmd = [
         "snow", "snowpark", "deploy", "--replace", "--temporary-connection",
         "--project", str(APPS_DIR / app_name),
@@ -244,30 +268,67 @@ def main():
     ]
     run_command(deploy_cmd, f"Deploying Snowpark project for app: {args.app}")
 
-    #  Step 7B: Register Stored Procedures
-    # Register procedures manually if needed
-    try:
-        register_module = importlib.import_module(
-            f"{app_name}.app.python.register_procs")
-        register_module.register_all_procs(session)
-        print(f"✅ Registered manual procedures for app: {app_name}")
-    except ModuleNotFoundError:
-        print(f"ℹ️ No manual procedure registration found for app: {app_name}")
+    #  Step 10: Register Automatic Stored Procedures
+    if not zip_file.exists():
+        raise FileNotFoundError(f"Zip file not found: {zip_file}")
+    else:
+        # session.file.put(
+        #     zip_file, f"@dev_deployment/{os.path.basename(zip_file)}", overwrite=True)
+        # <-- Only because version 2 does not yet support dynamic artifacts
+        # session.file.put(zip_file, "@dev_deployment/app.zip", overwrite=True)
 
-    # ✅ Step 8: Deploy DAG
+        # print(f"📦 Uploaded {os.path.basename(zip_file)} to @dev_deployment/")
+
+        register_module = importlib.import_module(
+            f"apps.{app_name}.app.python.register_procs")
+        register_module.register_all_procs(
+            session,
+            app_name=app_name,
+            stage_name=f"{env_name}_deployment",
+            zip_name=os.path.basename(zip_file),
+            include_manual=args.include_manual_procs
+        )
+    # register_module.register_all_procs(session)
+
+    # # ✅ Step 10: Register Manual Procedures (only if flag is passed)
+
+    # if args.include_manual_procs:
+    #     try:
+    #         manual_module = importlib.import_module(
+    #             f"apps.{app_name}.app.python.procedures_man"
+    #         )
+    #         manual_module.register_manual_procs(session)
+    #         print(f"✅ Registered manual procedures from procedures_man.py")
+    #     except ModuleNotFoundError:
+    #         print(f"ℹ️ No procedures_man.py found for app: {app_name}")
+    #     except AttributeError:
+    #         print(
+    #             f"⚠️ procedures_man.py exists but missing register_manual_procs(session)")
+    # else:
+    #     print(f"⏭️ Manual procedure registration skipped via CLI flag.")
+
+    # ✅ Step 11: Deploy DAGs
     target_db = database
     schema_name = schema
     snowflake_schema = root.databases[target_db].schemas[schema_name]
 
     if not args.skip_dag:
-        if dag:
+        if dag_list:
             from snowflake.snowpark.stored_procedure import CreateMode  # type: ignore
             dag_op = DAGOperation(snowflake_schema)
-            dag_op.deploy(dag, CreateMode.or_replace)
-            print(f"✅ DAG deployed for app: {args.app}")
+
+            for dag in dag_list:
+                try:
+                    print(f"📡 Deploying DAG handler: {dag.__name__}")
+                    dag_op.deploy(dag, CreateMode.or_replace)
+                    print(
+                        f"✅ DAG '{dag.__name__}' deployed for app: {args.app}")
+                except Exception as e:
+                    print(f"❌ DAG '{dag.__name__}' deployment failed: {e}")
+                    sys.exit(1)
         else:
             print(
-                f"ℹ️ No DAG found for app '{args.app}'. Skipping DAG deployment.")
+                f"⚠️ No DAGs found for app '{args.app}'. Skipping DAG deployment.")
     else:
         print(f"⏭️ DAG deployment skipped via CLI flag.")
 
