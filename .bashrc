@@ -5,3 +5,4 @@ alias ll='ls -la'
 alias snowflake='snow'
 export PATH=~/bin:$PATH
 
+

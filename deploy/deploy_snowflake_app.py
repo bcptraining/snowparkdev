@@ -1,25 +1,31 @@
-import importlib  # for dynamic imports from the calling app
+import pytz
+from datetime import datetime
+import importlib
 import zipfile
 import subprocess
-
-# type: ignore[attr-defined]
-# from snowflake.snowpark.stored_procedure import CreateMode  # type: ignore  linter does not like this import so moved to dag where its needed
-
-
-from snowflake.core import Root
-from snowflake.core.task.dagv1 import DAGOperation
-
-# from first_snowpark_project.app.python.session import get_session
-# from first_snowpark_project.app.python.dags import dag
+import shutil
 import sys
 import os
+import time
 import argparse
 from pathlib import Path
+from snowflake.core import Root
+from snowflake.core.task.dagv1 import DAGOperation
+import re  # for regex operations
 
 APPS_DIR = Path("apps")
-# sys.path.insert(0, str(APPS_DIR.resolve()))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# These functions are not currently used but might be helpful for future enhancements to compare existing procedure definitions.
+# def get_current_def(session, proc_name):
+#     ddl_query = f"SELECT GET_DDL('procedure', '{proc_name}')"
+#     result = session.sql(ddl_query).collect()
+#     return result[0][0] if result else None
+
+
+# def extract_python_body(ddl_text):
+#     match = re.search(r"AS\s+\$\$\s+(.*?)\s+\$\$", ddl_text, re.DOTALL)
+#     return match.group(1).strip() if match else None
 
 def get_snowflake_credentials():
     return {
@@ -34,71 +40,60 @@ def get_snowflake_credentials():
 
 
 def ensure_init_files(app_path: Path):
-    required_dirs = ["", "app", "app/python"]
-    for subdir in required_dirs:
+    for subdir in ["", "app", "app/python"]:
         init_path = app_path / subdir / "__init__.py"
         if not init_path.exists():
             raise FileNotFoundError(
-                f"Missing __init__.py in {init_path.parent}. "
-                "Make sure this directory is a Python package."
-            )
+                f"Missing __init__.py in {init_path.parent}")
 
 
 def load_app_modules(app_name):
     app_path = APPS_DIR / app_name
     ensure_init_files(app_path)
-
-    # Trigger procedure registration via side effects
-    # importlib.import_module(f"apps.{app_name}.app.python.register_procs")
-
     session_module = importlib.import_module(
-        f"apps.{app_name}.app.python.session"
-    )
-
+        f"apps.{app_name}.app.python.session")
     try:
         dags_module = importlib.import_module(
-            f"apps.{app_name}.app.python.dags"
-        )
+            f"apps.{app_name}.app.python.dags")
         dag_list = getattr(dags_module, "dags", [])
-        # dag = getattr(dags_module, "dag", None)
     except ModuleNotFoundError:
         dag_list = []
-
-        # dag = None
     return session_module.get_session, dag_list
-    # return session_module.get_session, dag
 
 
 def parse_cli_args():
-    # Dynamically list all subdirectories in apps/
-    try:
-        valid_apps = sorted([
-            path.name for path in APPS_DIR.iterdir() if path.is_dir()
-        ])
-    except FileNotFoundError:
-        print(f"❌ Error: '{APPS_DIR}' directory not found.")
-        sys.exit(1)
-
+    valid_apps = sorted([p.name for p in APPS_DIR.iterdir() if p.is_dir()])
     valid_envs = ["dev", "qa", "prod"]
-
-    parser = argparse.ArgumentParser(
-        description="Deploy Snowpark app",
-        epilog="Example: python deploy_snowflake_app.py --app DE_PROJECT_1 --env dev"
+    parser = argparse.ArgumentParser(description="Deploy Snowpark app")
+    parser.add_argument("--app", required=True)
+    parser.add_argument("--env", required=True, choices=valid_envs)
+    parser.add_argument("--skip-dag", action="store_true")
+    parser.add_argument("--include-manual-procs", action="store_true")
+    parser.add_argument("--tags", nargs="*", default=None)
+    parser.add_argument(
+        "--verbosity",
+        choices=["summary", "verbose"],
+        default="verbose",
+        help="Control output verbosity: 'verbose' shows full logs, 'summary' shows final deployment summary only"
     )
-    parser.add_argument("--app", required=True, help="App name under apps/")
-    parser.add_argument("--env", required=True, choices=valid_envs,
-                        help="Environment name (dev, qa, prod)")
-    parser.add_argument("--skip-dag", action="store_true",
-                        help="Skip DAG deployment")
-    parser.add_argument("--include-manual-procs", action="store_true",
-                        help="Include manual procedure registration from procedures_man.py")
-
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Simulate deployment without executing Snowflake commands")
     args = parser.parse_args()
 
-    # Validate app name with optional fuzzy suggestion
+    env_tag_defaults = {
+        "dev": ["core", "experimental", "diagnostic"],
+        "qa": ["core", "diagnostic"],
+        "prod": ["core", "!experimental", "!diagnostic"]
+    }
+
+    if not args.tags:
+        args.tags = env_tag_defaults.get(args.env, [])
+        print(
+            f"🧠 No tags provided. Using default tags for '{args.env}': {', '.join(args.tags)}")
+
     if args.app not in valid_apps:
-        suggestion = next(
-            (app for app in valid_apps if app.lower() == args.app.lower()), None)
+        suggestion = next((a for a in valid_apps if a.lower()
+                          == args.app.lower()), None)
         if suggestion:
             print(f"⚠️ Did you mean: '{suggestion}'?")
         print(
@@ -109,17 +104,17 @@ def parse_cli_args():
 
 
 def validate_env_vars(required_vars):
-    missing = [var for var in required_vars if not os.environ.get(var)]
+    missing = [v for v in required_vars if not os.environ.get(v)]
     if missing:
         raise EnvironmentError(
-            f"Missing required environment variables: {', '.join(missing)}")
+            f"Missing required env vars: {', '.join(missing)}")
 
 
 def print_env_summary(required_vars):
     print("\n🔗 Using Snowflake connection:")
     for var in required_vars:
-        value = "***" if "PASSWORD" in var else os.environ[var]
-        print(f"{var}: {value}")
+        val = "***" if "PASSWORD" in var else os.environ[var]
+        print(f"{var}: {val}")
     print()
 
 
@@ -127,91 +122,82 @@ def run_command(command, description):
     print(f"🚀 {description}...")
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"❌ Error during {description}:")
-        print(result.stderr)
+        print(f"❌ Error during {description}:\n{result.stderr}")
         raise RuntimeError(f"{description} failed")
     else:
-        print(f"✅ {description} succeeded")
-        print(result.stdout)
-
-# Refactored zip function to accept project directory
+        print(f"✅ {description} succeeded\n{result.stdout}")
 
 
-def zip_source_code(source_dir: Path, zip_name: str = "app.zip") -> Path:
-    source_dir = Path(source_dir)
+def inject_shared_modules(app_path: Path):
+    shared_registry = Path("common/registry.py")
+    target_path = app_path / "app/common/registry.py"
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(shared_registry, target_path)
+    print(f"🔗 Injected shared registry.py into {target_path}")
+
+
+def zip_source_code(source_dir: Path, zip_name: str = "app.zip", verbosity: str = "verbose") -> Path:
     zip_path = source_dir / zip_name
-
-    # Step 1. Clean up old artifacts
     for artifact in ["app.zip", "dependencies.zip"]:
         artifact_path = source_dir / artifact
         if artifact_path.exists():
             artifact_path.unlink()
-            print(f"🧹 Removed old artifact: {artifact_path.name}")
-
-    # Step 2. Zip the app/ folder
-    print("Preparing artifacts for source code")
+            if verbosity == "verbose":
+                print(f"🧹 Removed old artifact: {artifact_path.name}")
 
     app_dir = source_dir / "app"
     if not app_dir.exists():
-        raise FileNotFoundError(
-            f"Expected app directory at {app_dir}, but it was not found.")
+        raise FileNotFoundError(f"Missing app directory: {app_dir}")
 
     def should_include(file_path: Path) -> bool:
-        return not (
-            "__pycache__" in file_path.parts or
-            file_path.suffix in [".pyc", ".pyo"]
-        )
+        return not ("__pycache__" in file_path.parts or file_path.suffix in [".pyc", ".pyo"])
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file_path in app_dir.rglob("*"):
             if file_path.is_file() and should_include(file_path):
-                relative_path = file_path.relative_to(source_dir)
-                zipf.write(file_path, relative_path)
+                zipf.write(file_path, file_path.relative_to(source_dir))
 
     print(f"✅ Created zip at {zip_path}")
+    if verbosity == "verbose":
+        with zipfile.ZipFile(zip_path, "r") as zipf:
+            print("📦 Contents of zip:")
+            for name in sorted(zipf.namelist()):
+                print(f"  - {name}")
     return zip_path
 
 
-def main():
+def vprint(msg: str, verbosity: str):
+    if verbosity == "verbose":
+        print(msg)
 
-    # Step 0: Parse CLI arguments
+
+def main():
     args = parse_cli_args()
     app_name = args.app
     env_name = args.env
+    verbosity = args.verbosity
+    dry_run = args.dry_run
     app_path = APPS_DIR / app_name
+    start_time = time.time()
     print(
-        f"🚀 Starting deployment for app: {app_name} in environment: {env_name}")
+        f"🧭 Verbosity: {verbosity} — detailed logs {'enabled' if verbosity == 'verbose' else 'suppressed'}")
 
-    # Step 1: dynamic import of session and dag from the calling app
+    print(
+        f"\n🚀 Starting deployment for app: {app_name} in environment: {env_name}")
 
-    # get_session, dag = load_app_modules(args.app)  <-- This was only supporting a single dag
-    get_session, dag_list = load_app_modules(args.app)
-
-    # Step 2: Definitions
+    get_session, dag_list = load_app_modules(app_name)
 
     required_vars = [
         "SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD",
         "SNOWFLAKE_ROLE", "SNOWFLAKE_WAREHOUSE", "SNOWFLAKE_DATABASE"
     ]
-
-    # print(f"📁 Changed working directory to: {app_path}")
-
-    # Step 3: Validate environment variables
-    creds = get_snowflake_credentials()
     validate_env_vars(required_vars)
+    creds = get_snowflake_credentials()
     print_env_summary(required_vars)
 
-   # Step 4: Extract credentials and check command line arguments
+    account, user, password, role = creds["account"], creds["user"], creds["password"], creds["role"]
+    warehouse, database, schema = creds["warehouse"], creds["database"], creds["schema"]
 
-    account = creds["account"]
-    user = creds["user"]
-    password = creds["password"]
-    role = creds["role"]
-    warehouse = creds["warehouse"]
-    database = creds["database"]
-    schema = creds["schema"]
-
-   # Step 5: Initialize session
     try:
         session = get_session()
         session.sql(f"USE DATABASE {database}").collect()
@@ -220,92 +206,92 @@ def main():
         print(f"❌ Failed to initialize Snowflake session: {e}")
         sys.exit(1)
 
-    # Step 6: Build Snowpark Project
     build_cmd = [
         "snow", "snowpark", "build",
-        "--project",  str(APPS_DIR / app_name),
+        "--project", str(APPS_DIR / app_name),
         "--temporary-connection",
         "--account", account,
         "--user", user,
-        # "--password", password,  Rely on snowflake CLI config (config.toml)
         "--role", role,
         "--warehouse", warehouse,
         "--database", database,
         "--schema", schema,
         "--allow-shared-libraries"
     ]
+    run_command(build_cmd, f"Building Snowpark project for app: {app_name}")
 
-    run_command(build_cmd, f"Building Snowpark project for app: {args.app}")
+    inject_shared_modules(app_path)
 
-    # Step 7: Zip source code
-    # < -- Version 2 does not support dynamic attributes right now
-    zip_file = zip_source_code(app_path, zip_name="app.zip")
-    print(f"📦 Zipping source code in: {app_path}")
-    # zip_file = zip_source_code(app_path, zip_name=f"{app_name}_{env_name}.zip")
+    stage_name = f"{env_name}_deployment"
+    stage_target = f"@{stage_name}/apps/{app_name}/app.zip"
+    zip_file = zip_source_code(
+        app_path, zip_name="app.zip", verbosity=verbosity)
+    # print(f"📦 Zipping source code in: {app_path}") # redundant
+    # print(f"📦 Created zip: {zip_file}") # redundant
 
-    print(f"📦 Created zip: {zip_file}")
+    if not args.dry_run:
+        session.file.put(str(zip_file), stage_target, overwrite=True)
+    else:
+        vprint(
+            f"🧪 Dry-run: Skipping actual execution of session.file.put(", verbosity)
 
-    # This guarantees the zip is refreshed in the stage before deployment.
-    # session.file.put("app.zip", "@dev_deployment/app/", overwrite=True)
+    print(f"📦 Uploaded app.zip to {stage_target}")
 
-    # Step 8: Upload zip BEFORE deploy
-    # session.file.put(zip_file, "@dev_deployment/app.zip", overwrite=True)
-    session.file.put(str(zip_file), "@dev_deployment/app.zip", overwrite=True)
-
-    print(f"📦 Uploaded app.zip to @dev_deployment/")
-
-    # Step 9: Deploy Snowpark app
     deploy_cmd = [
         "snow", "snowpark", "deploy", "--replace", "--temporary-connection",
         "--project", str(APPS_DIR / app_name),
         "--account", account,
         "--user", user,
-        # "--password", password,  Rely on snowflake CLI config (config.toml)
         "--role", role,
         "--warehouse", warehouse,
         "--database", database,
         "--schema", schema
     ]
-    run_command(deploy_cmd, f"Deploying Snowpark project for app: {args.app}")
+    run_command(deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
 
-    #  Step 10: Register Automatic Stored Procedures
-    if not zip_file.exists():
-        raise FileNotFoundError(f"Zip file not found: {zip_file}")
-    else:
-        # session.file.put(
-        #     zip_file, f"@dev_deployment/{os.path.basename(zip_file)}", overwrite=True)
-        # <-- Only because version 2 does not yet support dynamic artifacts
-        # session.file.put(zip_file, "@dev_deployment/app.zip", overwrite=True)
-
-        # print(f"📦 Uploaded {os.path.basename(zip_file)} to @dev_deployment/")
-
+    print("\n🔍 Registering auto procedures...")
+    try:
         register_module = importlib.import_module(
             f"apps.{app_name}.app.python.register_procs")
-        register_module.register_all_procs(
-            session,
+        registered_procs = register_module.register_all_procs(
+            session=session,
             app_name=app_name,
-            stage_name=f"{env_name}_deployment",
+            env_name=env_name,
+            stage_name=stage_name,
             zip_name=os.path.basename(zip_file),
-            include_manual=args.include_manual_procs
+            include_manual=args.include_manual_procs,
+            include_tags=args.tags,
+            dry_run=args.dry_run
         )
-    # register_module.register_all_procs(session)
+        if registered_procs and verbosity == "verbose":
+            # if registered_procs:
+            print(f"\n📜 Auto-registered procedures:")
+            for proc in registered_procs:
+                print(
+                    f"  - {proc['kind']}: {proc['name']} ({', '.join(proc['tags'])})")
+        # else: <-- This case is already handled inside register_all_procs
+        #     print("⚠️ No auto procedures or functions were registered.")
+    except ModuleNotFoundError:
+        print(
+            f"ℹ️ procedures_auto.py not found for app: {app_name}. Skipping auto registration.")
+    except AttributeError as e:
+        print(f"⚠️ register_all_procs() missing or misconfigured: {e}")
 
-    # # ✅ Step 10: Register Manual Procedures (only if flag is passed)
-
-    # if args.include_manual_procs:
-    #     try:
-    #         manual_module = importlib.import_module(
-    #             f"apps.{app_name}.app.python.procedures_man"
-    #         )
-    #         manual_module.register_manual_procs(session)
-    #         print(f"✅ Registered manual procedures from procedures_man.py")
-    #     except ModuleNotFoundError:
-    #         print(f"ℹ️ No procedures_man.py found for app: {app_name}")
-    #     except AttributeError:
-    #         print(
-    #             f"⚠️ procedures_man.py exists but missing register_manual_procs(session)")
-    # else:
-    #     print(f"⏭️ Manual procedure registration skipped via CLI flag.")
+    # ✅ Step 10B: Register Manual Procedures (only if flag is passed)
+    if args.include_manual_procs:
+        try:
+            manual_module = importlib.import_module(
+                f"apps.{app_name}.app.python.procedures_man"
+            )
+            manual_module.register_manual_procs(session)
+            print(f"✅ Registered manual procedures from procedures_man.py")
+        except ModuleNotFoundError:
+            print(f"ℹ️ No procedures_man.py found for app: {app_name}")
+        except AttributeError:
+            print(
+                f"⚠️ procedures_man.py exists but missing register_manual_procs(session)")
+    else:
+        print(f"⏭️ Manual procedure registration skipped via --include-manual-procs flag.")
 
     # ✅ Step 11: Deploy DAGs
     target_db = database
@@ -319,7 +305,8 @@ def main():
 
             for dag in dag_list:
                 try:
-                    print(f"📡 Deploying DAG handler: {dag.__name__}")
+                    vprint(
+                        f"📡 Deploying DAG handler: {dag.__name__}", verbosity)
                     dag_op.deploy(dag, CreateMode.or_replace)
                     print(
                         f"✅ DAG '{dag.__name__}' deployed for app: {args.app}")
@@ -328,9 +315,44 @@ def main():
                     sys.exit(1)
         else:
             print(
-                f"⚠️ No DAGs found for app '{args.app}'. Skipping DAG deployment.")
+                f"⚠️ No DAGs defined for app 'DE_PROJECT_1'. Skipping DAG deployment.")
+
     else:
         print(f"⏭️ DAG deployment skipped via CLI flag.")
+
+    print(
+        f"\n✅ Deployment completed successfully for app '{app_name}' in environment '{env_name}'.")
+
+    duration = round(time.time() - start_time, 2)
+# 🧪 Print Summary Statement
+    summary_time = datetime.now(pytz.timezone(
+        "America/Vancouver")).strftime("%Y-%m-%d %H:%M %Z")
+
+    if dry_run and verbosity in ["summary", "verbose"]:
+        print(
+            f"🧪 Dry-Run Summary\n"
+            f"  App: {app_name}\n"
+            f"  Environment: {env_name}\n"
+            f"  Stage: {stage_name}\n"
+            f"  Procedures Registered: 0\n"
+            f"  Manual Procedures: Skipped\n"
+            f"  DAGs: Skipped\n"
+            f"  Artifacts Uploaded: Simulated\n"
+            f"🕒 Dry-run finished at: {summary_time}\n"
+            f"⏱️ Total dry-run duration: {duration:.2f} seconds")
+
+    else:
+        print(
+            f"\n📦 Deployment Summary\n"
+            f"  App: {app_name}\n"
+            f"  Environment: {env_name}\n"
+            f"  Stage: {stage_name}\n"
+            f"  Auto Procedures Registered: {len(registered_procs) if registered_procs else 0}\n"
+            f"  Manual Procedures: {'Registered' if args.include_manual_procs else 'Skipped'}\n"
+            f"  DAGs: {'Deployed' if dag_list else 'None found'}\n"
+            f"🕒 Deployment finished at: {summary_time}\n"
+            f"\n✅ Deployment completed successfully for app '{app_name}' in environment '{env_name}'."
+        )
 
 
 if __name__ == "__main__":
