@@ -1,11 +1,11 @@
 from snowflake.snowpark import Session
 from snowflake.snowpark.types import StringType
 from typing import List, Optional, Callable
+from pathlib import Path
 import sys
 import pickle
 
 # 🧠 Optional tag validation fallback
-# If validate_tags isn't available (e.g. during local testing), use a no-op fallback
 ValidateTagsType = Callable[[List[str], Optional[str]], List[str]]
 try:
     from deploy.deploy_snowflake_app import validate_tags
@@ -14,6 +14,13 @@ except ImportError:
         return tags
     validate_tags: ValidateTagsType = fallback_validate_tags
 
+# 🔊 Local verbosity helper
+
+
+def vprint(msg: str, verbosity: str):
+    if verbosity == "verbose":
+        print(msg)
+
 # 🛠️ Define your manual procedure
 
 
@@ -21,12 +28,8 @@ def copy_to_table_proc(session: Session, source_table: str, target_table: str) -
     return f"Copied from {source_table} to {target_table}"
 
 
-# ✅ Patch the function's module path to match what Snowflake expects inside the ZIP
-# This ensures that when pickled, the function references a resolvable module path
 copy_to_table_proc.__module__ = "app.python.procedures_man"
 
-# 📦 Register the procedure in a manual registry
-# This allows you to tag, filter, and deploy it programmatically
 MANUAL_PROCS = [
     {
         "func": copy_to_table_proc,
@@ -38,7 +41,6 @@ MANUAL_PROCS = [
     # Add more procedures here as needed
 ]
 
-# 🧪 Validate tags early to catch invalid or misclassified procedures
 for proc in MANUAL_PROCS:
     validate_tags(proc.get("tags", []), proc["name"])
 
@@ -53,15 +55,22 @@ def register_manual_procs(
     dry_run: bool = False,
     verbosity: str = "summary"
 ) -> List[dict]:
+    vprint(
+        f"📡 Manual-registering procedures for {app_name} in stage {stage_name}", verbosity)
+
+    proc_dir = Path(__file__).parent
+    vprint(f"🔍 Looking for procedures_man.py at: {__file__}", verbosity)
+    vprint(f"📂 Contents of: {proc_dir}", verbosity)
+    for f in sorted(proc_dir.iterdir()):
+        vprint(f"  - {f.name}", verbosity)
+
     registered = []
 
     for proc in MANUAL_PROCS:
-        # 🧼 Skip procedures that don't match the tag filter
         if include_tags and not any(tag in include_tags for tag in proc.get("tags", [])):
             print(f"⏭️ Skipping {proc['name']} due to tag filter.")
             continue
 
-        # 📝 Dry-run mode: simulate registration without executing it
         if dry_run:
             print(f"📝 Would register: {proc['name']}")
             registered.append({
@@ -73,22 +82,15 @@ def register_manual_procs(
             })
             continue
 
-        # 🔗 Patch alias path in sys.modules so Snowflake can resolve it inside the ZIP
-        # This ensures that the module path embedded in the pickle matches the ZIP structure
-        alias_path = f"app.python.procedures_man"
+        alias_path = "app.python.procedures_man"
         sys.modules[alias_path] = sys.modules[__name__]
-
-        # 🧊 Pickle the function after rebinding its module path
-        # This produces a ZIP-safe hex blob that Snowflake can deserialize
         patched_func = pickle.loads(pickle.dumps(proc["func"]))
 
-        # 🧪 Verbose mode: show hex blob for inspection
-        if verbosity == "verbose":
-            print(f"🔗 Re-pickled {proc['name']} under alias: {alias_path}")
-            print(f"🔍 Pickled hex for {proc['name']}:")
-            print(pickle.dumps(patched_func).hex())
+        vprint(
+            f"🔗 Re-pickled {proc['name']} under alias: {alias_path}", verbosity)
+        vprint(f"🔍 Pickled hex for {proc['name']}:", verbosity)
+        vprint(pickle.dumps(patched_func).hex(), verbosity)
 
-        # 📡 Register the procedure with Snowflake
         session.sproc.register(
             func=patched_func,
             name=proc["name"],
@@ -108,5 +110,18 @@ def register_manual_procs(
             "tags": proc.get("tags", []),
             "source": "manual"
         })
+
+    if verbosity in ["summary", "verbose"]:
+        print("\n📜 Registered Entities Summary:")
+        print("+----------------------+-----------+--------------+----------+")
+        print("| Name                 | Type      | Tags         | Source   |")
+        print("+======================+===========+==============+==========+")
+        for proc in registered:
+            print(
+                f"| {proc['name']:<20} | {proc['kind']:<9} | {', '.join(proc['tags']):<12} | manual   |")
+            print("+----------------------+-----------+--------------+----------+")
+
+    print(f"📦 Total manual registered: {len(registered)}")
+    print(f"🚀 completed register_manual_procs for app '{app_name}'")
 
     return registered

@@ -16,6 +16,11 @@ from tag_registry import TAG_SETS
 # tags = TAG_SETS[args.env] if 'env_name' in locals() else []  # Example usage
 
 
+def vprint(msg: str, verbosity: str):
+    if verbosity == "verbose":
+        print(msg)
+
+
 # Global constants
 APPS_DIR = Path("apps")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -193,11 +198,6 @@ def zip_source_code(source_dir: Path, zip_name: str = "app.zip", verbosity: str 
                 print(f"  - {name}")
     vprint(f"end of zip_source_code: {zip_path}", verbosity)
     return zip_path
-
-
-def vprint(msg: str, verbosity: str):
-    if verbosity == "verbose":
-        print(msg)
 
 
 def main():
@@ -448,6 +448,9 @@ def main():
             f"✅ Dry-run completed. Manual and custom procedures were simulated only. Declarative procedures were deployed live via Snowpark.")
 
     else:
+        manual_count = sum(
+            1 for proc in manual_registered if proc.get("source") == "manual")
+
         print(
             f"\n📦 Deployment Summary\n"
             f"  App: {app_name}\n"
@@ -455,7 +458,7 @@ def main():
             f"  Stage: {stage_name}\n"
             # f"✅ Auto Procedures(auto registry only): {auto_count} were deployed\n"
             f"  Auto Procedures Registered: {len(registered_procs) if registered_procs else 0}\n"
-            f"  Manual Procedures: {'Registered' if args.include_manual_procs else 'Skipped'}\n"
+            f"  Manual Procedures Registered: {manual_count if manual_count > 0 else 'Skipped'}\n"
             f"  DAGs: {'Deployed' if dag_list else 'None found'}\n"
             f"🕒 Deployment finished at: {summary_time}\n"
             f"\n✅ Deployment completed successfully for app '{app_name}' in environment '{env_name}'."
