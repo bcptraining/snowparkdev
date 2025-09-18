@@ -39,14 +39,21 @@ def hello_function(name: str) -> str:
 # 🚀 Auto-registration logic
 
 
-def register_procs(session, app_name, stage_name, zip_name, include_tags=None):
-    # For summary of registered procedures (keep out of deployed handlers)
+def register_procs(session, app_name, stage_name, zip_name, include_tags=None, verbosity="normal"):
+    """
+    Registers tagged procedures/functions from AUTO_PROCS.
+    Returns a list of dicts with source attribution.
+    """
+    from app.common.registry import AUTO_PROCS
+    from snowflake.snowpark.functions import udf
     from tabulate import tabulate
-    print(
-        f"📡 Auto-registering procedures for {app_name} in stage {stage_name}")
 
+    if verbosity in ("normal", "verbose"):
+        print(
+            f"📡 Auto-registering procedures for {app_name} in stage {stage_name}")
+
+    # Filter by tags
     selected = []
-
     if include_tags:
         tag_set = set(include_tags)
         positive_tags = {tag for tag in tag_set if not tag.startswith("!")}
@@ -54,24 +61,22 @@ def register_procs(session, app_name, stage_name, zip_name, include_tags=None):
 
         for proc in AUTO_PROCS:
             proc_tags = proc.get("tags", set())
-
             if positive_tags and not proc_tags.intersection(positive_tags):
                 continue
-
             if proc_tags.intersection(negative_tags):
                 continue
-
             selected.append(proc)
     else:
         selected = AUTO_PROCS.copy()
 
-    print(
-        f"🔍 Filtering procedures with tags: {', '.join(include_tags) if include_tags else 'ALL'}")
-    print(f"✅ Selected {len(selected)} procedures for registration")
+    if verbosity == "verbose":
+        print(
+            f"🔍 Filtering procedures with tags: {', '.join(include_tags) if include_tags else 'ALL'}")
+        print(f"✅ Selected {len(selected)} procedures for registration")
 
+    # Register each entity
     for proc in selected:
-        kind = proc.get("kind", "procedure")  # ✅ pull from correct key
-
+        kind = proc.get("kind", "procedure")
         if kind == "function":
             udf(
                 func=proc["func"],
@@ -83,10 +88,7 @@ def register_procs(session, app_name, stage_name, zip_name, include_tags=None):
                 is_permanent=True,
                 session=session
             )
-            print(
-                f"✅ Registered function: {proc['name']} ({', '.join(proc['tags'])})")
-
-        elif kind == "procedure":
+        else:
             session.sproc.register(
                 func=proc["func"],
                 input_types=proc["input_types"],
@@ -97,22 +99,24 @@ def register_procs(session, app_name, stage_name, zip_name, include_tags=None):
                 is_permanent=True,
                 session=session
             )
+
+        if verbosity == "verbose":
             print(
-                f"✅ Registered procedure: {proc['name']} ({', '.join(proc['tags'])})")
+                f"✅ Registered {kind}: {proc['name']} ({', '.join(proc['tags'])})")
 
-    print("✅ Tagged procedure registration complete.")
-    #  Summary table of registered procs
+    # Inject source attribution
+    for proc in selected:
+        proc["source"] = "auto"
 
-    if selected:
-        summary = []
-        for proc in selected:
-            summary.append([
-                proc["name"],
-                "Function" if proc.get("kind") == "function" else "Procedure",
-                ", ".join(proc.get("tags", []))
-            ])
+    # Summary table
+    if verbosity in ("normal", "verbose") and selected:
+        summary = [
+            [proc["name"], "Function" if proc.get("kind") == "function" else "Procedure",
+             ", ".join(proc.get("tags", [])), proc["source"]]
+            for proc in selected
+        ]
         print("\n📜 Registered Entities Summary:")
         print(tabulate(summary, headers=[
-              "Name", "Type", "Tags"], tablefmt="grid"))
-    else:
-        print("⚠️ No procedures or functions matched the tag filters.")
+              "Name", "Type", "Tags", "Source"], tablefmt="grid"))
+
+    return selected

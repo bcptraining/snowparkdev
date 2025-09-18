@@ -12,9 +12,34 @@ from pathlib import Path
 from snowflake.core import Root
 from snowflake.core.task.dagv1 import DAGOperation
 import re  # for regex operations
+from tag_registry import TAG_SETS
+# tags = TAG_SETS[args.env] if 'env_name' in locals() else []  # Example usage
 
+
+# Global constants
 APPS_DIR = Path("apps")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+env_tag_defaults = {  # moved from inside parse_cli_args() to be a global constant
+    "dev": ["core", "experimental", "diagnostic"],
+    "qa": ["core", "diagnostic"],
+    "prod": ["core", "!experimental", "!diagnostic"]
+}
+
+VALID_TAGS = {
+    "core", "dev", "prod", "staging", "experimental",
+    "utility", "test", "internal", "public", "deprecated",
+    "custom", "analytics", "etl", "diagnostic"
+}
+
+
+def validate_tags(tags: list[str], proc_name: str | None = None) -> list[str]:
+    invalid = [t for t in tags if t not in VALID_TAGS]
+    if invalid:
+        raise ValueError(
+            f"❌ Procedure '{proc_name}' has invalid tags: {invalid}")
+    return tags
+
 
 # These functions are not currently used but might be helpful for future enhancements to compare existing procedure definitions.
 # def get_current_def(session, proc_name):
@@ -80,11 +105,11 @@ def parse_cli_args():
                         help="Simulate deployment without executing Snowflake commands")
     args = parser.parse_args()
 
-    env_tag_defaults = {
-        "dev": ["core", "experimental", "diagnostic"],
-        "qa": ["core", "diagnostic"],
-        "prod": ["core", "!experimental", "!diagnostic"]
-    }
+    # env_tag_defaults = {  <-- moved to be a global vonstant (see top)
+    #     "dev": ["core", "experimental", "diagnostic"],
+    #     "qa": ["core", "diagnostic"],
+    #     "prod": ["core", "!experimental", "!diagnostic"]
+    # }
 
     if not args.tags:
         args.tags = env_tag_defaults.get(args.env, [])
@@ -129,6 +154,7 @@ def run_command(command, description):
 
 
 def inject_shared_modules(app_path: Path):
+    # Thnis fn copies a shared registry.py file into a specific location inside an app structure.
     shared_registry = Path("common/registry.py")
     target_path = app_path / "app/common/registry.py"
     target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,6 +163,8 @@ def inject_shared_modules(app_path: Path):
 
 
 def zip_source_code(source_dir: Path, zip_name: str = "app.zip", verbosity: str = "verbose") -> Path:
+    print(
+        f"📦 zip_source_code Zipping source code from: {source_dir} (excluding __pycache__, .pyc, .pyo)")
     zip_path = source_dir / zip_name
     for artifact in ["app.zip", "dependencies.zip"]:
         artifact_path = source_dir / artifact
@@ -163,6 +191,7 @@ def zip_source_code(source_dir: Path, zip_name: str = "app.zip", verbosity: str 
             print("📦 Contents of zip:")
             for name in sorted(zipf.namelist()):
                 print(f"  - {name}")
+    vprint(f"end of zip_source_code: {zip_path}", verbosity)
     return zip_path
 
 
@@ -179,8 +208,11 @@ def main():
     dry_run = args.dry_run
     app_path = APPS_DIR / app_name
     start_time = time.time()
+    tags = TAG_SETS.get(env_name, [])
+
     print(
         f"🧭 Verbosity: {verbosity} — detailed logs {'enabled' if verbosity == 'verbose' else 'suppressed'}")
+    print(f"🧠 Using tags for env '{env_name}': {tags}")
 
     print(
         f"\n🚀 Starting deployment for app: {app_name} in environment: {env_name}")
@@ -223,14 +255,22 @@ def main():
     inject_shared_modules(app_path)
 
     stage_name = f"{env_name}_deployment"
-    stage_target = f"@{stage_name}/apps/{app_name}/app.zip"
+    stage_target = f"@{stage_name}/apps/{app_name}"
     zip_file = zip_source_code(
         app_path, zip_name="app.zip", verbosity=verbosity)
     # print(f"📦 Zipping source code in: {app_path}") # redundant
     # print(f"📦 Created zip: {zip_file}") # redundant
 
     if not args.dry_run:
-        session.file.put(str(zip_file), stage_target, overwrite=True)
+        vprint(f"📂 Files on stage @dev_deployment before upload:", verbosity)
+        session.file.put(str(zip_file), stage_target,
+                         overwrite=True, source_compression="NONE")
+        files = session.sql(
+            "LIST @dev_deployment/apps/DE_PROJECT_1/").collect()
+        vprint(f"📂 Files on stage @dev_deployment  after upload:", verbosity)
+        for f in files:
+            vprint(f"📦 {f['name']}", verbosity)
+
     else:
         vprint(
             f"🧪 Dry-run: Skipping actual execution of session.file.put(", verbosity)
@@ -248,6 +288,7 @@ def main():
         "--schema", schema
     ]
     run_command(deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
+    print("⚠️ Note: Declarative procedures were deployed live. Dry-run mode does not simulate Snowpark deploy.")
 
     print("\n🔍 Registering auto procedures...")
     try:
@@ -260,15 +301,27 @@ def main():
             stage_name=stage_name,
             zip_name=os.path.basename(zip_file),
             include_manual=args.include_manual_procs,
-            include_tags=args.tags,
-            dry_run=args.dry_run
+            include_tags=tags,
+            dry_run=dry_run,
+            verbosity=verbosity
         )
-        if registered_procs and verbosity == "verbose":
-            # if registered_procs:
-            print(f"\n📜 Auto-registered procedures:")
-            for proc in registered_procs:
-                print(
-                    f"  - {proc['kind']}: {proc['name']} ({', '.join(proc['tags'])})")
+
+        auto_count = sum(
+            1 for proc in (registered_procs or [])
+            if proc.get("source") == "auto"
+        )
+        for proc in registered_procs or []:
+            print(
+                f"🔍 proc keys: {list(proc.keys())} — source: {proc.get('source')}")
+
+        print(
+            f"✅ Auto procedure registration complete. auto_count= {auto_count} procedures/functions registered.")
+        # if registered_procs and verbosity == "verbose":
+        #     # if registered_procs:
+        #     print(f"\n📜 Auto-registered procedures:")
+        #     for proc in registered_procs:
+        #         print(
+        #             f"  - {proc['kind']}: {proc['name']} ({', '.join(proc['tags'])})")
         # else: <-- This case is already handled inside register_all_procs
         #     print("⚠️ No auto procedures or functions were registered.")
     except ModuleNotFoundError:
@@ -281,9 +334,32 @@ def main():
     if args.include_manual_procs:
         try:
             manual_module = importlib.import_module(
-                f"apps.{app_name}.app.python.procedures_man"
+                "app.python.procedures_man"
+                # f"apps.{app_name}.app.python.procedures_man"
             )
-            manual_module.register_manual_procs(session)
+            # See what files are in the stage before manual registration
+            files = session.sql("LIST @dev_deployment/").collect()
+            vprint(
+                f"📂 Files on stage @dev_deployment/ before manual registration:", verbosity)
+            for f in files:
+                vprint(
+                    f"📦 {f['name']} | {f['size']} bytes | {f['last_modified']}", verbosity)
+            vprint(
+                f"📂 Files on stage @dev_deployment/ after manual registration:", verbosity)
+
+            # manual_module.register_manual_procs(session, stage_name, app_name, args.tags, dry_run=dry_run)
+            print(
+                f"stage_name={stage_name}, app_name={app_name}, tags={args.tags}, dry_run={dry_run}")
+            # Ensure latest zip is on stage
+            session.file.put(str(zip_file), stage_target, overwrite=True)
+            manual_registered = manual_module.register_manual_procs(
+                session=session,
+                stage_name=stage_name,
+                app_name=app_name,
+                include_tags=tags,
+                dry_run=dry_run,
+                verbosity=verbosity
+            )
             print(f"✅ Registered manual procedures from procedures_man.py")
         except ModuleNotFoundError:
             print(f"ℹ️ No procedures_man.py found for app: {app_name}")
@@ -307,9 +383,17 @@ def main():
                 try:
                     vprint(
                         f"📡 Deploying DAG handler: {dag.__name__}", verbosity)
-                    dag_op.deploy(dag, CreateMode.or_replace)
-                    print(
-                        f"✅ DAG '{dag.__name__}' deployed for app: {args.app}")
+                    # dag_op.deploy(dag, CreateMode.or_replace)
+                    if not dry_run:
+                        dag_op.deploy(dag, CreateMode.or_replace)
+                        print(
+                            f"✅ DAG '{dag.__name__}' deployed for app: {args.app}")
+                    else:
+                        print(
+                            f"🧪 Dry-run: Skipping DAG deployment for '{dag.__name__}'")
+
+                    # print(
+                    #     f"✅ DAG '{dag.__name__}' deployed for app: {args.app}")
                 except Exception as e:
                     print(f"❌ DAG '{dag.__name__}' deployment failed: {e}")
                     sys.exit(1)
@@ -323,23 +407,45 @@ def main():
     print(
         f"\n✅ Deployment completed successfully for app '{app_name}' in environment '{env_name}'.")
 
+
+#  Step 12: Summary and Validation
+# Comfirm whether registered_procs is populated and source is set to auto
+    print("🔍 Registered Procs:")
+    for proc in (registered_procs or []):
+        print(f"  - {proc.get('name')} | source={proc.get('source')}")
+
     duration = round(time.time() - start_time, 2)
 # 🧪 Print Summary Statement
+    tag_summary = ", ".join(args.tags) if args.tags else "None"
+
     summary_time = datetime.now(pytz.timezone(
         "America/Vancouver")).strftime("%Y-%m-%d %H:%M %Z")
 
     if dry_run and verbosity in ["summary", "verbose"]:
+        custom_auto_count = sum(
+            1 for proc in registered_procs
+            if proc.get("source") == "auto" and proc.get("status") == "dry_run"
+        )
+
+        manual_simulated = sum(
+            1 for proc in manual_registered
+            if proc.get("source") == "manual" and proc.get("status") == "dry_run"
+        )
+
         print(
             f"🧪 Dry-Run Summary\n"
             f"  App: {app_name}\n"
             f"  Environment: {env_name}\n"
             f"  Stage: {stage_name}\n"
-            f"  Procedures Registered: 0\n"
-            f"  Manual Procedures: Skipped\n"
+            f"  Tags Used: {tag_summary}\n"
+            # f"✅ Auto Procedures(auto registry only): {auto_count} were deployed\n"
+            f"  Auto Procedures (custom registry only): {custom_auto_count} simulated\n"
+            f"  Manual Procedures: {manual_simulated} Simulated\n"
             f"  DAGs: Skipped\n"
             f"  Artifacts Uploaded: Simulated\n"
             f"🕒 Dry-run finished at: {summary_time}\n"
-            f"⏱️ Total dry-run duration: {duration:.2f} seconds")
+            f"⏱️ Total dry-run duration: {duration:.2f} seconds\n"
+            f"✅ Dry-run completed. Manual and custom procedures were simulated only. Declarative procedures were deployed live via Snowpark.")
 
     else:
         print(
@@ -347,6 +453,7 @@ def main():
             f"  App: {app_name}\n"
             f"  Environment: {env_name}\n"
             f"  Stage: {stage_name}\n"
+            # f"✅ Auto Procedures(auto registry only): {auto_count} were deployed\n"
             f"  Auto Procedures Registered: {len(registered_procs) if registered_procs else 0}\n"
             f"  Manual Procedures: {'Registered' if args.include_manual_procs else 'Skipped'}\n"
             f"  DAGs: {'Deployed' if dag_list else 'None found'}\n"

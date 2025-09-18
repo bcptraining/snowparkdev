@@ -4,7 +4,7 @@ mixins:
   snowpark_dag: {}  # No artifacts or stage — DAGs don’t support them
   snowpark_shared:
     artifacts:
-      - dest: "app"
+      - dest: "apps/DE_PROJECT_1/mixins"
         src: app/
     stage: dev_deployment
 
