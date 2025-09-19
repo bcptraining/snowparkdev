@@ -1,8 +1,30 @@
+# ------------------------------------------------------------------------------------
+# 📦 Legacy Auto Procedure Registry — Deprecated as of definition_version: '2'
+#
+# This file previously defined auto procedures using @auto_proc decorators for
+# dynamic registration and tag-based filtering. As of Snowflake's declarative
+# deployment framework (definition_version: '2'), all auto procedures are now
+# defined in snowflake.yml and deployed via `snowflake deploy`.
+#
+# These decorators are commented out and retained for reference only.
+# Manual procedures with parameters are still registered dynamically via procedures_man.py.
+#
+# ✅ Current Source of Truth: snowflake.yml
+# ❌ Dynamic registration no longer used for auto procedures
+#
+# For historical context, the legacy dynamic registration logic is retained
+# in register_procs(...) below, but is not invoked by deploy scripts.
+# If you want to try it then go to procedures_auto.py and change the legace_code
+# variable to True in register_all_procs(...) in register_procs.py.
+# ------------------------------------------------------------------------------------
+
+
 from snowflake.snowpark import Session
 from snowflake.snowpark.stored_procedure import StoredProcedureRegistration
 from snowflake.snowpark.functions import udf, sproc
 from snowflake.snowpark.types import StringType
 from app.common.registry import auto_proc, AUTO_PROCS
+from typing import List, Optional
 
 
 # 🎯 Tagging procedures with @auto_proc
@@ -39,7 +61,16 @@ def hello_function(name: str) -> str:
 # 🚀 Auto-registration logic
 
 
-def register_procs(session, app_name, stage_name, zip_name, include_tags=None, verbosity="normal"):
+def register_procs(
+    session: Session,
+    app_name: str,
+    stage_name: str,
+    zip_name: str,
+    include_tags: Optional[List[str]] = None,
+    dry_run: bool = False,
+    verbosity: str = "summary"
+) -> List[dict]:
+    # def register_procs(session, app_name, stage_name, zip_name, include_tags=None, verbosity="normal"):
     """
     Registers tagged procedures/functions from AUTO_PROCS.
     Returns a list of dicts with source attribution.

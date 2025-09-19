@@ -21,6 +21,7 @@ def vprint(msg: str, verbosity: str):
     if verbosity == "verbose":
         print(msg)
 
+
 # 🛠️ Define your manual procedure
 
 
@@ -63,6 +64,12 @@ def register_manual_procs(
     vprint(f"📂 Contents of: {proc_dir}", verbosity)
     for f in sorted(proc_dir.iterdir()):
         vprint(f"  - {f.name}", verbosity)
+
+    if include_tags:
+        vprint(
+            f"🔍 Filtering manual procedures by tags: {include_tags}", verbosity)
+    else:
+        vprint("🔍 No tag filter applied — registering all manual procedures", verbosity)
 
     registered = []
 
@@ -110,6 +117,18 @@ def register_manual_procs(
             "tags": proc.get("tags", []),
             "source": "manual"
         })
+
+        included = [proc for proc in MANUAL_PROCS if not include_tags or any(
+            tag in include_tags for tag in proc.get("tags", []))]
+        excluded = [proc for proc in MANUAL_PROCS if include_tags and not any(
+            tag in include_tags for tag in proc.get("tags", []))]
+
+        if verbosity in ["summary", "verbose"]:
+            print(
+                f"✅ Included {len(included)} manual procedures based on tag filter")
+            if excluded:
+                print(
+                    f"⏭️ Skipped {len(excluded)} manual procedures due to tag mismatch")
 
     if verbosity in ["summary", "verbose"]:
         print("\n📜 Registered Entities Summary:")
