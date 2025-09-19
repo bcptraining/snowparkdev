@@ -1,3 +1,5 @@
+import yaml
+from orchestration.proc_registrar import ProcRegistrar
 import pytz
 from datetime import datetime
 import importlib
@@ -198,6 +200,31 @@ def zip_source_code(source_dir: Path, zip_name: str = "app.zip", verbosity: str 
                 print(f"  - {name}")
     vprint(f"end of zip_source_code: {zip_path}", verbosity)
     return zip_path
+
+# ------------------------------------------- Class testing ProcRegistrar
+
+
+def load_snowflake_yml(app_path: Path):
+    yml_path = app_path / "snowflake.yml"
+    if not yml_path.exists():
+        raise FileNotFoundError(f"Missing snowflake.yml at {yml_path}")
+    with open(yml_path, "r") as f:
+        return yaml.safe_load(f)
+
+
+print("Testing ProcRegistrar class...")
+registrar = ProcRegistrar(verbose=True, dry_run=True, tags=["core", "dag"])
+registrar.register_auto(stage="dummy_stage")
+# Narrate snowflake.yml
+args = parse_cli_args()
+app_name = args.app
+app_path = APPS_DIR / app_name
+config = load_snowflake_yml(app_path)
+print(f"📜 snowflake.yml loaded. Entry points: {config.get('procedures', [])}")
+
+print("Testing completed.")
+
+# -------------------------------------------
 
 
 def main():
