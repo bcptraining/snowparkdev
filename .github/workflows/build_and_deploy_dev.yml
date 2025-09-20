@@ -67,8 +67,10 @@ jobs:
       - name: Detect changed apps
         id: detect
         run: |
-          changed_apps=$(git diff --name-only origin/dev HEAD | grep '^apps/' | cut -d '/' -f2 | sort -u | uniq)
+          previous_commit=$(git rev-parse HEAD^)
+          changed_apps=$(git diff --name-only "$previous_commit" HEAD | grep '^apps/' | cut -d '/' -f2 | sort -u | uniq)
           echo "changed_apps=$(echo "$changed_apps" | paste -sd ' ' -)" >> $GITHUB_ENV
+
 
 
       - name: Deploy changed apps
