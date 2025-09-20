@@ -71,6 +71,10 @@ jobs:
           changed_apps=$(git diff --name-only "$previous_commit" HEAD | grep '^apps/' | cut -d '/' -f2 | sort -u | uniq)
           echo "changed_apps=$(echo "$changed_apps" | paste -sd ' ' -)" >> $GITHUB_ENV
 
+      - name: Fix Snowflake config permissions
+        run: |
+          chmod 0600 /home/runner/.snowflake/config.toml
+
 
 
       - name: Deploy changed apps
