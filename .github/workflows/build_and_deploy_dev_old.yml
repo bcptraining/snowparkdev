@@ -3,7 +3,7 @@ name: Deploy Snowpark Apps
 on:
   push:
     branches:
-      - dev
+      - dev_old
 
   workflow_dispatch:
     inputs:
