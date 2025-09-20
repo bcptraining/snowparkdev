@@ -1,3 +1,4 @@
+from datetime import datetime
 from snowflake.snowpark import Session
 from snowflake.snowpark.types import StringType
 from typing import List, Optional, Callable
@@ -65,25 +66,40 @@ def register_manual_procs(
     for f in sorted(proc_dir.iterdir()):
         vprint(f"  - {f.name}", verbosity)
 
-    if include_tags:
-        vprint(
-            f"🔍 Filtering manual procedures by tags: {include_tags}", verbosity)
-    else:
-        vprint("🔍 No tag filter applied — registering all manual procedures", verbosity)
+    # ✅ Normalize tag case
+    normalized_tags = [tag.lower()
+                       for tag in include_tags] if include_tags else None
 
     registered = []
 
+    included = [proc for proc in MANUAL_PROCS if not normalized_tags or any(
+        tag.lower() in normalized_tags for tag in proc.get("tags", []))]
+    excluded = [proc for proc in MANUAL_PROCS if normalized_tags and not any(
+        tag.lower() in normalized_tags for tag in proc.get("tags", []))]
+
     for proc in MANUAL_PROCS:
-        if include_tags and not any(tag in include_tags for tag in proc.get("tags", [])):
+        proc["source"] = "manual"
+        proc["tags"] = [tag.lower()
+                        for tag in proc.get("tags", [])]  # normalize tags
+
+        # ✅ Docstring enforcement
+        if not proc["func"].__doc__:
+            print(f"⚠️ {proc['name']} is missing a docstring.")
+
+        if normalized_tags and not any(tag in normalized_tags for tag in proc["tags"]):
             print(f"⏭️ Skipping {proc['name']} due to tag filter.")
             continue
 
         if dry_run:
-            print(f"📝 Would register: {proc['name']}")
+            param_types = ", ".join(
+                t.__class__.__name__ for t in proc["input_types"])
+            return_type = proc["return_type"].__class__.__name__
+            print(
+                f"📝 Would register: {proc['name']}({param_types}) → {return_type}")
             registered.append({
                 "name": proc["name"],
                 "kind": "procedure",
-                "tags": proc.get("tags", []),
+                "tags": proc["tags"],
                 "source": "manual",
                 "status": "dry_run"
             })
@@ -114,23 +130,19 @@ def register_manual_procs(
         registered.append({
             "name": proc["name"],
             "kind": "procedure",
-            "tags": proc.get("tags", []),
-            "source": "manual"
+            "tags": proc["tags"],
+            "source": "manual",
+            "status": "registered"  # ✅ Added status for real registrations
         })
 
-        included = [proc for proc in MANUAL_PROCS if not include_tags or any(
-            tag in include_tags for tag in proc.get("tags", []))]
-        excluded = [proc for proc in MANUAL_PROCS if include_tags and not any(
-            tag in include_tags for tag in proc.get("tags", []))]
-
-        if verbosity in ["summary", "verbose"]:
-            print(
-                f"✅ Included {len(included)} manual procedures based on tag filter")
-            if excluded:
-                print(
-                    f"⏭️ Skipped {len(excluded)} manual procedures due to tag mismatch")
-
+    # ✅ Narration block
     if verbosity in ["summary", "verbose"]:
+        print(
+            f"\n✅ Included {len(included)} manual procedures based on tag filter")
+        if excluded:
+            print(
+                f"⏭️ Skipped {len(excluded)} manual procedures due to tag mismatch")
+
         print("\n📜 Registered Entities Summary:")
         print("+----------------------+-----------+--------------+----------+")
         print("| Name                 | Type      | Tags         | Source   |")
@@ -140,7 +152,14 @@ def register_manual_procs(
                 f"| {proc['name']:<20} | {proc['kind']:<9} | {', '.join(proc['tags']):<12} | manual   |")
             print("+----------------------+-----------+--------------+----------+")
 
+    # ✅ Dry-run summary block
+    if dry_run:
+        print(
+            f"\n🧪 Dry-Run Summary: {len(registered)} manual procedures simulated")
+
     print(f"📦 Total manual registered: {len(registered)}")
+    print(
+        f"🧠 Manual registration completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"🚀 completed register_manual_procs for app '{app_name}'")
 
     return registered

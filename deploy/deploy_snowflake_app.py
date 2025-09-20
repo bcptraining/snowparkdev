@@ -1,4 +1,5 @@
 import yaml
+# -- supports an experimental refactor to use a class-based approach
 from orchestration.proc_registrar import ProcRegistrar
 import pytz
 from datetime import datetime
@@ -213,16 +214,39 @@ def load_snowflake_yml(app_path: Path):
 
 
 print("Testing ProcRegistrar class...")
-registrar = ProcRegistrar(verbose=True, dry_run=True, tags=["core", "dag"])
-registrar.register_auto(stage="dummy_stage")
-# Narrate snowflake.yml
 args = parse_cli_args()
 app_name = args.app
 app_path = APPS_DIR / app_name
+
+registrar = ProcRegistrar(
+    app_path=app_path,
+    verbose=args.verbosity == "verbose",
+    dry_run=args.dry_run
+)
+
+registrar.load_declarative_procs()
+# Ensure app/python is importable as 'app.python'
+sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
+
+registrar.validate_handlers()  # This will print validation results
+registrar.validate_signatures()
+registrar.validate_returns()
+registrar.summarize_validation()
+validated_declarative_procs = registrar.validated_procs  # ← new accessor
+
+
+if registrar.verbose and not registrar.dry_run:
+    registrar.emit_final_summary()
+
+
 config = load_snowflake_yml(app_path)
-print(f"📜 snowflake.yml loaded. Entry points: {config.get('procedures', [])}")
+declared_names = [e["identifier"]["name"] for e in config.get(
+    "entities", {}).values() if e.get("type") == "procedure"]
+print(f"📜 snowflake.yml loaded. Declarative procedures: {declared_names}")
 
 print("Testing completed.")
+
+validated_declarative_procs = registrar.validated_procs
 
 # -------------------------------------------
 
@@ -236,6 +260,7 @@ def main():
     app_path = APPS_DIR / app_name
     start_time = time.time()
     tags = TAG_SETS.get(env_name, [])
+    manual_registered = []
 
     print(
         f"🧭 Verbosity: {verbosity} — detailed logs {'enabled' if verbosity == 'verbose' else 'suppressed'}")
@@ -343,6 +368,7 @@ def main():
 
         print(
             f"✅ Auto procedure registration complete. auto_count= {auto_count} procedures/functions registered.")
+        registered_procs = validated_declarative_procs
         # if registered_procs and verbosity == "verbose":
         #     # if registered_procs:
         #     print(f"\n📜 Auto-registered procedures:")
@@ -358,28 +384,27 @@ def main():
         print(f"⚠️ register_all_procs() missing or misconfigured: {e}")
 
     # ✅ Step 10B: Register Manual Procedures (only if flag is passed)
+
+    manual_registered: list[dict] = []  # ✅ Always defined and typed
+    registered_procs: list[dict] = validated_declarative_procs
+
     if args.include_manual_procs:
         try:
             manual_module = importlib.import_module(
-                "app.python.procedures_man"
-                # f"apps.{app_name}.app.python.procedures_man"
-            )
-            # See what files are in the stage before manual registration
+                "app.python.procedures_man")
+
             files = session.sql("LIST @dev_deployment/").collect()
             vprint(
-                f"📂 Files on stage @dev_deployment/ before manual registration:", verbosity)
+                "📂 Files on stage @dev_deployment/ before manual registration:", verbosity)
             for f in files:
                 vprint(
                     f"📦 {f['name']} | {f['size']} bytes | {f['last_modified']}", verbosity)
-            vprint(
-                f"📂 Files on stage @dev_deployment/ after manual registration:", verbosity)
 
-            # manual_module.register_manual_procs(session, stage_name, app_name, args.tags, dry_run=dry_run)
             print(
                 f"stage_name={stage_name}, app_name={app_name}, tags={args.tags}, dry_run={dry_run}")
-            # Ensure latest zip is on stage
             session.file.put(str(zip_file), stage_target, overwrite=True)
-            manual_registered = manual_module.register_manual_procs(
+
+            result = manual_module.register_manual_procs(
                 session=session,
                 stage_name=stage_name,
                 app_name=app_name,
@@ -387,14 +412,19 @@ def main():
                 dry_run=dry_run,
                 verbosity=verbosity
             )
-            print(f"✅ Registered manual procedures from procedures_man.py")
+
+            if result:
+                manual_registered.extend(result)
+
+            print("✅ Registered manual procedures from procedures_man.py")
+
         except ModuleNotFoundError:
             print(f"ℹ️ No procedures_man.py found for app: {app_name}")
         except AttributeError:
             print(
-                f"⚠️ procedures_man.py exists but missing register_manual_procs(session)")
+                "⚠️ procedures_man.py exists but missing register_manual_procs(session)")
     else:
-        print(f"⏭️ Manual procedure registration skipped via --include-manual-procs flag.")
+        print("⏭️ Manual procedure registration skipped via --include-manual-procs flag.")
 
     # ✅ Step 11: Deploy DAGs
     target_db = database
@@ -437,9 +467,9 @@ def main():
 
 #  Step 12: Summary and Validation
 # Comfirm whether registered_procs is populated and source is set to auto
-    print("🔍 Registered Procs:")
-    for proc in (registered_procs or []):
-        print(f"  - {proc.get('name')} | source={proc.get('source')}")
+    # print("🔍 Registered Procs:")
+    # for proc in (registered_procs or []):
+    #     print(f"  - {proc.get('name')} | source={proc.get('source')}")
 
     duration = round(time.time() - start_time, 2)
 # 🧪 Print Summary Statement
@@ -490,6 +520,20 @@ def main():
             f"🕒 Deployment finished at: {summary_time}\n"
             f"\n✅ Deployment completed successfully for app '{app_name}' in environment '{env_name}'."
         )
+
+    print("\n📊 Registered Procedure Summary:\n")
+    header = f"{'Name':<20} {'Source':<12} {'Handler':<50} {'Returns':<10} {'Status':<10}"
+    print(header)
+    print("-" * len(header))
+
+    all_procs = registered_procs + manual_registered
+    for proc in all_procs:
+        name = proc.get("name", "—")
+        source = proc.get("source", "—")
+        handler = proc.get("handler", "—")
+        returns = proc.get("return_type", "—")
+        status = proc.get("status", "—")
+        print(f"{name:<20} {source:<12} {handler:<50} {returns:<10} {status:<10}")
 
 
 if __name__ == "__main__":
