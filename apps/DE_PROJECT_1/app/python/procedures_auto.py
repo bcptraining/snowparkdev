@@ -15,7 +15,7 @@
 # For historical context, the legacy dynamic registration logic is retained
 # in register_procs(...) below, but is not invoked by deploy scripts.
 # If you want to try it then go to procedures_auto.py and change the legace_code
-# variable to True in register_all_procs(...) in register_procs.py. -- not used
+# variable to True in register_all_procs(...) in register_procs.py.
 # ------------------------------------------------------------------------------------
 
 
