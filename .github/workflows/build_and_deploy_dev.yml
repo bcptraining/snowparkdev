@@ -67,19 +67,32 @@ jobs:
       - name: Detect changed apps
         id: detect
         run: |
-          changed_apps=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^apps/' | cut -d '/' -f2 | sort -u)
-          echo "changed_apps=$changed_apps" >> $GITHUB_ENV
+          changed_apps=$(git diff --name-only origin/dev HEAD | grep '^apps/' | cut -d '/' -f2 | sort -u | uniq)
+          echo "changed_apps=$(echo "$changed_apps" | paste -sd ' ' -)" >> $GITHUB_ENV
+
 
       - name: Deploy changed apps
         run: |
-          for app in $changed_apps; do
-            echo "🚀 Deploying $app..."
-            PYTHONPATH=. python deploy/deploy_snowflake_app.py \
-              --app "$app" \
-              --env dev \
-              --include-manual-procs \
-              --verbosity summary
-          done
+          echo "Changed apps: $changed_apps"
+          if [ -z "$changed_apps" ]; then
+            echo "⏭️ No changed apps detected. Skipping deploy."
+          else
+            echo "🔍 Changed apps detected: $changed_apps"
+            IFS=' ' read -ra apps <<< "$changed_apps"
+            for app in "${apps[@]}"; do
+              echo "::group::Deploying $app"
+              echo "🚀 Deploying $app..."
+              PYTHONPATH=. python deploy/deploy_snowflake_app.py \
+                --app "$app" \
+                --env dev \
+                --include-manual-procs \
+                --verbosity summary || {
+                  echo "❌ Deploy failed for $app"
+                  exit 1
+                }
+              echo "::endgroup::"
+            done
+          fi
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
