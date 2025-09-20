@@ -31,7 +31,7 @@ def register_all_procs(
     manual_registered = []
 
     print(f"🚀 Starting register_all_procs for app '{app_name}'")
-    print("📡 Auto procedures are deployed via snowflake.yml — skipping dynamic registration")
+    # print("📡 Auto procedures are deployed via snowflake.yml — skipping dynamic registration")
 
     # Manual procedure registration
     if include_manual:
