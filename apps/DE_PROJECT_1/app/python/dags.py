@@ -88,3 +88,11 @@
 # if __name__ == "__main__":
 #     session = get_session()  # Or use mock if testing offline
 #     test_local_procedures(session)
+
+#  Refactor Info: support for multiplke dags per app:
+# from snowflake.core.task.dagv1 import DAG
+
+# dag1 = DAG(...)
+# dag2 = DAG(...)
+
+# dag_list = [dag1, dag2]

@@ -1,116 +1,153 @@
-# from __future__ import annotations
-# from python.common.helpers import print_hello
-from ..common.helpers import print_hello
-from ..common.helpers import copy_to_table, prepare_copy_inputs
+# ------------------------------------------------------------------------------------
+# 📦 Legacy Auto Procedure Registry — Deprecated as of definition_version: '2'
+#
+# This file previously defined auto procedures using @auto_proc decorators for
+# dynamic registration and tag-based filtering. As of Snowflake's declarative
+# deployment framework (definition_version: '2'), all auto procedures are now
+# defined in snowflake.yml and deployed via `snowflake deploy`.
+#
+# These decorators are commented out and retained for reference only.
+# Manual procedures with parameters are still registered dynamically via procedures_man.py.
+#
+# ✅ Current Source of Truth: snowflake.yml
+# ❌ Dynamic registration no longer used for auto procedures
+#
+# For historical context, the legacy dynamic registration logic is retained
+# in register_procs(...) below, but is not invoked by deploy scripts.
+# If you want to try it then go to procedures_auto.py and change the legace_code
+# variable to True in register_all_procs(...) in register_procs.py.
+# ------------------------------------------------------------------------------------
+
+
 from snowflake.snowpark import Session
-import sys
-import os
-import json
-from pathlib import Path
-# from ..config_refactored_out_not_used import configs
-# from ..schema import schemas
-from snowflake.snowpark.types import StructType, StructField, StringType, IntegerType, FloatType, DateType, BooleanType, TimestampType
-# from snowflake.snowpark.stored_procedure import procedure
-# from snowflake.snowpark import stored_procedure
-# from snowflake.snowpark.stored_procedure import procedure
+from snowflake.snowpark.stored_procedure import StoredProcedureRegistration
+from snowflake.snowpark.functions import udf, sproc
+from snowflake.snowpark.types import StringType
+from app.common.registry import auto_proc, AUTO_PROCS
+from typing import List, Optional
 
 
-#  ---- Functions ----
+# 🎯 Tagging procedures with @auto_proc
+
+print("✅ procedures_auto.py loaded")
+
+# Note: All procedures must accept 'session' as the first parameter -- functions do not need this.
 
 
-# def load_schema_from_json(json_path: str, schema_name: str) -> StructType:
-#     with open(json_path, "r") as f:
-#         all_schemas = json.load(f)
-#     fields = all_schemas.get(schema_name)
-#     if not fields:
-#         raise ValueError(f"Schema '{schema_name}' not found in {json_path}")
-#     return StructType([
-#         StructField(field["name"], TYPE_MAP[field["type"]])
-#         for field in fields
-#     ])
-
-
-# def load_named_config(config_name: str, config_dir: str | Path = "app/config") -> dict:
-#     config_dir = Path(config_dir)
-#     config_file = config_dir / f"{config_name}.json"
-
-#     if not config_file.exists():
-#         raise FileNotFoundError(f"Config file not found: {config_file}")
-
-#     with open(config_file, "r") as f:
-#         config = json.load(f)
-
-#     if not isinstance(config, dict):
-#         raise ValueError(
-#             f"Expected a JSON object at root of {config_file}, got {type(config)}")
-
-#     return config
-
-
-# def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
-#     schema = load_schema_from_json(schema_file, schema_key)
-#     config = load_named_config(config_name)
-#     return config, schema
-
-
-# Step 0. Define paths and directories containing schemas and configs
-# emp_schema_path = "app/schemas/schemas.json"  # All schemas are in this file
-# config_dir = "app/config/"  # Directory containing config JSON files
-
-# Step 1. Load schema and config for employee table
-# emp_schema = load_schema_from_json(
-#     emp_schema_path, "emp_stg_schema_udemy")
-
-# copy_config = load_named_config("copy_to_snowstg_udemy")
-
-
-# Dynamically add the project root to sys.path
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../../..")))
-# from app.python.common import print_hello
-
-
-# def hello_procedure(session: Session, name: str) -> str:
-#     return f"Hello, {name}"
-# @procedure(name="HELLO_PROCEDURE2", is_permanent=True, stage_location="@dev_deployment", return_type=StringType())
-
-def hello_procedure2(session: Session, name="World2") -> str:
-    return print_hello(name)
-
-
+@auto_proc(name="hello_procedure", input_types=[StringType()], return_type=StringType(), tags=["core", "dev"])
 def hello_procedure(session: Session, name: str) -> str:
-    return f"Hello, {name}! Hope you're having a great day!"
+    return f"Hello, {name}!"
 
 
+@auto_proc(name="hello_procedure2", input_types=[StringType()], return_type=StringType(), tags=["dev"])
+def hello_procedure2(session: Session, name: str) -> str:
+    return f"Hi there, {name}!"
+
+
+@auto_proc(name="test_procedure", input_types=[], return_type=StringType(), tags=["dev"])
 def test_procedure(session: Session) -> str:
-    return "Test procedure"
+    return "Test procedure executed."
 
 
+@auto_proc(name="test_procedure_two", input_types=[], return_type=StringType(), tags=["experimental"])
 def test_procedure_two(session: Session) -> str:
-    return "Test procedure"
+    return "Second test procedure executed."
 
 
-# @procedure(name="COPY_EMPLOYEE_PROC", is_permanent=True, stage_location="@dev_deployment", return_type=StringType)
-# def copy_employee_stg_udemy_proc(session: Session) -> str:
-#     config, schema = prepare_copy_inputs(
-#         "app/schemas/schemas.json", "emp_stg_schema_udemy", "copy_to_snowstg_udemy"
-#     )
-#     copied_into_result, qid = copy_to_table(session, config, schema)
-#     return f"✅ Copy completed. Query ID: {qid}"
+@auto_proc(name="hello_function", input_types=[StringType()], return_type=StringType(), tags=["core"], kind="function")
+def hello_function(name: str) -> str:
+    return f"Echo: {name}"
+
+# 🚀 Auto-registration logic
 
 
-# , config_file: str, schema: str = 'NA'):
-# def copy_to_table_proc(session: Session) -> str:
-#     copied_into_result, qid = copy_to_table(
-#         # session, configs.employee_config, "EMP_STG_SCHEMA_UDEMY")
-#         session, copy_config, emp_schema)
-#     return "something"
+def register_procs(
+    session: Session,
+    app_name: str,
+    stage_name: str,
+    zip_name: str,
+    include_tags: Optional[List[str]] = None,
+    dry_run: bool = False,
+    verbosity: str = "summary"
+) -> List[dict]:
+    # def register_procs(session, app_name, stage_name, zip_name, include_tags=None, verbosity="normal"):
+    """
+    Registers tagged procedures/functions from AUTO_PROCS.
+    Returns a list of dicts with source attribution.
+    """
+    from app.common.registry import AUTO_PROCS
+    from snowflake.snowpark.functions import udf
+    from tabulate import tabulate
 
-# def copy_to_table_proc(session: Session, config: dict, schema: StructType) -> str:
+    if verbosity in ("normal", "verbose"):
+        print(
+            f"📡 Auto-registering procedures for {app_name} in stage {stage_name}")
 
-#     copied_into_result, qid = copy_to_table(session, config, schema)
-#     return f"✅ Copy completed. Query ID: {qid}"
+    # Filter by tags
+    selected = []
+    if include_tags:
+        tag_set = set(include_tags)
+        positive_tags = {tag for tag in tag_set if not tag.startswith("!")}
+        negative_tags = {tag[1:] for tag in tag_set if tag.startswith("!")}
 
-# copy_config, emp_schema = prepare_copy_inputs(
-#     "app/schemas/schemas.json", "emp_stg_schema_udemy", "copy_to_snowstg_udemy"
-# )
+        for proc in AUTO_PROCS:
+            proc_tags = proc.get("tags", set())
+            if positive_tags and not proc_tags.intersection(positive_tags):
+                continue
+            if proc_tags.intersection(negative_tags):
+                continue
+            selected.append(proc)
+    else:
+        selected = AUTO_PROCS.copy()
+
+    if verbosity == "verbose":
+        print(
+            f"🔍 Filtering procedures with tags: {', '.join(include_tags) if include_tags else 'ALL'}")
+        print(f"✅ Selected {len(selected)} procedures for registration")
+
+    # Register each entity
+    for proc in selected:
+        kind = proc.get("kind", "procedure")
+        if kind == "function":
+            udf(
+                func=proc["func"],
+                input_types=proc["input_types"],
+                return_type=proc["return_type"],
+                name=proc["name"],
+                stage_location=f"@{stage_name}",
+                replace=True,
+                is_permanent=True,
+                session=session
+            )
+        else:
+            session.sproc.register(
+                func=proc["func"],
+                input_types=proc["input_types"],
+                return_type=proc["return_type"],
+                name=proc["name"],
+                stage_location=f"@{stage_name}",
+                replace=True,
+                is_permanent=True,
+                session=session
+            )
+
+        if verbosity == "verbose":
+            print(
+                f"✅ Registered {kind}: {proc['name']} ({', '.join(proc['tags'])})")
+
+    # Inject source attribution
+    for proc in selected:
+        proc["source"] = "auto"
+
+    # Summary table
+    if verbosity in ("normal", "verbose") and selected:
+        summary = [
+            [proc["name"], "Function" if proc.get("kind") == "function" else "Procedure",
+             ", ".join(proc.get("tags", [])), proc["source"]]
+            for proc in selected
+        ]
+        print("\n📜 Registered Entities Summary:")
+        print(tabulate(summary, headers=[
+              "Name", "Type", "Tags", "Source"], tablefmt="grid"))
+
+    return selected

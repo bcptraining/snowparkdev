@@ -11,7 +11,10 @@
   "files.insertFinalNewline": true,
   "yaml.format.enable": true,
   "editor.formatOnPaste": true,
-
+  //
+  "python.analysis.extraPaths": [
+    "apps/DE_PROJECT_1"
+  ],
 
   // turn off audio cues (not applicable in codespaces)
   // "audioCues.terminalCommandDone": "off",

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from apps.DE_PROJECT_1.app.common.helpers import print_hello
+from app.common.helpers import print_hello
 
 
 def hello_function(name="World") -> str:
