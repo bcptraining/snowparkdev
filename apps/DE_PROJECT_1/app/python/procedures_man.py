@@ -46,7 +46,7 @@ json_to_struct_type = common.json_to_struct_type
 def load_copy_to_table():
     from DE_PROJECT_1.app.common.common import copy_to_table
     return copy_to_table
-# ✅ Now this import will work.
+# ✅ Now this import will work
 
 
 # 🧠 Optional tag validation fallback
