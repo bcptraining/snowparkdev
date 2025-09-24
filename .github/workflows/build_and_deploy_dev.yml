@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # ✅ Ensures full history is available
+          fetch-depth: 0
           repository: bcptraining/snowparkdev
           ref: ${{ github.event.inputs.target_branch || github.ref_name }}
 
@@ -65,96 +65,65 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
 
-      # - name: Detect changed apps
-      #   id: detect
-      #   run: |
-      #     previous_commit=$(git rev-parse HEAD^)
-      #     changed_apps=$(git diff --name-only "$previous_commit" HEAD | grep '^apps/' | cut -d '/' -f2 | sort -u | uniq)
-      #     echo "changed_apps=$(echo "$changed_apps" | paste -sd ' ' -)" >> $GITHUB_ENV
-
       - name: Detect changed apps
         id: detect
         run: |
           previous_commit="${{ github.event.before }}"
           current_commit="${{ github.sha }}"
+          echo "previous_commit=$previous_commit" >> $GITHUB_ENV
+          echo "current_commit=$current_commit" >> $GITHUB_ENV
           changed_apps=$(git diff --name-only "$previous_commit" "$current_commit" | grep '^apps/' | cut -d '/' -f2 | sort -u | uniq)
           echo "changed_apps=$(echo "$changed_apps" | paste -sd ' ' -)" >> $GITHUB_ENV
 
-
       - name: Fix Snowflake config permissions
-        run: |
-          chmod 0600 /home/runner/.snowflake/config.toml
-
-
-
-      # - name: Deploy changed apps
-      #   run: |
-      #     echo "Changed apps: $changed_apps"
-      #     if [ -z "$changed_apps" ]; then
-      #       echo "⏭️ No changed apps detected. Skipping deploy."
-      #     else
-      #       echo "🔍 Changed apps detected: $changed_apps"
-      #       IFS=' ' read -ra apps <<< "$changed_apps"
-      #       for app in "${apps[@]}"; do
-      #         echo "::group::Deploying $app"
-      #         echo "🚀 Deploying $app..."
-      #         PYTHONPATH=. python deploy/deploy_snowflake_app.py \
-      #           --app "$app" \
-      #           --env dev \
-      #           --include-manual-procs \
-      #           --verbosity summary || {
-      #             echo "❌ Deploy failed for $app"
-      #             exit 1
-      #           }
-      #         echo "::endgroup::"
-      #       done
-      #     fi
-      #   env:
-      #     SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
-      #     SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
-      #     SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD_DEV }}
-      #     SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE_DEV }}
-      #     SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
-      #     SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
+        run: chmod 0600 /home/runner/.snowflake/config.toml
 
       - name: Start deploy summary
         run: |
           echo "# 🚀 Deploy Summary — Dev Environment" > deploy_summary.md
+          echo "[" > deploy_summary.json
 
       - name: Deploy changed apps
         run: |
           echo "Changed apps: $changed_apps"
+          echo "Previous commit: $previous_commit"
+          echo "Current commit: $current_commit"
+
           if [ -z "$changed_apps" ]; then
             echo "⏭️ No changed apps detected. Skipping deploy." | tee -a deploy_summary.md
           else
             echo "🔍 Changed apps detected: $changed_apps"
             IFS=' ' read -ra apps <<< "$changed_apps"
             for app in "${apps[@]}"; do
-            echo "::group::Deploying $app"
-            echo "🚀 Deploying $app..."
-            PYTHONPATH=. python deploy/deploy_snowflake_app.py \
-              --app "$app" \
-              --env dev \
-              --include-manual-procs \
-              --verbosity summary || {
-                echo "❌ Deploy failed for $app" | tee -a deploy_summary.md
-                exit 1
-              }
+              echo "::group::Deploying $app"
+              echo "🚀 Deploying $app..."
+              PYTHONPATH=. python deploy/deploy_snowflake_app.py \
+                --app "$app" \
+                --env dev \
+                --include-manual-procs \
+                --verbosity summary || {
+                  echo "❌ Deploy failed for $app" | tee -a deploy_summary.md
+                  exit 1
+                }
 
-            echo "## ✅ $app deployed to dev" >> deploy_summary.md
-            echo "- Manual procedures included" >> deploy_summary.md
-            echo "- Environment: dev" >> deploy_summary.md
-            echo "- Timestamp: $(date -u)" >> deploy_summary.md
-            echo "- Commit: $current_commit" >> deploy_summary.md
-            # echo "- Author: $(git log -1 --pretty=format:'%an <%ae>')" >> deploy_summary.md
-            echo "- Author: $(git log -1 "$current_commit" --pretty=format:'%an <%ae>')" >> deploy_summary.md
-            echo "- Message: $(git log -1 "$current_commit" --pretty=format:'%s')" >> deploy_summary.md
-            echo "- Changed files:" >> deploy_summary.md
-            git diff --name-only "$previous_commit" "$current_commit" | grep "$app" >> deploy_summary.md
-            echo "" >> deploy_summary.md
-            echo "{\"app\": \"$app\", \"status\": \"success\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\", \"author\": \"$(git log -1 \"$current_commit\" --pretty=format:'%an <%ae>')\", \"message\": \"$(git log -1 \"$current_commit\" --pretty=format:'%s')\"}" >> deploy_summary.json
-            echo "::endgroup::"
-          done
+              echo "## ✅ $app deployed to dev" >> deploy_summary.md
+              echo "- Manual procedures included" >> deploy_summary.md
+              echo "- Environment: dev" >> deploy_summary.md
+              echo "- Timestamp: $(date -u)" >> deploy_summary.md
+              echo "- Commit: $current_commit" >> deploy_summary.md
+              echo "- Author: $(git log -1 "$current_commit" --pretty=format:'%an <%ae>')" >> deploy_summary.md
+              echo "- Message: $(git log -1 "$current_commit" --pretty=format:'%s')" >> deploy_summary.md
+              echo "- Changed files:" >> deploy_summary.md
+              if [ -n "$previous_commit" ] && [ -n "$current_commit" ]; then
+                git diff --name-only "$previous_commit" "$current_commit" | grep "$app" >> deploy_summary.md
+              else
+                echo "[unavailable]" >> deploy_summary.md
+              fi
+              echo "" >> deploy_summary.md
+
+              echo "  {\"app\": \"$app\", \"status\": \"success\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\", \"author\": \"$(git log -1 \"$current_commit\" --pretty=format:'%an <%ae>')\", \"message\": \"$(git log -1 \"$current_commit\" --pretty=format:'%s')\"}," >> deploy_summary.json
+              echo "::endgroup::"
+            done
           fi
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
@@ -164,13 +133,15 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
 
+      - name: Finalize JSON summary
+        run: |
+          sed -i '$ s/,$//' deploy_summary.json
+          echo "]" >> deploy_summary.json
 
       - name: Upload deploy summaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: deploy-summaries
           path: |
             deploy_summary.md
             deploy_summary.json
-
-
