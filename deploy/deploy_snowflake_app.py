@@ -17,6 +17,8 @@ from snowflake.core.task.dagv1 import DAGOperation
 import re  # for regex operations
 from tag_registry import TAG_SETS
 # tags = TAG_SETS[args.env] if 'env_name' in locals() else []  # Example usage
+from deploy.deploy_manager import DeployManager
+from deploy.utils.change_detection import get_changed_files_for_app
 
 
 def vprint(msg: str, verbosity: str):
@@ -261,6 +263,11 @@ def main():
     start_time = time.time()
     tags = TAG_SETS.get(env_name, [])
     manual_registered = []
+    # Default to empty list; in real use, populate with actual changed files if available
+    changed_apps = []
+    changed_files = get_changed_files_for_app(app_name)
+
+    print(f"🔍 Changed files detected for app '{app_name}': {changed_files}")
 
     print(
         f"🧭 Verbosity: {verbosity} — detailed logs {'enabled' if verbosity == 'verbose' else 'suppressed'}")
@@ -384,45 +391,65 @@ def main():
         print(f"⚠️ register_all_procs() missing or misconfigured: {e}")
 
     # ✅ Step 10B: Register Manual Procedures (only if flag is passed)
+    # Step 10B replaced by step 10C using DeployManager class
 
-    manual_registered: list[dict] = []  # ✅ Always defined and typed
+    # manual_registered: list[dict] = []  # ✅ Always defined and typed
+    # registered_procs: list[dict] = validated_declarative_procs
+
+    # if args.include_manual_procs:
+    #     try:
+    #         manual_module = importlib.import_module(
+    #             "app.python.procedures_man")
+
+    #         files = session.sql("LIST @dev_deployment/").collect()
+    #         vprint(
+    #             "📂 Files on stage @dev_deployment/ before manual registration:", verbosity)
+    #         for f in files:
+    #             vprint(
+    #                 f"📦 {f['name']} | {f['size']} bytes | {f['last_modified']}", verbosity)
+
+    #         print(
+    #             f"stage_name={stage_name}, app_name={app_name}, tags={args.tags}, dry_run={dry_run}")
+    #         session.file.put(str(zip_file), stage_target, overwrite=True)
+
+    #         result = manual_module.register_manual_procs(
+    #             session=session,
+    #             stage_name=stage_name,
+    #             app_name=app_name,
+    #             include_tags=tags,
+    #             dry_run=dry_run,
+    #             verbosity=verbosity
+    #         )
+
+    #         if result:
+    #             manual_registered.extend(result)
+
+    #         print("✅ Registered manual procedures from procedures_man.py")
+
+    #     except ModuleNotFoundError:
+    #         print(f"ℹ️ No procedures_man.py found for app: {app_name}")
+    #     except AttributeError:
+    #         print(
+    #             "⚠️ procedures_man.py exists but missing register_manual_procs(session)")
+    # else:
+    #     print("⏭️ Manual procedure registration skipped via --include-manual-procs flag.")
+     # ✅ Step 10C: Register Manual Procedures (determined by DeployManager class)
+    manual_registered: list[dict] = []
     registered_procs: list[dict] = validated_declarative_procs
 
     if args.include_manual_procs:
-        try:
-            manual_module = importlib.import_module(
-                "app.python.procedures_man")
+        manager = DeployManager(
+            session=session,
+            app_name=app_name,
+            stage_name=stage_name,
+            changed_files=changed_files,
+            include_tags=tags,
+            dry_run=dry_run,
+            verbosity=verbosity
+        )
+        manual_registered = manager.register_manual()
+        manager.emit_summary()
 
-            files = session.sql("LIST @dev_deployment/").collect()
-            vprint(
-                "📂 Files on stage @dev_deployment/ before manual registration:", verbosity)
-            for f in files:
-                vprint(
-                    f"📦 {f['name']} | {f['size']} bytes | {f['last_modified']}", verbosity)
-
-            print(
-                f"stage_name={stage_name}, app_name={app_name}, tags={args.tags}, dry_run={dry_run}")
-            session.file.put(str(zip_file), stage_target, overwrite=True)
-
-            result = manual_module.register_manual_procs(
-                session=session,
-                stage_name=stage_name,
-                app_name=app_name,
-                include_tags=tags,
-                dry_run=dry_run,
-                verbosity=verbosity
-            )
-
-            if result:
-                manual_registered.extend(result)
-
-            print("✅ Registered manual procedures from procedures_man.py")
-
-        except ModuleNotFoundError:
-            print(f"ℹ️ No procedures_man.py found for app: {app_name}")
-        except AttributeError:
-            print(
-                "⚠️ procedures_man.py exists but missing register_manual_procs(session)")
     else:
         print("⏭️ Manual procedure registration skipped via --include-manual-procs flag.")
 

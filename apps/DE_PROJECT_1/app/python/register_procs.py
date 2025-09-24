@@ -1,3 +1,5 @@
+from deploy.deploy_manager import DeployManager
+from deploy.utils.change_detection import get_changed_files_for_app
 import importlib.util
 import importlib
 import sys
@@ -33,40 +35,56 @@ def register_all_procs(
     print(f"🚀 Starting register_all_procs for app '{app_name}'")
     # print("📡 Auto procedures are deployed via snowflake.yml — skipping dynamic registration")
 
-    # Manual procedure registration
-    if include_manual:
-        try:
-            manual_module = importlib.import_module(
-                f"apps.{app_name}.app.python.procedures_man")
-            if hasattr(manual_module, "register_manual_procs"):
-                manual_registered = manual_module.register_manual_procs(
-                    session=session,
-                    stage_name=stage_name,
-                    app_name=app_name,
-                    include_tags=include_tags,
-                    dry_run=dry_run,
-                    verbosity=verbosity
-                )
-                if manual_registered:
-                    print("\n📊 Manual Procedure Summary:\n")
-                    for proc in manual_registered:
-                        name = proc.get("name", "—")
-                        handler = proc.get("handler", "—")
-                        params = ", ".join(
-                            f'{p["name"]}: {p["type"]}' for p in proc.get("signature", [])) or "—"
-                        returns = proc.get("returns", "—")
-                        print(f" - {name} → {handler}({params}) → {returns}")
-            else:
-                print(
-                    "⚠️ procedures_man.py exists but missing register_manual_procs(...)")
-        except ModuleNotFoundError:
-            print("ℹ️ procedures_man.py not found. Skipping manual registration.")
-        except Exception as e:
-            print(f"❌ Failed to import or execute procedures_man.py: {e}")
-    else:
-        print("⏭️ Manual procedure registration skipped via flag.")
+    # Manual procedure registration (refactored to detect file changes -- see below)
+    # if include_manual:
+    #     try:
+    #         manual_module = importlib.import_module(
+    #             f"apps.{app_name}.app.python.procedures_man")
+    #         if hasattr(manual_module, "register_manual_procs"):
+    #             manual_registered = manual_module.register_manual_procs(
+    #                 session=session,
+    #                 stage_name=stage_name,
+    #                 app_name=app_name,
+    #                 include_tags=include_tags,
+    #                 dry_run=dry_run,
+    #                 verbosity=verbosity
+    #             )
+    #             if manual_registered:
+    #                 print("\n📊 Manual Procedure Summary:\n")
+    #                 for proc in manual_registered:
+    #                     name = proc.get("name", "—")
+    #                     handler = proc.get("handler", "—")
+    #                     params = ", ".join(
+    #                         f'{p["name"]}: {p["type"]}' for p in proc.get("signature", [])) or "—"
+    #                     returns = proc.get("returns", "—")
+    #                     print(f" - {name} → {handler}({params}) → {returns}")
+    #         else:
+    #             print(
+    #                 "⚠️ procedures_man.py exists but missing register_manual_procs(...)")
+    #     except ModuleNotFoundError:
+    #         print("ℹ️ procedures_man.py not found. Skipping manual registration.")
+    #     except Exception as e:
+    #         print(f"❌ Failed to import or execute procedures_man.py: {e}")
+    # else:
+    #     print("⏭️ Manual procedure registration skipped via flag.")
 
     # Summary counts
+
+    changed_files = get_changed_files_for_app(app_name)
+
+    manager = DeployManager(
+        session=session,
+        app_name=app_name,
+        stage_name=stage_name,
+        changed_files=changed_files,
+        include_tags=include_tags,
+        dry_run=dry_run,
+        verbosity=verbosity
+    )
+
+    manual_registered = manager.register_manual()
+    manager.emit_summary()
+
     auto_count = len(declarative_procs)
     manual_count = sum(
         1 for proc in manual_registered if proc.get("source") == "manual")
