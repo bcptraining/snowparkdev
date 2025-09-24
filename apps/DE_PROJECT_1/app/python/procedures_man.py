@@ -1,3 +1,7 @@
+
+from snowflake.snowpark.types import StructType, StructField, StringType, IntegerType, FloatType, BooleanType
+import json
+from typing import Dict, Union
 from datetime import datetime
 from snowflake.snowpark import Session
 from snowflake.snowpark.types import StringType
@@ -5,6 +9,45 @@ from typing import List, Optional, Callable
 from pathlib import Path
 import sys
 import pickle
+import importlib.util
+import os
+from snowflake.snowpark.types import StructType
+from tabulate import tabulate  # For tabular outputs
+# Tip: Requires config_file and schema
+# from common.common import json_to_struct_type
+# print("🔗 Imported json_to_struct_type:", callable(json_to_struct_type))
+
+# Dynamically add the project root to PYTHONPATH
+ROOT_DIR = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "../../../"))
+sys.path.insert(0, ROOT_DIR)
+
+# Dynamically load the common module
+
+
+def load_common_module():
+    common_path = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), "../common/common.py"))
+    spec = importlib.util.spec_from_file_location("common", common_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(
+            f"Could not load module spec or loader for {common_path}")
+    common = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(common)
+    print(f"🔍 Loading common.py from: {common_path}")
+    return common
+
+
+# Load shared schema converter
+common = load_common_module()
+json_to_struct_type = common.json_to_struct_type
+
+
+def load_copy_to_table():
+    from DE_PROJECT_1.app.common.common import copy_to_table
+    return copy_to_table
+# ✅ Now this import will work
+
 
 # 🧠 Optional tag validation fallback
 ValidateTagsType = Callable[[List[str], Optional[str]], List[str]]
@@ -25,9 +68,78 @@ def vprint(msg: str, verbosity: str):
 
 # 🛠️ Define your manual procedure
 
+# Load config file
+CONFIG_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json"
+SCHEMA_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/schemas/schemas.json"
 
-def copy_to_table_proc(session: Session, source_table: str, target_table: str) -> str:
-    return f"Copied from {source_table} to {target_table}"
+# def copy_to_table_proc(session: Session, source_table: str, target_table: str) -> str:
+
+#  Example procedure to copy data from one table to another using dynamic config and schema files
+
+
+def copy_to_table_proc(session: Session, schema_key: str) -> str:
+    def format_copy_results(copy_result_rows):
+        table_data = []
+        # Build table data summarizing copy results
+        for row in copy_result_rows:
+            file_name = row.file.split("/")[-1]
+            status = row.status
+            loaded = row.rows_loaded
+            parsed = row.rows_parsed
+            errors = row.errors_seen
+            if errors:
+                error_msg = f"{row.first_error} (line {row.first_error_line}, column {row.first_error_column_name})"
+            else:
+                error_msg = "—"
+            table_data.append([file_name, status, loaded,
+                               parsed, errors, error_msg])
+
+        headers = ["📄 File Name", "Status", "Rows Loaded",
+                   "Rows Parsed", "Errors Seen", "First Error"]
+        print("\n✅ Copy Result Summary\n")
+        print(tabulate(table_data, headers=headers, tablefmt="github"))
+
+    # Load config from JSON
+    with open(CONFIG_PATH, "r") as f:
+        config_file = json.load(f)
+
+    # Load schema file
+    with open(SCHEMA_PATH, "r") as f:
+        schema_file = json.load(f)
+
+    # Extract raw schema by key
+    raw_schema = schema_file.get(schema_key)
+
+    if not raw_schema:
+        available_keys = list(schema_file.keys())
+        return (
+            f"❌ Schema key '{schema_key}' not found in schema file.\n"
+            f"📂 Available schema keys: {available_keys}"
+        )
+
+    # Convert raw schema to StructType
+    try:
+        schema = json_to_struct_type(raw_schema)
+    except Exception as e:
+        return f"❌ Failed to convert schema for key '{schema_key}': {e}"
+
+    # Execute copy
+    copied_into_result, qid = copy_to_table(
+        session, config_file, schema=schema)
+
+    # Narrate Partial Loads in Deploy Summary
+    # for row in copied_into_result:
+    #     print(f"📄 {row.file}")
+    #     print(f"   Status: {row.status}")
+    #     print(f"   Rows: {row.rows_loaded}/{row.rows_parsed} loaded")
+    #     if row.errors_seen:
+    #         print(
+    #             f"   ⚠️ Error: {row.first_error} at line {row.first_error_line}, column {row.first_error_column_name}")
+
+    summary_text = format_copy_results(copied_into_result)
+
+    # return f"Copy Result: {copied_into_result}, Query ID: {qid}"
+    return f"✅ Copy completed.\n\nQuery ID: {qid}"
 
 
 copy_to_table_proc.__module__ = "app.python.procedures_man"
@@ -83,8 +195,11 @@ def register_manual_procs(
                         for tag in proc.get("tags", [])]  # normalize tags
 
         # ✅ Docstring enforcement
+        # if not proc["func"].__doc__:
+        #     print(f"⚠️ {proc['name']} is missing a docstring.")
         if not proc["func"].__doc__:
-            print(f"⚠️ {proc['name']} is missing a docstring.")
+            raise ValueError(
+                f"❌ Procedure '{proc['name']}' is missing a docstring.")
 
         if normalized_tags and not any(tag in normalized_tags for tag in proc["tags"]):
             print(f"⏭️ Skipping {proc['name']} due to tag filter.")
@@ -163,3 +278,66 @@ def register_manual_procs(
     print(f"🚀 completed register_manual_procs for app '{app_name}'")
 
     return registered
+
+
+if __name__ == "__main__":
+    import os
+    import importlib.util
+    from snowflake.snowpark import Session
+    from typing import Dict, Union
+
+    # 🔧 Dynamically load common.py
+    def load_common_module():
+        common_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "../common/common.py"))
+        spec = importlib.util.spec_from_file_location("common", common_path)
+        if spec is None or spec.loader is None:
+            raise ImportError(
+                f"Could not load module spec or loader for {common_path}")
+        common = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(common)
+        return common
+
+    # ✅ Load shared utilities
+    common = load_common_module()
+    json_to_struct_type = common.json_to_struct_type
+    # import copy_to_table from common
+    copy_to_table = load_copy_to_table()
+
+    # 🔐 Load Snowflake credentials from env
+    raw_connection_parameters = {
+        "account": os.getenv("SNOWFLAKE_ACCOUNT"),
+        "user": os.getenv("SNOWFLAKE_USER"),
+        "password": os.getenv("SNOWFLAKE_PASSWORD"),
+        "role": os.getenv("SNOWFLAKE_ROLE"),
+        "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
+        "database": os.getenv("SNOWFLAKE_DATABASE"),
+        "schema": os.getenv("SNOWFLAKE_SCHEMA", "PUBLIC")
+    }
+
+    # 🧼 Remove missing keys
+    cleaned_connection_parameters: Dict[str, Union[str, int]] = {
+        k: v for k, v in raw_connection_parameters.items() if v is not None
+    }
+
+    required_keys = ["account", "user", "password",
+                     "role", "warehouse", "database", "schema"]
+    missing = [k for k in required_keys if k not in cleaned_connection_parameters]
+    if missing:
+        raise ValueError(
+            f"❌ Missing required connection parameters: {missing}")
+
+    # 🚀 Create Snowpark session
+    session = Session.builder.configs(cleaned_connection_parameters).create()
+
+    # Set the default database and schema (context)
+    session.sql(
+        f"USE SCHEMA {cleaned_connection_parameters['database']}.{cleaned_connection_parameters['schema']}").collect()
+
+    # 🧪 Run test with valid schema key
+    result = copy_to_table_proc(session, "emp_stg_schema_udemy")
+    print("✅ Result with valid schema:", result)
+
+    # 🧪 Run test with invalid schema key
+    # result = copy_to_table_proc(session, "nonexistent_schema_key")
+    # print("❌ Result with invalid schema:", result)
