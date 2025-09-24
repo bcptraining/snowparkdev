@@ -50,20 +50,6 @@ entities:
       use_mixins:
         - snowpark_shared
 
-  # my_task_GreetTheDay:
-  #   type: task
-  #   identifier:
-  #     name: my_task_GreetTheDay
-  #   schedule: "USING CRON 0 */4 * * * UTC"
-  #   handler: app.python.create_task.my_task_with_args
-  #   signature: []
-  #   returns: string
-  #   meta:
-  #     use_mixins:
-  #       - snowpark_task
-
-
-
   test_procedure:
     type: procedure
     identifier:
@@ -85,28 +71,3 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-# Procedured with parameters are not supported in Definition Version 2 as of Aug 2025
-# copy_to_table_proc:
-#   type: procedure
-#   identifier:
-#     name: copy_to_table_proc
-#   handler: app.python.procedures.copy_to_table_proc
-#   signature:
-#     - name: schema_key
-#       type: string
-#     - name: config_name
-#       type: string
-#   returns: string
-#   meta:
-#     use_mixins:
-#       - snowpark_shared
-
-  # As of now (Aug 2025), DAGs are not supported in Snowflake's deployment framework.
-  # my_dag:
-  #     type: dag
-  #     identifier:
-  #       name: my_dag
-  #     handler: app.python.dags.my_dag
-  #     meta:
-  #       use_mixins:
-  #         - snowpark_dag
