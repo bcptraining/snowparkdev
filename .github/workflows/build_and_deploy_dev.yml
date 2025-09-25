@@ -176,6 +176,7 @@ jobs:
         run: |
           sed -i '$ s/,$//' deploy_summary.json
           echo "]" >> deploy_summary.json
+
       - name: Show deploy summary in logs
         run: cat deploy_summary.md
 
