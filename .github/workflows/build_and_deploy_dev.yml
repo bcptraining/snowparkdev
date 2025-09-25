@@ -106,18 +106,24 @@ jobs:
             for app in "${apps[@]}"; do
               echo "::group::Deploying $app"
 
-              app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null | tr '\n' ' ' | xargs || echo "")
+              app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null | tr '\n' ' ' | xargs || echo "[none]")
+              disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
+
+              if [ ! -f "apps/$app/tags.txt" ]; then
+                echo "⚠️ No tags.txt found for $app" >> deploy_summary.md
+              fi
 
               if ! echo "$app_tags" | grep -qE "$(echo "$allowed_tags" | sed 's/ /|/g')"; then
                 echo "⏭️ Skipping $app due to tag mismatch." | tee -a deploy_summary.md
                 echo "## ⏭️ $app skipped" >> deploy_summary.md
                 echo "- Reason: Tag mismatch" >> deploy_summary.md
+                echo "- Disqualifying tags: $disqualifying_tags" >> deploy_summary.md
                 echo "- Environment: dev" >> deploy_summary.md
                 echo "- Timestamp: $(date -u)" >> deploy_summary.md
                 echo "- Commit: $current_commit" >> deploy_summary.md
                 echo "- Tags: $app_tags" >> deploy_summary.md
                 echo "" >> deploy_summary.md
-                echo "  {\"app\": \"$app\", \"status\": \"skipped\", \"reason\": \"tag_mismatch\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
+                echo "  {\"app\": \"$app\", \"status\": \"skipped\", \"reason\": \"tag_mismatch\", \"disqualifying_tags\": \"$disqualifying_tags\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
                 echo "::endgroup::"
                 continue
               fi
@@ -130,8 +136,9 @@ jobs:
                 echo "- Timestamp: $(date -u)" >> deploy_summary.md
                 echo "- Commit: $current_commit" >> deploy_summary.md
                 echo "- Tags: $app_tags" >> deploy_summary.md
+                echo "- Disqualifying tags: $disqualifying_tags" >> deploy_summary.md
                 echo "" >> deploy_summary.md
-                echo "  {\"app\": \"$app\", \"status\": \"skipped\", \"reason\": \"dry_run\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
+                echo "  {\"app\": \"$app\", \"status\": \"skipped\", \"reason\": \"dry_run\", \"disqualifying_tags\": \"$disqualifying_tags\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
                 echo "::endgroup::"
                 continue
               fi
@@ -173,18 +180,4 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
 
-      - name: Finalize JSON summary
-        run: |
-          sed -i '$ s/,$//' deploy_summary.json
-          echo "]" >> deploy_summary.json
-
-      - name: Show deploy summary in logs
-        run: cat deploy_summary.md
-
-      - name: Upload deploy summaries
-        uses: actions/upload-artifact@v4
-        with:
-          name: deploy-summaries
-          path: |
-            deploy_summary.md
-            deploy_summary.json
+      - name:
