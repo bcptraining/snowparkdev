@@ -106,8 +106,29 @@ jobs:
             for app in "${apps[@]}"; do
               echo "::group::Deploying $app"
 
-              app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null | tr '\n' ' ' | xargs || echo "[none]")
-              disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
+              # app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null | tr '\n' ' ' | xargs || echo "[none]")
+
+              if [ -f "apps/$app/tags.txt" ]; then
+                app_tags=$(cat "apps/$app/tags.txt" | tr '\n' ' ' | xargs)
+              else
+                app_tags="[none]"
+              fi
+
+              if [ "$app_tags" = "[none]" ]; then
+                disqualifying_tags="[none]"
+              else
+                disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
+              fi
+
+              # disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
+
+              if [ "$app_tags" = "[none]" ]; then
+                disqualifying_tags="[none]"
+              else
+                disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
+              fi
+              echo "App tags: $app_tags"
+
 
               if [ ! -f "apps/$app/tags.txt" ]; then
                 echo "⚠️ No tags.txt found for $app" >> deploy_summary.md
