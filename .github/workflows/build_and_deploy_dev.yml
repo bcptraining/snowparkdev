@@ -68,8 +68,8 @@ jobs:
       - name: Detect changed apps
         id: detect
         run: |
-          previous_commit="${{ github.event.before }}"
-          current_commit="${{ github.sha }}"
+          previous_commit=$(echo "${{ github.event.before }}" | tr -d '"')
+          current_commit=$(echo "${{ github.sha }}" | tr -d '"')
           echo "previous_commit=$previous_commit" >> $GITHUB_ENV
           echo "current_commit=$current_commit" >> $GITHUB_ENV
           changed_apps=$(git diff --name-only "$previous_commit" "$current_commit" | grep '^apps/' | cut -d '/' -f2 | sort -u | uniq)
