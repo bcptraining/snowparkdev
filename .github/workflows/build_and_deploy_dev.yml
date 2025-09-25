@@ -106,7 +106,8 @@ jobs:
             for app in "${apps[@]}"; do
               echo "::group::Deploying $app"
 
-              app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null || echo "")
+              app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null | tr '\n' ' ' | xargs || echo "")
+
               if ! echo "$app_tags" | grep -qE "$(echo "$allowed_tags" | sed 's/ /|/g')"; then
                 echo "⏭️ Skipping $app due to tag mismatch." | tee -a deploy_summary.md
                 echo "## ⏭️ $app skipped" >> deploy_summary.md
