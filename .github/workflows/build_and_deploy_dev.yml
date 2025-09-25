@@ -11,6 +11,10 @@ on:
         description: "Branch to deploy from"
         required: true
         default: "dev"
+      dry_run:
+        description: "Simulate deploy without executing"
+        required: false
+        default: "false"
 
 jobs:
   deploy:
@@ -86,8 +90,14 @@ jobs:
       - name: Deploy changed apps
         run: |
           echo "Changed apps: $changed_apps"
+
+          # Re-sanitize SHAs
+          previous_commit=$(echo "$previous_commit" | tr -d '"')
+          current_commit=$(echo "$current_commit" | tr -d '"')
           echo "Previous commit: $previous_commit"
           echo "Current commit: $current_commit"
+
+          allowed_tags="core experimental diagnostic"
 
           if [ -z "$changed_apps" ]; then
             echo "⏭️ No changed apps detected. Skipping deploy." | tee -a deploy_summary.md
@@ -96,6 +106,28 @@ jobs:
             IFS=' ' read -ra apps <<< "$changed_apps"
             for app in "${apps[@]}"; do
               echo "::group::Deploying $app"
+
+              # Tag-based filtering
+              app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null || echo "")
+              if ! echo "$app_tags" | grep -qE "$(echo "$allowed_tags" | sed 's/ /|/g')"; then
+                echo "⏭️ Skipping $app due to tag mismatch." | tee -a deploy_summary.md
+                continue
+              fi
+
+              # Dry-run simulation
+              if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+                echo "🧪 Dry-run mode enabled. Skipping actual deploy for $app." | tee -a deploy_summary.md
+                echo "## 🧪 $app simulated deploy" >> deploy_summary.md
+                echo "- Environment: dev" >> deploy_summary.md
+                echo "- Timestamp: $(date -u)" >> deploy_summary.md
+                echo "- Commit: $current_commit" >> deploy_summary.md
+                echo "- Tags: $app_tags" >> deploy_summary.md
+                echo "" >> deploy_summary.md
+                echo "  {\"app\": \"$app\", \"status\": \"dry_run\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
+                echo "::endgroup::"
+                continue
+              fi
+
               echo "🚀 Deploying $app..."
               PYTHONPATH=. python deploy/deploy_snowflake_app.py \
                 --app "$app" \
@@ -114,7 +146,7 @@ jobs:
               echo "- Author: $(git log -1 "$current_commit" --pretty=format:'%an <%ae>')" >> deploy_summary.md
               echo "- Message: $(git log -1 "$current_commit" --pretty=format:'%s')" >> deploy_summary.md
               echo "- Changed files:" >> deploy_summary.md
-              if [ -n "$previous_commit" ] && [ -n "$current_commit" ]; then
+              if git cat-file -e "$previous_commit" && git cat-file -e "$current_commit"; then
                 git diff --name-only "$previous_commit" "$current_commit" | grep "$app" >> deploy_summary.md
               else
                 echo "[unavailable]" >> deploy_summary.md
