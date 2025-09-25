@@ -1,183 +1,92 @@
-name: Deploy Snowpark Apps
+- name: Deploy changed apps
+  run: |
+    echo "Changed apps: $changed_apps"
 
-on:
-  push:
-    branches:
-      - dev
+    previous_commit=$(echo "$previous_commit" | tr -d '"')
+    current_commit=$(echo "$current_commit" | tr -d '"')
+    echo "Previous commit: $previous_commit"
+    echo "Current commit: $current_commit"
 
-  workflow_dispatch:
-    inputs:
-      target_branch:
-        description: "Branch to deploy from"
-        required: true
-        default: "dev"
-      dry_run:
-        description: "Simulate deploy without executing"
-        required: false
-        default: "false"
+    allowed_tags="core experimental diagnostic"
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    if [ -z "$changed_apps" ]; then
+      echo "⏭️ No changed apps detected. Skipping deploy." | tee -a deploy_summary.md
+    else
+      echo "🔍 Changed apps detected: $changed_apps"
+      IFS=' ' read -ra apps <<< "$changed_apps"
+      for app in "${apps[@]}"; do
+        echo "::group::Deploying $app"
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          repository: bcptraining/snowparkdev
-          ref: ${{ github.event.inputs.target_branch || github.ref_name }}
+        app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null | tr '\n' ' ' | xargs || echo "[none]")
+        disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
 
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
+        if [ ! -f "apps/$app/tags.txt" ]; then
+          echo "⚠️ No tags.txt found for $app" >> deploy_summary.md
+        fi
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install .
+        if ! echo "$app_tags" | grep -qE "$(echo "$allowed_tags" | sed 's/ /|/g')"; then
+          echo "⏭️ Skipping $app due to tag mismatch." | tee -a deploy_summary.md
+          echo "## ⏭️ $app skipped" >> deploy_summary.md
+          echo "- Reason: Tag mismatch" >> deploy_summary.md
+          echo "- Disqualifying tags: $disqualifying_tags" >> deploy_summary.md
+          echo "- Environment: dev" >> deploy_summary.md
+          echo "- Timestamp: $(date -u)" >> deploy_summary.md
+          echo "- Commit: $current_commit" >> deploy_summary.md
+          echo "- Tags: $app_tags" >> deploy_summary.md
+          echo "" >> deploy_summary.md
+          echo "  {\"app\": \"$app\", \"status\": \"skipped\", \"reason\": \"tag_mismatch\", \"disqualifying_tags\": \"$disqualifying_tags\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
+          echo "::endgroup::"
+          continue
+        fi
 
-      - name: Install SnowCLI via pipx
-        run: |
-          pip install pipx
-          pipx ensurepath
-          pipx install snowflake-cli
-          echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-          export PATH="$HOME/.local/bin:$PATH"
-          snow --version
+        if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+          echo "🧪 Dry-run mode enabled. Skipping actual deploy for $app." | tee -a deploy_summary.md
+          echo "## 🧪 $app simulated deploy" >> deploy_summary.md
+          echo "- Reason: Dry-run mode" >> deploy_summary.md
+          echo "- Environment: dev" >> deploy_summary.md
+          echo "- Timestamp: $(date -u)" >> deploy_summary.md
+          echo "- Commit: $current_commit" >> deploy_summary.md
+          echo "- Tags: $app_tags" >> deploy_summary.md
+          echo "- Disqualifying tags: $disqualifying_tags" >> deploy_summary.md
+          echo "" >> deploy_summary.md
+          echo "  {\"app\": \"$app\", \"status\": \"skipped\", \"reason\": \"dry_run\", \"disqualifying_tags\": \"$disqualifying_tags\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
+          echo "::endgroup::"
+          continue
+        fi
 
-      - name: Create SnowCLI config
-        run: |
-          mkdir -p ~/.snowflake
-          cat <<EOF > ~/.snowflake/config.toml
-          [connections.default]
-          account = "${SNOWFLAKE_ACCOUNT}"
-          user = "${SNOWFLAKE_USER}"
-          password = "${SNOWFLAKE_PASSWORD}"
-          role = "${SNOWFLAKE_ROLE}"
-          warehouse = "${SNOWFLAKE_WAREHOUSE}"
-          database = "${SNOWFLAKE_DATABASE}"
-          schema = "PUBLIC"
-          EOF
-        env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD_DEV }}
-          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE_DEV }}
-          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
-          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
+        echo "🚀 Deploying $app..."
+        PYTHONPATH=. python deploy/deploy_snowflake_app.py \
+          --app "$app" \
+          --env dev \
+          --include-manual-procs \
+          --verbosity summary || {
+            echo "❌ Deploy failed for $app" | tee -a deploy_summary.md
+            exit 1
+          }
 
-      - name: Detect changed apps
-        id: detect
-        run: |
-          previous_commit=$(echo "${{ github.event.before }}" | tr -d '"')
-          current_commit=$(echo "${{ github.sha }}" | tr -d '"')
-          echo "previous_commit=$previous_commit" >> $GITHUB_ENV
-          echo "current_commit=$current_commit" >> $GITHUB_ENV
-          changed_apps=$(git diff --name-only "$previous_commit" "$current_commit" | grep '^apps/' | cut -d '/' -f2 | sort -u | uniq)
-          echo "changed_apps=$(echo "$changed_apps" | paste -sd ' ' -)" >> $GITHUB_ENV
+        echo "## ✅ $app deployed to dev" >> deploy_summary.md
+        echo "- Manual procedures included" >> deploy_summary.md
+        echo "- Environment: dev" >> deploy_summary.md
+        echo "- Timestamp: $(date -u)" >> deploy_summary.md
+        echo "- Commit: $current_commit" >> deploy_summary.md
+        echo "- Author: $(git log -1 "$current_commit" --pretty=format:'%an <%ae>')" >> deploy_summary.md
+        echo "- Message: $(git log -1 "$current_commit" --pretty=format:'%s')" >> deploy_summary.md
+        echo "- Changed files:" >> deploy_summary.md
+        if git cat-file -e "$previous_commit" && git cat-file -e "$current_commit"; then
+          git diff --name-only "$previous_commit" "$current_commit" | grep "$app" >> deploy_summary.md
+        else
+          echo "[unavailable]" >> deploy_summary.md
+        fi
+        echo "" >> deploy_summary.md
 
-      - name: Fix Snowflake config permissions
-        run: chmod 0600 /home/runner/.snowflake/config.toml
-
-      - name: Start deploy summary
-        run: |
-          echo "# 🚀 Deploy Summary — Dev Environment" > deploy_summary.md
-          echo "[" > deploy_summary.json
-
-      - name: Deploy changed apps
-        run: |
-          echo "Changed apps: $changed_apps"
-
-          previous_commit=$(echo "$previous_commit" | tr -d '"')
-          current_commit=$(echo "$current_commit" | tr -d '"')
-          echo "Previous commit: $previous_commit"
-          echo "Current commit: $current_commit"
-
-          allowed_tags="core experimental diagnostic"
-
-          if [ -z "$changed_apps" ]; then
-            echo "⏭️ No changed apps detected. Skipping deploy." | tee -a deploy_summary.md
-          else
-            echo "🔍 Changed apps detected: $changed_apps"
-            IFS=' ' read -ra apps <<< "$changed_apps"
-            for app in "${apps[@]}"; do
-              echo "::group::Deploying $app"
-
-              app_tags=$(cat "apps/$app/tags.txt" 2>/dev/null | tr '\n' ' ' | xargs || echo "[none]")
-              disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
-
-              if [ ! -f "apps/$app/tags.txt" ]; then
-                echo "⚠️ No tags.txt found for $app" >> deploy_summary.md
-              fi
-
-              if ! echo "$app_tags" | grep -qE "$(echo "$allowed_tags" | sed 's/ /|/g')"; then
-                echo "⏭️ Skipping $app due to tag mismatch." | tee -a deploy_summary.md
-                echo "## ⏭️ $app skipped" >> deploy_summary.md
-                echo "- Reason: Tag mismatch" >> deploy_summary.md
-                echo "- Disqualifying tags: $disqualifying_tags" >> deploy_summary.md
-                echo "- Environment: dev" >> deploy_summary.md
-                echo "- Timestamp: $(date -u)" >> deploy_summary.md
-                echo "- Commit: $current_commit" >> deploy_summary.md
-                echo "- Tags: $app_tags" >> deploy_summary.md
-                echo "" >> deploy_summary.md
-                echo "  {\"app\": \"$app\", \"status\": \"skipped\", \"reason\": \"tag_mismatch\", \"disqualifying_tags\": \"$disqualifying_tags\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
-                echo "::endgroup::"
-                continue
-              fi
-
-              if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-                echo "🧪 Dry-run mode enabled. Skipping actual deploy for $app." | tee -a deploy_summary.md
-                echo "## 🧪 $app simulated deploy" >> deploy_summary.md
-                echo "- Reason: Dry-run mode" >> deploy_summary.md
-                echo "- Environment: dev" >> deploy_summary.md
-                echo "- Timestamp: $(date -u)" >> deploy_summary.md
-                echo "- Commit: $current_commit" >> deploy_summary.md
-                echo "- Tags: $app_tags" >> deploy_summary.md
-                echo "- Disqualifying tags: $disqualifying_tags" >> deploy_summary.md
-                echo "" >> deploy_summary.md
-                echo "  {\"app\": \"$app\", \"status\": \"skipped\", \"reason\": \"dry_run\", \"disqualifying_tags\": \"$disqualifying_tags\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\"}," >> deploy_summary.json
-                echo "::endgroup::"
-                continue
-              fi
-
-              echo "🚀 Deploying $app..."
-              PYTHONPATH=. python deploy/deploy_snowflake_app.py \
-                --app "$app" \
-                --env dev \
-                --include-manual-procs \
-                --verbosity summary || {
-                  echo "❌ Deploy failed for $app" | tee -a deploy_summary.md
-                  exit 1
-                }
-
-              echo "## ✅ $app deployed to dev" >> deploy_summary.md
-              echo "- Manual procedures included" >> deploy_summary.md
-              echo "- Environment: dev" >> deploy_summary.md
-              echo "- Timestamp: $(date -u)" >> deploy_summary.md
-              echo "- Commit: $current_commit" >> deploy_summary.md
-              echo "- Author: $(git log -1 "$current_commit" --pretty=format:'%an <%ae>')" >> deploy_summary.md
-              echo "- Message: $(git log -1 "$current_commit" --pretty=format:'%s')" >> deploy_summary.md
-              echo "- Changed files:" >> deploy_summary.md
-              if git cat-file -e "$previous_commit" && git cat-file -e "$current_commit"; then
-                git diff --name-only "$previous_commit" "$current_commit" | grep "$app" >> deploy_summary.md
-              else
-                echo "[unavailable]" >> deploy_summary.md
-              fi
-              echo "" >> deploy_summary.md
-
-              echo "  {\"app\": \"$app\", \"status\": \"success\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\", \"author\": \"$(git log -1 \"$current_commit\" --pretty=format:'%an <%ae>')\", \"message\": \"$(git log -1 \"$current_commit\" --pretty=format:'%s')\"}," >> deploy_summary.json
-              echo "::endgroup::"
-            done
-          fi
-        env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD_DEV }}
-          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE_DEV }}
-          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
-          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
-
-      - name:
+        echo "  {\"app\": \"$app\", \"status\": \"success\", \"timestamp\": \"$(date -u)\", \"commit\": \"$current_commit\", \"author\": \"$(git log -1 \"$current_commit\" --pretty=format:'%an <%ae>')\", \"message\": \"$(git log -1 \"$current_commit\" --pretty=format:'%s')\"}," >> deploy_summary.json
+        echo "::endgroup::"
+      done
+    fi
+  env:
+    SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT_DEV }}
+    SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER_DEV }}
+    SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD_DEV }}
+    SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE_DEV }}
+    SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE_DEV }}
+    SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE_DEV }}
