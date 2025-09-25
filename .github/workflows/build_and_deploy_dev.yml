@@ -117,16 +117,15 @@ jobs:
               if [ "$app_tags" = "[none]" ]; then
                 disqualifying_tags="[none]"
               else
-                disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
+                disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')")
+                if [ -z "$disqualifying_tags" ]; then
+                  disqualifying_tags="[none]"
+                else
+                  disqualifying_tags=$(echo "$disqualifying_tags" | paste -sd ', ' -)
+                fi
               fi
 
-              # disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
 
-              if [ "$app_tags" = "[none]" ]; then
-                disqualifying_tags="[none]"
-              else
-                disqualifying_tags=$(echo "$app_tags" | tr ' ' '\n' | grep -vE "$(echo "$allowed_tags" | sed 's/ /|/g')" | paste -sd ', ' -)
-              fi
               echo "App tags: $app_tags"
 
 
