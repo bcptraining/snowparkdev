@@ -22,7 +22,9 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-
+      tags:
+        - core
+      description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting.
 
   hello_procedure:
     type: procedure
@@ -36,6 +38,12 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
+      tags:
+        - core
+      description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting. Used for lightweight personalization in SQL queries.
+
+
+
 
   hello_procedure2:
     type: procedure
@@ -49,6 +57,8 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
+      tags:
+        - experimental
 
   test_procedure:
     type: procedure
@@ -60,6 +70,9 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
+      tags:
+        - experimental
+
 
   test_procedure_two:
     type: procedure
@@ -71,3 +84,6 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
+      tags:
+        - experimental
+

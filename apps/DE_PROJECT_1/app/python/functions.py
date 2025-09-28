@@ -6,6 +6,11 @@ from app.common.helpers import print_hello
 
 
 def hello_function(name="World") -> str:
+    """
+    This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting.
+    It's tagged as core, meaning it's intended for core environments like dev or prod.
+    """
+
     return print_hello(name)
 
 
