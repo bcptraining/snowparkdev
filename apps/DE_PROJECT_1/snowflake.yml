@@ -1,4 +1,4 @@
-definition_version: '2'
+definition_version: '3'
 
 mixins:
   snowpark_dag: {}  # No artifacts or stage — DAGs don’t support them
