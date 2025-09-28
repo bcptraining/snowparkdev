@@ -9,6 +9,12 @@ from tabulate import tabulate
 
 
 class DeployManager:
+    """
+    DeployManager handles manual procedure registration and emits unified summaries.
+    Declarative procedures are validated and registered via ProcRegistrar.
+    procedures_auto.py provides handlers only — not registration logic.
+    """
+
     def __init__(
         self,
         session: Session,

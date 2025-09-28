@@ -46,7 +46,6 @@ json_to_struct_type = common.json_to_struct_type
 def load_copy_to_table():
     from DE_PROJECT_1.app.common.common import copy_to_table
     return copy_to_table
-# ✅ Now this import will work
 
 
 # 🧠 Optional tag validation fallback
@@ -78,6 +77,10 @@ SCHEMA_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/schemas/schemas.jso
 
 
 def copy_to_table_proc(session: Session, schema_key: str) -> str:
+    """
+    tags: core
+    description: This procedure handles core dev logic.
+    """
     def format_copy_results(copy_result_rows):
         table_data = []
         # Build table data summarizing copy results

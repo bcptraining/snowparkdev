@@ -215,3 +215,11 @@ jobs:
           path: |
             deploy_summary.md
             deploy_summary.json
+
+      - name: Post deploy summary to GitHub
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: deploy_summary.md

@@ -13,7 +13,7 @@ def vprint(msg: str, verbosity: str):
         print(msg)
 
 
-def register_all_procs(
+def register_manual_procs(
     session: Session,
     app_name: str,
     env_name: str,
@@ -24,15 +24,16 @@ def register_all_procs(
     dry_run: bool = False,
     verbosity: str = "summary"
 ):
-    declarative_procs = [
-        {"name": "hello_procedure", "source": "declarative"},
-        {"name": "hello_procedure2", "source": "declarative"},
-        {"name": "test_procedure", "source": "declarative"},
-        {"name": "test_procedure_two", "source": "declarative"},
-    ]
+    # Declarative procedures are now validated and registered via ProcRegistrar, not here.
+    # declarative_procs = [
+    #     {"name": "hello_procedure", "source": "declarative"},
+    #     {"name": "hello_procedure2", "source": "declarative"},
+    #     {"name": "test_procedure", "source": "declarative"},
+    #     {"name": "test_procedure_two", "source": "declarative"},
+    # ]
     manual_registered = []
 
-    print(f"🚀 Starting register_all_procs for app '{app_name}'")
+    print(f"🚀 Starting register_manual_procs for app '{app_name}'")
     # print("📡 Auto procedures are deployed via snowflake.yml — skipping dynamic registration")
 
     # Manual procedure registration (refactored to detect file changes -- see below)
@@ -85,7 +86,8 @@ def register_all_procs(
     manual_registered = manager.register_manual()
     manager.emit_summary()
 
-    auto_count = len(declarative_procs)
+    # auto_count = len(declarative_procs)
+    auto_count = len(validated_declarative_procs)
     manual_count = sum(
         1 for proc in manual_registered if proc.get("source") == "manual")
 
@@ -112,14 +114,22 @@ def register_all_procs(
         print("⚠️ No procedures or functions were registered.")
 
     # ✅ Unified Registered Procs Summary
-    print("\n🔍 Registered Procs:")
-    for proc in declarative_procs:
-        print(f"  - {proc['name']} | source=declarative")
+    print("\n🔍 Registered manual Procedures:")
+    # for proc in declarative_procs:
+    #     print(f"  - {proc['name']} | source=declarative")
+
     for proc in manual_registered:
         print(f"  - {proc.get('name', '—')} | source=manual")
-    if not declarative_procs and not manual_registered:
-        print("  ⚠️ No procedures registered.")
 
-    print(f"🚀 completed register_all_procs for app '{app_name}'")
+    if not manual_registered:
+        print("  ⚠️ No manual procedures registered.")
 
-    return declarative_procs + manual_registered
+    print(f"🚀 completed register_manual_procs for app '{app_name}'")
+
+    # tag each manual proc with source
+    for proc in manual_registered:
+        proc["source"] = "manual"
+
+    # return validated_declarative_procs + manual_registered <-- original, but now declarative handled elsewhere
+
+    return manual_registered
