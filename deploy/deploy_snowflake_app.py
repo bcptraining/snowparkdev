@@ -16,6 +16,9 @@ from pathlib import Path
 from snowflake.core import Root
 from snowflake.core.task.dagv1 import DAGOperation
 import re  # for regex operations
+# Defines set of tags applicable to each environment
+from deploy.constants import VALID_TAGS
+
 from tag_registry import TAG_SETS
 
 
@@ -39,12 +42,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 #     "qa": ["core", "diagnostic"],
 #     "prod": ["core", "!experimental", "!diagnostic"]
 # }
-
-VALID_TAGS = {
-    "core", "dev", "prod", "staging", "experimental",
-    "utility", "test", "internal", "public", "deprecated",
-    "custom", "analytics", "etl", "diagnostic"
-}
 
 
 def validate_tags(tags: list[str], proc_name: str | None = None) -> list[str]:
