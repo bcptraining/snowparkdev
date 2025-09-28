@@ -22,6 +22,7 @@ from tag_registry import TAG_SETS
 # tags = TAG_SETS[args.env] if 'env_name' in locals() else []  # Example usage
 from deploy.deploy_manager import DeployManager
 from deploy.utils.change_detection import get_changed_files_for_app
+from deploy.utils.tag_validation import validate_tags_for_env
 
 
 def vprint(msg: str, verbosity: str):
@@ -294,14 +295,61 @@ print(f"📜 snowflake.yml loaded. Declarative procedures: {declared_names}")
 
 print("Testing completed.")
 
-# validated_declarative_procs = registrar.validated_procs  # This redundant with above
 
-# -------------------------------------------
-#  Remember to complete validate_env_consistency(env_name) below
-#  and set args.branch_env based on current branch (if the branch is dev then shouldn't thenvronment be the same?)
+def build_markdown_summary(summary_artifact, tag_validation_structured, excluded_procs):
+    lines = [
+        f"## {summary_artifact['summary_title']}",
+        f"**App:** `{summary_artifact['app']}`",
+        f"**Environment:** `{summary_artifact['env']}`",
+        f"**Tags:** {', '.join(summary_artifact['tags'])}",
+        "",
+        summary_artifact["tag_validation"],
+        "",
+        f"**Changed Files:** {', '.join(summary_artifact['changed_files']) or '—'}",
+        f"**Procedures:** {summary_artifact['total_procedures']}",
+        f"**DAGs:** {summary_artifact['total_dags']}",
+        f"**Dry Run:** `{summary_artifact['dry_run']}`",
+        f"**Duration:** `{summary_artifact['duration_seconds']}s`",
+        f"**Timestamp:** `{summary_artifact['timestamp']}`",
+        "",
+        f"**Procedures Excluded Due to Tags:** {len(excluded_procs)}",
+        f"**Valid Tags Used:** {', '.join(tag_validation_structured['valid']) or 'None'}",
+        f"**Invalid Tags Supplied:** {', '.join(t[0] for t in tag_validation_structured['invalid']) or 'None'}"
+    ]
+    return "\n".join(lines)
 
 
 def main():
+    def build_procedure_table(procs):
+        lines = [
+            "\n### Registered Procedures",
+            "| Name | Source | Handler | Returns | Status |",
+            "|------|--------|---------|---------|--------|"
+        ]
+        for proc in procs:
+            name = escape_md(proc.get("name", "—"))
+            source = escape_md(proc.get("source", "—"))
+            handler = escape_md(proc.get("handler", "—"))
+            returns = escape_md(proc.get("return_type", "—"))
+            status = escape_md(proc.get("status", "—"))
+            lines.append(
+                f"| {name} | {source} | {handler} | {returns} | {status} |")
+
+        return "\n".join(lines)
+
+    def build_excluded_procs_list(excluded_procs):
+        if not excluded_procs:
+            return "\n### 🚫 Excluded Procedures\n- None\n"
+
+        lines = ["\n### 🚫 Excluded Procedures"]
+        for proc in excluded_procs:
+            name = escape_md(proc.get("name", "unknown"))
+            tags = proc.get("tags", [])
+            tag_str = ", ".join(escape_md(tag)
+                                for tag in tags) if tags else "None"
+            lines.append(f"- `{name}` excluded due to tags: `{tag_str}`")
+        return "\n".join(lines)
+
     # Step 1: Parse CLI arguments and initialize context
     args = parse_cli_args()
     app_name = args.app
@@ -309,7 +357,16 @@ def main():
     verbosity = args.verbosity
     dry_run = args.dry_run
     app_path = APPS_DIR / app_name
-    tags = TAG_SETS.get(env_name, [])
+    # tags = TAG_SETS.get(env_name, [])
+    tags = args.tags  # These are the tags the user actually passed in
+    tag_check = validate_tags_for_env(env_name, tags)
+    print(tag_check["narration"])  # or emit to Markdown/JSON summary
+    # Save this tag info so it can leter be inserted into summary_artifact in step 12 (summary)
+    tag_validation_narration = tag_check["narration"]
+    tag_validation_structured = {
+        "valid": tag_check["valid"],
+        "invalid": tag_check["invalid"]
+    }
 
     # Step 2: 🔍 Validate declarative procedures via ProcRegistrar
     registrar = ProcRegistrar(
@@ -532,6 +589,7 @@ def main():
 
     # Escape Markdown-sensitive characters for safe table rendering
 
+
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")
 
@@ -546,6 +604,9 @@ def main():
         if dry_run else None
     )
     excluded_procs = excluded_declarative + excluded_manual
+
+    if not validated_declarative_procs and not manual_registered:
+        print(f"⏭️ All procedures skipped for {app_name} due to tag mismatch.")
 
     # Emit human-readable summary to console
     if dry_run and verbosity in ["summary", "verbose"]:
@@ -594,6 +655,9 @@ def main():
         status = proc.get("status", "—")
         print(f"{name:<20} {source:<12} {handler:<50} {returns:<10} {status:<10}")
 
+    # print(build_procedure_table(all_procs))
+    # Already emitted to Markdown file—no need to duplicate here
+
     # 🔹 Prepare JSON summary artifact for CI, Slack, GitHub, etc.
     summary_title = "🧪 Dry-Run Summary" if dry_run else "✅ Deployment Summary"
     summary_artifact = {
@@ -602,6 +666,8 @@ def main():
         "changed_files": changed_files,
         "stage": stage_name,
         "tags": args.tags,
+        "tag_validation": tag_validation_narration,
+        "tags_validated": tag_validation_structured,
         "dry_run": dry_run,
         "summary_title": summary_title,
         "status": "dry_run" if dry_run else "deployed",
@@ -633,6 +699,14 @@ def main():
         ]
     }
 
+    # 🔹 Optional Markdown summary block for Slack, GitHub, etc.
+
+    markdown_summary = build_markdown_summary(
+        summary_artifact,
+        tag_validation_structured,
+        excluded_procs
+    )
+
     # 🔹 Emit JSON artifact to GitHub Actions output
     json_output = json.dumps(summary_artifact).replace("\n", "\\n")
     with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -655,25 +729,27 @@ def main():
         f.write(f"- DAGs: `{len(dag_list) if dag_list else 0}`\n")
         f.write(f"- Duration: `{duration:.2f} seconds`\n")
         f.write(f"- Timestamp: `{summary_time}`\n")
-        f.write("\n### Registered Procedures\n")
-        f.write("| Name | Source | Handler | Returns | Status |\n")
-        f.write("|------|--------|---------|---------|--------|\n")
-        for proc in all_procs:
-            f.write(
-                f"| {escape_md(proc.get('name','—'))} | {escape_md(proc.get('source','—'))} | "
-                f"{escape_md(proc.get('handler','—'))} | {escape_md(proc.get('return_type','—'))} | "
-                f"{escape_md(proc.get('status','—'))} |\n"
-            )
+        # f.write("\n### Registered Procedures\n")
+        # f.write("| Name | Source | Handler | Returns | Status |\n")
+        # f.write("|------|--------|---------|---------|--------|\n")
+        # for proc in all_procs:
+        #     f.write(
+        #         f"| {escape_md(proc.get('name','—'))} | {escape_md(proc.get('source','—'))} | "
+        #         f"{escape_md(proc.get('handler','—'))} | {escape_md(proc.get('return_type','—'))} | "
+        #         f"{escape_md(proc.get('status','—'))} |\n"
+        #
+        f.write(build_procedure_table(all_procs))
 
-        f.write(f"\n### 🚫 Excluded Procedures\n")
-        if excluded_procs:
-            for proc in excluded_procs:
-                name = proc.get("name", "unknown")
-                tags = proc.get("tags", [])
-                f.write(
-                    f"- `{name}` excluded due to tags: `{', '.join(tags)}`\n")
-        else:
-            f.write("- None\n")
+        # f.write(f"\n### 🚫 Excluded Procedures\n")
+        # if excluded_procs:
+        #     for proc in excluded_procs:
+        #         name = proc.get("name", "unknown")
+        #         tags = proc.get("tags", [])
+        #         f.write(
+        #             f"- `{name}` excluded due to tags: `{', '.join(tags)}`\n")
+        # else:
+        #     f.write("- None\n")
+        f.write(build_excluded_procs_list(excluded_procs))
 
     # 🔸 Emit Markdown artifact to console (only in verbose mode outside CI)
     if verbosity == "verbose" and not os.getenv("CI"):
