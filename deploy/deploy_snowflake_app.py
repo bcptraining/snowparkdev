@@ -349,30 +349,52 @@ def main():
         return "\n".join(lines)
 
     def validate_cli_version(min_required="3.0.0"):
+        import subprocess
+        import re
+
+        def version_tuple(v): return tuple(map(int, v.split(".")))
+
         try:
             result = subprocess.run(
                 ["snow", "--help"], capture_output=True, text=True)
             first_line = result.stdout.splitlines()[0]
             match = re.search(r"\[v(\d +\.\d +\.\d+)\]", first_line)
-            if not match:
-                print("⚠️ Unable to detect Snowflake CLI version from help output.")
-                return False
-
-            current_version = match.group(1)
-            print(f"🧠 Snowflake CLI version detected: {current_version}")
-
-            def version_tuple(v): return tuple(map(int, v.split(".")))
-            if version_tuple(current_version) < version_tuple(min_required):
+            if match:
+                current_version = match.group(1)
+                print(f"🧠 Snowflake CLI version detected: {current_version}")
+                if version_tuple(current_version) < version_tuple(min_required):
+                    print(
+                        f"❌ CLI version {current_version} is below required minimum {min_required}.")
+                    return False
                 print(
-                    f"❌ CLI version {current_version} is below required minimum {min_required}.")
-                return False
-
-            print(
-                f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
-            return True
+                    f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
+                return True
+            else:
+                print("⚠️ CLI version not found in help output. Trying pip fallback...")
 
         except Exception as e:
-            print(f"❌ Error checking CLI version: {e}")
+            print(f"⚠️ Error running snow --help: {e}. Trying pip fallback...")
+
+        # Fallback to pip show
+        try:
+            result = subprocess.run(
+                ["pip", "show", "snowflake-cli-labs"], capture_output=True, text=True)
+            for line in result.stdout.splitlines():
+                if line.startswith("Version:"):
+                    current_version = line.split(":")[1].strip()
+                    print(f"🧠 Snowflake CLI version (pip): {current_version}")
+                    if version_tuple(current_version) < version_tuple(min_required):
+                        print(
+                            f"❌ CLI version {current_version} is below required minimum {min_required}.")
+                        return False
+                    print(
+                        f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
+                    return True
+            print("❌ Could not find CLI version via pip.")
+            return False
+
+        except Exception as e:
+            print(f"❌ Error checking CLI version via pip: {e}")
             return False
 
     # Step 0:  Validate CLI version before anything else
