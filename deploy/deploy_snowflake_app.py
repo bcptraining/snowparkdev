@@ -1,3 +1,4 @@
+import re
 import yaml
 # -- supports an experimental refactor to use a class-based approach
 from orchestration.proc_registrar import ProcRegistrar
@@ -346,6 +347,38 @@ def main():
                                 for tag in tags) if tags else "None"
             lines.append(f"- `{name}` excluded due to tags: `{tag_str}`")
         return "\n".join(lines)
+
+    def validate_cli_version(min_required="3.0.0"):
+        try:
+            result = subprocess.run(
+                ["snow", "--help"], capture_output=True, text=True)
+            first_line = result.stdout.splitlines()[0]
+            match = re.search(r"\[v(\d +\.\d +\.\d+)\]", first_line)
+            if not match:
+                print("⚠️ Unable to detect Snowflake CLI version from help output.")
+                return False
+
+            current_version = match.group(1)
+            print(f"🧠 Snowflake CLI version detected: {current_version}")
+
+            def version_tuple(v): return tuple(map(int, v.split(".")))
+            if version_tuple(current_version) < version_tuple(min_required):
+                print(
+                    f"❌ CLI version {current_version} is below required minimum {min_required}.")
+                return False
+
+            print(
+                f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
+            return True
+
+        except Exception as e:
+            print(f"❌ Error checking CLI version: {e}")
+            return False
+
+    # Step 0:  Validate CLI version before anything else
+    if not validate_cli_version(min_required="3.0.0"):
+        raise RuntimeError(
+            "Snowflake CLI version is too old. Please upgrade to 3.0.0 or later.")
 
     # Step 1: Parse CLI arguments and initialize context
     args = parse_cli_args()
