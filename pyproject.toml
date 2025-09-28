@@ -8,6 +8,7 @@ authors = [
 dependencies = [
     "snowflake-snowpark-python==1.33.0",
     "snowflake-core==1.5.1",
+    "snowflake-cli-labs==3.10.0",
     "numpy",
     "pandas",
     "pyarrow<19.0.0"
