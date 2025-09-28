@@ -302,6 +302,7 @@ print("Testing completed.")
 
 
 def main():
+    # Step 1: Parse CLI arguments and initialize context
     args = parse_cli_args()
     app_name = args.app
     env_name = args.env
@@ -309,7 +310,8 @@ def main():
     dry_run = args.dry_run
     app_path = APPS_DIR / app_name
     tags = TAG_SETS.get(env_name, [])
-    # 🔍 Validate declarative procedures via ProcRegistrar
+
+    # Step 2: 🔍 Validate declarative procedures via ProcRegistrar
     registrar = ProcRegistrar(
         app_path=app_path,
         verbose=verbosity == "verbose",
@@ -321,7 +323,8 @@ def main():
     registrar.validate_returns()
     registrar.summarize_validation()
 
-    # Filter declarative procs based on the tag set defined for the environment
+    # Step 3: Filter declarative procs by tag relevance defined for the environment
+# Step 3: Filter declarative procedures by tag relevance defined for the environment
 
     validated_declarative_procs = [
         proc for proc in registrar.validated_procs
@@ -330,13 +333,16 @@ def main():
     for proc in validated_declarative_procs:
         proc["source"] = "auto"
 
-    excluded = len(registrar.validated_procs) - \
-        len(validated_declarative_procs)
+    excluded_declarative = [
+        proc for proc in registrar.validated_procs
+        if not is_tag_allowed(proc.get("tags", []), tags)
+    ]
 
-    if verbosity == "verbose" and excluded > 0:
+    if verbosity == "verbose" and excluded_declarative:
         print(
-            f"🚫 {excluded} declarative procedures excluded due to tag filtering for env '{env_name}'")
+            f"🚫 {len(excluded_declarative)} declarative procedures excluded due to tag filtering for env '{env_name}'")
 
+    # Step 4: Detect changed files and narrate context
     start_time = time.time()
     # tags = TAG_SETS.get(env_name, [])
     # manual_registered = []
@@ -356,6 +362,7 @@ def main():
     print(
         f"\n🚀 Starting deployment for app: {app_name} in environment: {env_name}")
 
+    # Step 5: Load app modules and validate environment variables
     get_session, dag_list = load_app_modules(app_name)
 
     required_vars = [
@@ -366,6 +373,7 @@ def main():
     creds = get_snowflake_credentials()
     print_env_summary(required_vars)
 
+    # Step 6: Initialize Snowflake session and root object
     account, user, password, role = creds["account"], creds["user"], creds["password"], creds["role"]
     warehouse, database, schema = creds["warehouse"], creds["database"], creds["schema"]
 
@@ -377,6 +385,7 @@ def main():
         print(f"❌ Failed to initialize Snowflake session: {e}")
         sys.exit(1)
 
+    # Step 7: Build Snowpark project and inject shared modules
     build_cmd = [
         "snow", "snowpark", "build",
         "--project", str(APPS_DIR / app_name),
@@ -390,9 +399,9 @@ def main():
         "--allow-shared-libraries"
     ]
     run_command(build_cmd, f"Building Snowpark project for app: {app_name}")
-
     inject_shared_modules(app_path)
 
+    # Step 8: Zip source code and upload to stage
     stage_name = f"{env_name}_deployment"
     stage_target = f"@{stage_name}/apps/{app_name}"
     zip_file = zip_source_code(
@@ -419,6 +428,7 @@ def main():
     print(f"📦 Uploaded app.zip to {stage_target}")
     vprint(f"📦 Stage target: {stage_target}", verbosity)
 
+    # Step 9: Deploy Snowpark App
     deploy_cmd = [
         "snow", "snowpark", "deploy", "--replace", "--temporary-connection",
         "--project", str(APPS_DIR / app_name),
@@ -440,6 +450,7 @@ def main():
 
     print("⚠️ Note: Declarative procedures were deployed live. Dry-run mode does not simulate Snowpark deploy.")
 
+    # Step 10: Register manual procedures and apply tag filtering
     if args.include_manual_procs:
         manager = DeployManager(
             session=session,
@@ -450,31 +461,34 @@ def main():
             dry_run=dry_run,
             verbosity=verbosity
         )
-        manual_registered = manager.register_manual()
 
-        # 🧹 Filter the manual procs by proc tag filters as defined per the evironent (do it before naration)
-        pre_filter_count = len(manual_registered)
+        raw_manual_procs = manager.register_manual()
+
         manual_registered = [
-            proc for proc in manual_registered
+            proc for proc in raw_manual_procs
             if is_tag_allowed(proc.get("tags", []), tags)
         ]
-        excluded = pre_filter_count - len(manual_registered)
-        if verbosity == "verbose" and excluded > 0:
+
+        excluded_manual = [
+            proc for proc in raw_manual_procs
+            if not is_tag_allowed(proc.get("tags", []), tags)
+        ]
+
+        if verbosity == "verbose" and excluded_manual:
             print(
-                f"🚫 {excluded} manual procedures excluded due to tag filtering for env '{env_name}'")
+                f"🚫 {len(excluded_manual)} manual procedures excluded due to tag filtering for env '{env_name}'")
 
         manager.emit_summary()
-
     else:
         print("⏭️ Manual procedure registration skipped via --include-manual-procs flag.")
 
+    # Step 11: Deploy Dags
     # ✅ Unified procedure list
     all_procs = validated_declarative_procs + manual_registered
 
     if len(all_procs) == 0 and (dry_run or verbosity == "verbose"):
         print("⚠️ No procedures were registered or simulated.")
 
-    # ✅ Step 11: Deploy DAGs
     target_db = database
     schema_name = schema
     snowflake_schema = root.databases[target_db].schemas[schema_name]
@@ -516,26 +530,25 @@ def main():
 
 #  Step 12: Summary and Validation
 
+    # Escape Markdown-sensitive characters for safe table rendering
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")
 
+    # Compute summary metadata
     duration = round(time.time() - start_time, 2)
     tag_summary = ", ".join(args.tags) if args.tags else "None"
     summary_time = datetime.now(pytz.timezone(
         "America/Vancouver")).strftime("%Y-%m-%d %H:%M %Z")
-
     auto_count = len(validated_declarative_procs)
-    if len(all_procs) == 0:
-        print("⚠️ No procedures were registered or simulated.")
-
     manual_simulated = (
         sum(1 for proc in manual_registered if proc.get("status") == "dry_run")
         if dry_run else None
     )
+    excluded_procs = excluded_declarative + excluded_manual
 
+    # Emit human-readable summary to console
     if dry_run and verbosity in ["summary", "verbose"]:
-
         print(
             f"🧪 Dry-Run Summary\n"
             f"  App: {app_name}\n"
@@ -543,21 +556,16 @@ def main():
             f"  Stage: {stage_name}\n"
             f"  Tags Used: {tag_summary}\n"
             f"  Auto Procedures: Not simulated — {auto_count} procs were deployed live via Snowpark\n"
-            # f"  Auto Procedures Simulated: {custom_auto_count}\n"
             f"  Manual Procedures Simulated: {manual_simulated}\n"
             f"  Total Procedures Simulated: {manual_simulated} (manual only)\n"
-            # f"  Total Procedures Simulated: {len(all_procs)}\n"
             f"  DAGs: Skipped\n"
             f"  Artifacts Uploaded: Simulated\n"
             f"🕒 Dry-run finished at: {summary_time}\n"
             f"⏱️ Total dry-run duration: {duration:.2f} seconds\n"
             f"✅ Dry-run completed. Manual and custom procedures were simulated only. Declarative procedures were deployed live via Snowpark."
         )
-
     else:
-        # auto_count = len(validated_declarative_procs)
         manual_count = len(manual_registered)
-
         print(
             f"\n📦 Deployment Summary\n"
             f"  App: {app_name}\n"
@@ -573,11 +581,11 @@ def main():
             f"✅ Deployment completed successfully for app '{app_name}' in environment '{env_name}'."
         )
 
+    # Emit tabular summary of registered procedures to console
     print("\n📊 Registered Procedure Summary:\n")
     header = f"{'Name':<20} {'Source':<12} {'Handler':<50} {'Returns':<10} {'Status':<10}"
     print(header)
     print("-" * len(header))
-
     for proc in all_procs:
         name = proc.get("name", "—")
         source = proc.get("source", "—")
@@ -586,7 +594,7 @@ def main():
         status = proc.get("status", "—")
         print(f"{name:<20} {source:<12} {handler:<50} {returns:<10} {status:<10}")
 
-    # Create machine-readable metadata (can log to a file, post to slack, or emit to GitHub Actions)
+    # 🔹 Prepare JSON summary artifact for CI, Slack, GitHub, etc.
     summary_title = "🧪 Dry-Run Summary" if dry_run else "✅ Deployment Summary"
     summary_artifact = {
         "app": app_name,
@@ -615,37 +623,26 @@ def main():
                 "status": proc.get("status", "—")
             }
             for proc in all_procs
+        ],
+        "excluded_procs": [
+            {
+                "name": proc.get("name", "unknown"),
+                "tags": proc.get("tags", [])
+            }
+            for proc in excluded_procs
         ]
     }
 
-    if verbosity == "verbose":
-        print("\n📦 Summary Artifact:")
-        print(json.dumps(summary_artifact, indent=2))
-
-    # Optional: Escape Newlines in Emitted JSON: If any values (like handler) contain newlines,
-    # they may break GitHub’s output parsing. To be safe, you can sanitize:
+    # 🔹 Emit JSON artifact to GitHub Actions output
     json_output = json.dumps(summary_artifact).replace("\n", "\\n")
     with open(os.environ["GITHUB_OUTPUT"], "a") as f:
         f.write(f"deploy_summary={json_output}\n")
 
-    # Optional: Emit Artifact to File for Debugging
+    # 🔹 Emit JSON artifact to local file for debugging
     with open("deploy_summary.json", "w") as f:
         json.dump(summary_artifact, f, indent=2)
 
-    # Optional: Emit Markdown Summary Artifact
-
-    excluded_declarative = [
-        proc for proc in registrar.validated_procs
-        if not is_tag_allowed(proc.get("tags", []), tags)
-    ]
-
-    excluded_manual = [
-        proc for proc in manager.register_manual()
-        if not is_tag_allowed(proc.get("tags", []), tags)
-    ]
-
-    excluded_procs = excluded_declarative + excluded_manual
-
+    # 🔸 Prepare and emit Markdown summary artifact for human-readable audit
     with open("deploy_summary.md", "w") as f:
         f.write(f"# {summary_title} — {app_name}\n")
         f.write(f"- Environment: `{env_name}`\n")
@@ -661,7 +658,6 @@ def main():
         f.write("\n### Registered Procedures\n")
         f.write("| Name | Source | Handler | Returns | Status |\n")
         f.write("|------|--------|---------|---------|--------|\n")
-
         for proc in all_procs:
             f.write(
                 f"| {escape_md(proc.get('name','—'))} | {escape_md(proc.get('source','—'))} | "
@@ -670,7 +666,6 @@ def main():
             )
 
         f.write(f"\n### 🚫 Excluded Procedures\n")
-
         if excluded_procs:
             for proc in excluded_procs:
                 name = proc.get("name", "unknown")
@@ -680,7 +675,7 @@ def main():
         else:
             f.write("- None\n")
 
-    # Optional: Emit Artifact to Console in CI Mode
+    # 🔸 Emit Markdown artifact to console (only in verbose mode outside CI)
     if verbosity == "verbose" and not os.getenv("CI"):
         with open("deploy_summary.md") as f:
             print(f.read())
