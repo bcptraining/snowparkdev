@@ -6,6 +6,7 @@ boto3==1.39.2
 botocore==1.39.2
 certifi==2025.6.15
 typing-extensions==4.14.0
+pyarrow<19.0.0
 
 # Supporting libraries
 requests==2.32.4

@@ -1,4 +1,7 @@
-from deploy.deploy_snowflake_app import VALID_TAGS
+# from deploy.deploy_snowflake_app import VALID_TAGS
+
+# Defines set of tags applicable to each environment
+from deploy.constants import VALID_TAGS
 from deploy.tag_registry import TAG_SETS
 
 

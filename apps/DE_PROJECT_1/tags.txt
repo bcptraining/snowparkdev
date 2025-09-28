@@ -1,9 +1,0 @@
-dev
-core
-experimental
-qa
-c
-prod
-core
-stable
-critical
