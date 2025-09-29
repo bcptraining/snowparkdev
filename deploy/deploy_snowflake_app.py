@@ -313,11 +313,13 @@ def build_markdown_summary(summary_artifact, tag_validation_structured, excluded
         f"**Procedures Excluded Due to Tags:** {len(excluded_procs)}",
         f"**Valid Tags Used:** {', '.join(tag_validation_structured['valid']) or 'None'}",
         f"**Invalid Tags Supplied:** {', '.join(t[0] for t in tag_validation_structured['invalid']) or 'None'}"
+
     ]
     return "\n".join(lines)
 
 
 def main():
+    # Define helper fiunctions for main() which are not intended for re-use elsewere
     def build_procedure_table(procs):
         lines = [
             "\n### Registered Procedures",
@@ -348,11 +350,17 @@ def main():
             lines.append(f"- `{name}` excluded due to tags: `{tag_str}`")
         return "\n".join(lines)
 
+    def register_exclusion(proc, reason):
+        proc["status"] = "excluded"
+        proc["reason"] = reason
+        return proc
+
     def validate_cli_version(min_required="3.0.0"):
         import subprocess
         import re
 
-        def version_tuple(v): return tuple(map(int, v.split(".")))
+        def version_tuple(v):
+            return tuple(map(int, v.split(".")))
 
         try:
             result = subprocess.run(
@@ -397,6 +405,102 @@ def main():
             print(f"❌ Error checking CLI version via pip: {e}")
             return False
 
+    def build_tag_coverage_table(included_procs, excluded_procs):
+        from collections import Counter
+
+        def extract_tags(procs):
+            return [tag for proc in procs for tag in proc.get("tags", [])]
+
+        included_counts = Counter(extract_tags(included_procs))
+        excluded_counts = Counter(extract_tags(excluded_procs))
+        all_tags = sorted(set(included_counts) | set(excluded_counts))
+
+        lines = ["\n### 🏷️ Tag Coverage", "| Tag | Included | Excluded |",
+                 "|------|----------|----------|"]
+        for tag in all_tags:
+            included = included_counts.get(tag, 0)
+            excluded = excluded_counts.get(tag, 0)
+            lines.append(f"| {tag} | {included} | {excluded} |")
+        return "\n".join(lines)
+
+    def tag_coverage_dict(included_procs, excluded_procs):
+        from collections import Counter
+
+        def extract_tags(procs):
+            return [tag for proc in procs for tag in proc.get("tags", [])]
+
+        included_counts = Counter(extract_tags(included_procs))
+        excluded_counts = Counter(extract_tags(excluded_procs))
+        all_tags = sorted(set(included_counts) | set(excluded_counts))
+
+        return {
+            tag: {
+                "included": included_counts.get(tag, 0),
+                "excluded": excluded_counts.get(tag, 0)
+            }
+            for tag in all_tags
+        }
+
+    def build_environment_context_block():
+        import platform
+        import sys
+        import shutil
+
+        python_version = platform.python_version()
+        python_exec = sys.executable
+        snow_cli_path = shutil.which("snow")
+
+        lines = [
+            "\n### 🧠 Environment Context",
+            f"- Python Version: `{python_version}`",
+            f"- Python Executable: `{python_exec}`",
+            f"- Snow CLI Path: `{snow_cli_path or 'Not found'}`"
+        ]
+        return "\n".join(lines)
+
+    def load_sidecar_tags(app_path):
+        # This tags "sidecar" is just a json file which has the tags for procs that get declarative (auto) deployed from snowflake.yml.
+        # This approach is temporary as we learned that v2 does not support metadata such as tags (or description/other) in the snowflake.yml.
+        tags_path = app_path / "tags.json"
+        default_tags = {"procedures": {}, "functions": {}, "dags": {}}
+
+        if not tags_path.exists():
+            print(
+                f"⚠️ No tags.json found at {tags_path}. Auto procedures, functions, and DAGs will not be tagged.")
+            return default_tags
+
+        try:
+            with open(tags_path) as f:
+                sidecar_tags = json.load(f)
+            # Ensure all expected keys exist
+            for key in default_tags:
+                sidecar_tags.setdefault(key, {})
+            return sidecar_tags
+        except Exception as e:
+            print(f"❌ Failed to load tags.json: {e}")
+            return default_tags
+
+    def validate_sidecar_tag_coverage(procs, sidecar_tags, entity_type="procedures"):
+        missing = [proc["name"] for proc in procs if proc["name"]
+                   not in sidecar_tags.get(entity_type, {})]
+        if missing:
+            print(
+                f"⚠️ {len(missing)} {entity_type} missing tag mappings in tags.json:")
+            for name in missing:
+                print(f"  - {name}")
+
+    def build_auto_proc_tag_table(procs):
+        lines = [
+            "\n### 🏷️ Auto Procedure Tags",
+            "| Procedure Name | Tags |",
+            "|----------------|------|"
+        ]
+        for proc in procs:
+            name = proc.get("name", "—")
+            tags = ", ".join(proc.get("tags", [])) or "—"
+            lines.append(f"| {name} | {tags} |")
+        return "\n".join(lines)
+
     # Step 0:  Validate CLI version before anything else
     if not validate_cli_version(min_required="3.0.0"):
         raise RuntimeError(
@@ -420,6 +524,9 @@ def main():
         "invalid": tag_check["invalid"]
     }
 
+    # step new1: Load tags
+    sidecar_tags = load_sidecar_tags(app_path)
+
     # Step 2: 🔍 Validate declarative procedures via ProcRegistrar
     registrar = ProcRegistrar(
         app_path=app_path,
@@ -433,23 +540,42 @@ def main():
     registrar.summarize_validation()
 
     # Step 3: Filter declarative procs by tag relevance defined for the environment
-# Step 3: Filter declarative procedures by tag relevance defined for the environment
+    #  This version of step 3 is for use when snowflake.yml version supports metadata. The sidecar solution is just a stop-gap.
+    # validated_declarative_procs = [
+    #     proc for proc in registrar.validated_procs
+    #     if is_tag_allowed(proc.get("tags", []), tags)
+    # ]
+    # for proc in validated_declarative_procs:
+    #     proc["source"] = "auto"
 
-    validated_declarative_procs = [
-        proc for proc in registrar.validated_procs
-        if is_tag_allowed(proc.get("tags", []), tags)
-    ]
-    for proc in validated_declarative_procs:
-        proc["source"] = "auto"
+    # excluded_declarative = [
+    #     register_exclusion(proc, "Tag not allowed in environment")
+    #     for proc in registrar.validated_procs
+    #     if not is_tag_allowed(proc.get("tags", []), tags)
+    # ]
 
-    excluded_declarative = [
-        proc for proc in registrar.validated_procs
-        if not is_tag_allowed(proc.get("tags", []), tags)
-    ]
+    # if verbosity == "verbose" and excluded_declarative:
+    #     print(
+    #         f"🚫 {len(excluded_declarative)} declarative procedures excluded due to tag filtering for env '{env_name}'")
 
-    if verbosity == "verbose" and excluded_declarative:
-        print(
-            f"🚫 {len(excluded_declarative)} declarative procedures excluded due to tag filtering for env '{env_name}'")
+    # This replaces the old metadata-based tagging and ensures every auto proc is tagged from the sidecar.
+    validated_declarative_procs = []
+    excluded_declarative = []
+
+    for proc in registrar.validated_procs:
+        proc_name = proc.get("name")
+        proc["tags"] = sidecar_tags.get("procedures", {}).get(proc_name, [])
+        if is_tag_allowed(proc["tags"], tags):
+            proc["source"] = "auto"
+            proc["status"] = "valid"
+            validated_declarative_procs.append(proc)
+        else:
+            excluded_declarative.append(register_exclusion(
+                proc, "Tag not allowed in environment"))
+
+    # Narrate procedures that aren’t tagged in tags.json
+    validate_sidecar_tag_coverage(
+        registrar.validated_procs, sidecar_tags, "procedures")
 
     # Step 4: Detect changed files and narrate context
     start_time = time.time()
@@ -573,15 +699,26 @@ def main():
 
         raw_manual_procs = manager.register_manual()
 
-        manual_registered = [
-            proc for proc in raw_manual_procs
-            if is_tag_allowed(proc.get("tags", []), tags)
-        ]
+        # manual_registered = [
+        #     proc for proc in raw_manual_procs
+        #     if is_tag_allowed(proc.get("tags", []), tags)
+        # ]
 
-        excluded_manual = [
-            proc for proc in raw_manual_procs
-            if not is_tag_allowed(proc.get("tags", []), tags)
-        ]
+        # excluded_manual = [
+        #     proc for proc in raw_manual_procs
+        #     if not is_tag_allowed(proc.get("tags", []), tags)
+        # ]
+        manual_registered = []
+        excluded_manual = []
+
+        for proc in raw_manual_procs:
+            if is_tag_allowed(proc.get("tags", []), tags):
+                proc["source"] = "manual"
+                proc["status"] = "valid"
+                manual_registered.append(proc)
+            else:
+                excluded_manual.append(register_exclusion(
+                    proc, "Tag not allowed in environment"))
 
         if verbosity == "verbose" and excluded_manual:
             print(
@@ -720,6 +857,7 @@ def main():
         "tags": args.tags,
         "tag_validation": tag_validation_narration,
         "tags_validated": tag_validation_structured,
+        "tag_coverage": tag_coverage_dict(validated_declarative_procs + manual_registered, excluded_procs),
         "dry_run": dry_run,
         "summary_title": summary_title,
         "status": "dry_run" if dry_run else "deployed",
@@ -732,6 +870,19 @@ def main():
         "total_procedures": len(all_procs),
         "total_dags": len(dag_list) if dag_list else 0,
         "dags": [dag.__name__ for dag in dag_list] if dag_list else [],
+        "auto_proc_tags": {
+            proc["name"]: proc.get("tags", [])
+            for proc in validated_declarative_procs
+        },
+        "dag_tags": {
+            dag.__name__: getattr(dag, "tags", [])
+            for dag in dag_list
+        },
+        #  Placeholder to add later
+        # "function_tags": {
+        #     func["name"]: func.get("tags", [])
+        #     for func in validated_functions  # if you have this list
+        # },
         "procedures": [
             {
                 "name": proc.get("name", "—"),
@@ -745,10 +896,12 @@ def main():
         "excluded_procs": [
             {
                 "name": proc.get("name", "unknown"),
-                "tags": proc.get("tags", [])
+                "tags": proc.get("tags", []),
+                "reason": proc.get("reason", "Not specified")
             }
             for proc in excluded_procs
         ]
+
     }
 
     # 🔹 Optional Markdown summary block for Slack, GitHub, etc.
@@ -801,7 +954,23 @@ def main():
         #             f"- `{name}` excluded due to tags: `{', '.join(tags)}`\n")
         # else:
         #     f.write("- None\n")
-        f.write(build_excluded_procs_list(excluded_procs))
+
+        # f.write(build_excluded_procs_list(excluded_procs))
+        f.write("\n### 🚫 Excluded Procedures\n")
+        if excluded_procs:
+            f.write("| Name | Tags | Reason |\n")
+            f.write("|------|------|--------|\n")
+            for proc in excluded_procs:
+                name = escape_md(proc.get("name", "unknown"))
+                tags = escape_md(", ".join(proc.get("tags", [])))
+                reason = escape_md(proc.get("reason", "Not specified"))
+                f.write(f"| {name} | {tags} | {reason} |\n")
+        else:
+            f.write("- None\n")
+        f.write(build_tag_coverage_table(
+            validated_declarative_procs + manual_registered, excluded_procs))
+        f.write(build_auto_proc_tag_table(validated_declarative_procs))
+        f.write(build_environment_context_block())
 
     # 🔸 Emit Markdown artifact to console (only in verbose mode outside CI)
     if verbosity == "verbose" and not os.getenv("CI"):
