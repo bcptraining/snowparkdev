@@ -13,7 +13,7 @@ import importlib.util
 import os
 from snowflake.snowpark.types import StructType
 from tabulate import tabulate  # For tabular outputs
-# Tip: Requires config_file and schema.........
+# Tip: Requires config_file and schema..........
 # from common.common import json_to_struct_type
 # print("🔗 Imported json_to_struct_type:", callable(json_to_struct_type))
 
