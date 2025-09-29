@@ -24,7 +24,7 @@ entities:
         - snowpark_shared
       # tags:
       #   - core
-      description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting.
+      # description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting.
 
   hello_procedure:
     type: procedure
@@ -40,7 +40,7 @@ entities:
         - snowpark_shared
       # tags:
       #   - core
-      description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting. Used for lightweight personalization in SQL queries.
+      # description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting. Used for lightweight personalization in SQL queries.
 
 
 
