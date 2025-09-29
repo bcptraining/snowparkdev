@@ -858,6 +858,7 @@ def main():
         "tag_validation": tag_validation_narration,
         "tags_validated": tag_validation_structured,
         "tag_coverage": tag_coverage_dict(validated_declarative_procs + manual_registered, excluded_procs),
+        "sidecar_tags": sidecar_tags,
         "dry_run": dry_run,
         "summary_title": summary_title,
         "status": "dry_run" if dry_run else "deployed",
