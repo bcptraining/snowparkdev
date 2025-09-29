@@ -1,4 +1,4 @@
-definition_version: '3'
+definition_version: '2'
 
 mixins:
   snowpark_dag: {}  # No artifacts or stage — DAGs don’t support them
@@ -22,8 +22,8 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-      tags:
-        - core
+      # tags:
+      #   - core
       description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting.
 
   hello_procedure:
@@ -38,8 +38,8 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-      tags:
-        - core
+      # tags:
+      #   - core
       description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting. Used for lightweight personalization in SQL queries.
 
 
@@ -57,8 +57,8 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-      tags:
-        - experimental
+      # tags:
+      #   - experimental
 
   test_procedure:
     type: procedure
@@ -70,8 +70,8 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-      tags:
-        - experimental
+      # tags:
+      #   - experimental
 
 
   test_procedure_two:
@@ -84,6 +84,6 @@ entities:
     meta:
       use_mixins:
         - snowpark_shared
-      tags:
-        - experimental
+      # tags:
+      #   - experimental
 
