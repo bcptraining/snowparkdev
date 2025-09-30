@@ -13,6 +13,8 @@ import importlib.util
 import os
 from snowflake.snowpark.types import StructType
 from tabulate import tabulate  # For tabular outputs
+from common.common import json_to_struct_type
+
 # Tip: Requires config_file and schema....
 # from common.common import json_to_struct_type
 # print("🔗 Imported json_to_struct_type:", callable(json_to_struct_type))
@@ -24,18 +26,19 @@ sys.path.insert(0, ROOT_DIR)
 
 # Dynamically load the common module
 
+# Yes, Cory — you should completely remove that load_common_module() function from procedures_man.py and replace it with a direct import:from common import json_to_struct_type
 
-def load_common_module():
-    common_path = os.path.abspath(os.path.join(
-        os.path.dirname(__file__), "../common/common.py"))
-    spec = importlib.util.spec_from_file_location("common", common_path)
-    if spec is None or spec.loader is None:
-        raise ImportError(
-            f"Could not load module spec or loader for {common_path}")
-    common = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(common)
-    print(f"🔍 Loading common.py from: {common_path}")
-    return common
+# def load_common_module():
+#     common_path = os.path.abspath(os.path.join(
+#         os.path.dirname(__file__), "../common/common.py"))
+#     spec = importlib.util.spec_from_file_location("common", common_path)
+#     if spec is None or spec.loader is None:
+#         raise ImportError(
+#             f"Could not load module spec or loader for {common_path}")
+#     common = importlib.util.module_from_spec(spec)
+#     spec.loader.exec_module(common)
+#     print(f"🔍 Loading common.py from: {common_path}")
+#     return common
 
 
 # Load shared schema converter
