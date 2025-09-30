@@ -265,38 +265,38 @@ def load_snowflake_yml(app_path: Path):
         return yaml.safe_load(f)
 
 
-print("Testing ProcRegistrar class...")
-args = parse_cli_args()
-app_name = args.app
-app_path = APPS_DIR / app_name
+# print("Testing ProcRegistrar class...")
+# args = parse_cli_args()
+# app_name = args.app
+# app_path = APPS_DIR / app_name
 
-registrar = ProcRegistrar(
-    app_path=app_path,
-    verbose=args.verbosity == "verbose",
-    dry_run=args.dry_run
-)
+# registrar = ProcRegistrar(
+#     app_path=app_path,
+#     verbose=args.verbosity == "verbose",
+#     dry_run=args.dry_run
+# )
 
-registrar.load_declarative_procs()
-# Ensure app/python is importable as 'app.python'
-sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
+# registrar.load_declarative_procs()
+# # Ensure app/python is importable as 'app.python'
+# sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
 
-registrar.validate_handlers()  # This will print validation results
-registrar.validate_signatures()
-registrar.validate_returns()
-registrar.summarize_validation()
-validated_declarative_procs = registrar.validated_procs  # ← new accessor
-
-
-if registrar.verbose and not registrar.dry_run:
-    registrar.emit_final_summary()
+# registrar.validate_handlers()  # This will print validation results
+# registrar.validate_signatures()
+# registrar.validate_returns()
+# registrar.summarize_validation()
+# validated_declarative_procs = registrar.validated_procs  # ← new accessor
 
 
-config = load_snowflake_yml(app_path)
-declared_names = [e["identifier"]["name"] for e in config.get(
-    "entities", {}).values() if e.get("type") == "procedure"]
-print(f"📜 snowflake.yml loaded. Declarative procedures: {declared_names}")
+# if registrar.verbose and not registrar.dry_run:
+#     registrar.emit_final_summary()
 
-print("Testing completed.")
+
+# config = load_snowflake_yml(app_path)
+# declared_names = [e["identifier"]["name"] for e in config.get(
+#     "entities", {}).values() if e.get("type") == "procedure"]
+# print(f"📜 snowflake.yml loaded. Declarative procedures: {declared_names}")
+
+# print("Testing completed.")
 
 
 def build_markdown_summary(summary_artifact, tag_validation_structured, excluded_procs):
@@ -371,9 +371,9 @@ def build_manual_proc_narration(manual_procs, changed_files, dry_run=True):
 
 
 def main():
-    from app.common.validation import resolve_handler, validate_signature, validate_return_type
 
     # Define helper fiunctions for main() which are not intended for re-use elsewere
+
     def build_procedure_table(procs):
         lines = [
             "\n### Registered Procedures",
@@ -622,10 +622,17 @@ def main():
         "invalid": tag_check["invalid"]
     }
 
-    # step new1: Load tags
-    sidecar_tags = load_sidecar_tags(app_path)
+    # Step 1.1: Ensure app/python is importable as 'app.python'
+    # sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
+    sys.path.insert(0, str((APPS_DIR / app_name / "app").resolve()))
 
     # Step 2: 🔍 Validate declarative procedures via ProcRegistrar
+    # Step 2.1: Ensure app/python is importable as 'app.python'
+    sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
+
+    from app.common.validation import resolve_handler, validate_signature, validate_return_type
+    sidecar_tags = load_sidecar_tags(app_path)
+    # Step 2.2: Perform validations
     registrar = ProcRegistrar(
         app_path=app_path,
         verbose=verbosity == "verbose",
@@ -895,7 +902,6 @@ def main():
 #  Step 12: Summary and Validation
 
     # Escape Markdown-sensitive characters for safe table rendering
-
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")

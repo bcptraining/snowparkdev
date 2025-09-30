@@ -1,10 +1,7 @@
 {
   "app": "DE_PROJECT_1",
   "env": "dev",
-  "changed_files": [
-    "apps/DE_PROJECT_1/app/python/procedures_man.py",
-    "apps/DE_PROJECT_1/app/tags.json"
-  ],
+  "changed_files": [],
   "stage": "dev_deployment",
   "tags": [
     "core",
@@ -27,7 +24,7 @@
     },
     "experimental": {
       "included": 3,
-      "excluded": 1
+      "excluded": 0
     }
   },
   "sidecar_tags": {
@@ -57,8 +54,8 @@
   "summary_title": "\ud83e\uddea Dry-Run Summary",
   "status": "dry_run",
   "verbosity": "verbose",
-  "duration_seconds": 14.67,
-  "timestamp": "2025-09-30 11:28 PDT",
+  "duration_seconds": 13.88,
+  "timestamp": "2025-09-30 12:48 PDT",
   "auto_count": 4,
   "manual_count": 0,
   "manual_simulated": 0,
@@ -110,13 +107,5 @@
       "status": "valid"
     }
   ],
-  "excluded_procs": [
-    {
-      "name": "copy_to_table_proc",
-      "tags": [
-        "experimental"
-      ],
-      "reason": "Not specified"
-    }
-  ]
+  "excluded_procs": []
 }
