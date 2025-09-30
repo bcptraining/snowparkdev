@@ -241,7 +241,7 @@ def register_manual_procs(
             stage_location=f"@{stage_name}",
             imports=[f"@{stage_name}/apps/{app_name}/app.zip"],
             packages=["snowflake-snowpark-python==1.33.0",
-                      "cloudpickle==3.0.0", "tabulate==0.9.0"]
+                      "cloudpickle==3.0.0", "tabulate==0.9.0"],
             replace=True
         )
 
