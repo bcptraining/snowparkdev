@@ -19,6 +19,8 @@ def register_manual_procs(
     env_name: str,
     stage_name: str,
     zip_name: str,
+    previous_commit: str,
+    current_commit: str,
     include_manual: bool = False,
     include_tags: Optional[List[str]] = None,
     dry_run: bool = False,
@@ -71,7 +73,9 @@ def register_manual_procs(
 
     # Summary counts
 
-    changed_files = get_changed_files_for_app(app_name)
+    # changed_files = get_changed_files_for_app(app_name)
+    changed_files = get_changed_files_for_app(
+        app_name, previous_commit, current_commit)
 
     manager = DeployManager(
         session=session,
@@ -86,8 +90,9 @@ def register_manual_procs(
     manual_registered = manager.register_manual()
     manager.emit_summary()
 
-    # auto_count = len(declarative_procs)
-    auto_count = len(validated_declarative_procs)
+    print("ℹ️ Declarative procedures are now registered via ProcRegistrar — skipping auto count here.")
+    auto_count = 0  # Declarative procedures handled elsewhere
+
     manual_count = sum(
         1 for proc in manual_registered if proc.get("source") == "manual")
 
