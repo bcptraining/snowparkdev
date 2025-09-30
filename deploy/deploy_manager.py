@@ -39,13 +39,25 @@ class DeployManager:
         if self.verbosity == "verbose":
             print(msg)
 
+    # def should_register_manual(self) -> bool:
+    #     manual_files = [
+    #         f"apps/{self.app_name}/app/python/procedures_man.py",
+    #         f"apps/{self.app_name}/app/schemas/schemas.json",
+    #         f"apps/{self.app_name}/app/common/common.py"
+    #     ]
+    #     return any(f in self.changed_files for f in manual_files)
+
     def should_register_manual(self) -> bool:
+        from deploy.constants import MANUAL_PROC_TRIGGER_SUFFIXES
         manual_files = [
-            f"apps/{self.app_name}/app/python/procedures_man.py",
-            f"apps/{self.app_name}/app/schemas/schemas.json",
-            f"apps/{self.app_name}/app/common/common.py"
-        ]
-        return any(f in self.changed_files for f in manual_files)
+            f"apps/{self.app_name}/{suffix}" for suffix in MANUAL_PROC_TRIGGER_SUFFIXES]
+        triggered = any(f in self.changed_files for f in manual_files)
+        if triggered:
+            print(
+                f"🧠 Manual registration triggered by changes in: {self.changed_files}")
+        else:
+            print("⏭️ Manual registration skipped — no relevant trigger files changed.")
+        return triggered
 
     def load_manual_procs(self):
         try:
