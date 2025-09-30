@@ -42,8 +42,8 @@ sys.path.insert(0, ROOT_DIR)
 
 
 # Load shared schema converter
-common = load_common_module()
-json_to_struct_type = common.json_to_struct_type
+# common = load_common_module()
+# json_to_struct_type = common.json_to_struct_type
 
 
 def load_copy_to_table():
