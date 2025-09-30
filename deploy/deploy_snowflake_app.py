@@ -621,6 +621,9 @@ def main():
         "valid": tag_check["valid"],
         "invalid": tag_check["invalid"]
     }
+    # Commit info context needed to determine if code or config for manual proc has changed and so needs to be deployed
+    previous_commit = os.environ.get("previous_commit", "").strip('"')
+    current_commit = os.environ.get("current_commit", "").strip('"')
 
     # Step 1.1: Ensure app/python is importable as 'app.python'
     # sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
@@ -693,7 +696,8 @@ def main():
     # validate_env_consistency(env_name)
     # Default to empty list; in real use, populate with actual changed files if available
     changed_apps = []
-    changed_files = get_changed_files_for_app(app_name)
+    changed_files = get_changed_files_for_app(
+        app_name, previous_commit, current_commit)
 
     print(f"🔍 Changed files detected for app '{app_name}': {changed_files}")
 
@@ -902,6 +906,7 @@ def main():
 #  Step 12: Summary and Validation
 
     # Escape Markdown-sensitive characters for safe table rendering
+
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")
