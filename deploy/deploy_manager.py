@@ -77,6 +77,13 @@ class DeployManager:
             dry_run=self.dry_run,
             verbosity=self.verbosity
         )
+        for proc in result or []:
+            proc["source_file"] = "app/python/procedures_man.py"
+            proc["source"] = "manual"
+            proc["tags"] = proc.get("tags", [])
+            proc["status"] = "valid"
+            proc["handler"] = proc.get("handler", "—")
+            proc["name"] = proc.get("name", "—")
 
         self.manual_procs = result or []
         print(f"✅ Registered {len(self.manual_procs)} manual procedures.")

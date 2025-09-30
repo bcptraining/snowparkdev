@@ -1,7 +1,10 @@
+import inspect
 import re
 import yaml
 # -- supports an experimental refactor to use a class-based approach
-from orchestration.proc_registrar import ProcRegistrar
+# from orchestration.proc_registrar import ProcRegistrar
+from deploy.orchestration.proc_registrar import ProcRegistrar
+from deploy.tag_registry import TAG_SETS
 import pytz
 from datetime import datetime
 import importlib
@@ -20,13 +23,15 @@ import re  # for regex operations
 # Defines set of tags applicable to each environment
 from deploy.constants import VALID_TAGS
 
-from tag_registry import TAG_SETS
-
 
 # tags = TAG_SETS[args.env] if 'env_name' in locals() else []  # Example usage
 from deploy.deploy_manager import DeployManager
 from deploy.utils.change_detection import get_changed_files_for_app
 from deploy.utils.tag_validation import validate_tags_for_env
+
+print(f"__name__ = {__name__}")
+print(f"cwd = {os.getcwd()}")
+print(f"sys.path = {sys.path}")
 
 
 def vprint(msg: str, verbosity: str):
@@ -318,7 +323,56 @@ def build_markdown_summary(summary_artifact, tag_validation_structured, excluded
     return "\n".join(lines)
 
 
+def write_github_output(line: str):
+    """
+    Safely writes a line to the GitHub Actions output file if available.
+
+    This function checks for the presence of the GITHUB_OUTPUT environment variable,
+    which is automatically set by GitHub Actions when using `echo "name=value" >> $GITHUB_OUTPUT`.
+    If running locally (outside CI), the variable won't exist, and this function will silently skip.
+
+    Args:
+        line (str): The line to write, typically in the format "key=value".
+    """
+    path = os.environ.get("GITHUB_OUTPUT")
+    if path:
+        # Append the line to the GitHub output file for downstream steps
+        with open(path, "a") as f:
+            f.write(line + "\n")
+
+
+def build_manual_proc_narration(manual_procs, changed_files, dry_run=True):
+    lines = [
+        "\n### 🧪 Manual Procedure Deployment Summary",
+        "| Name | Status | Reason |",
+        "|------|--------|--------|"
+    ]
+
+    for proc in manual_procs:
+        name = proc.get("name", "—")
+        handler = proc.get("handler", "—")
+        # Optional: attach this during registration
+        source_file = proc.get("source_file", "")
+        valid = proc.get("status") == "valid"
+        excluded = proc.get("excluded", False)
+        simulated = dry_run
+
+        if excluded:
+            lines.append(
+                f"| {name} | ❌ Excluded | {proc.get('exclusion_reason', 'Validation failed')} |")
+        elif source_file and source_file not in changed_files:
+            lines.append(f"| {name} | 🚫 Skipped | No relevant code changes |")
+        elif simulated:
+            lines.append(f"| {name} | 🧪 Simulated | Dry-run only |")
+        else:
+            lines.append(f"| {name} | ✅ Deployed | Live deployment |")
+
+    return "\n".join(lines)
+
+
 def main():
+    from app.common.validation import resolve_handler, validate_signature, validate_return_type
+
     # Define helper fiunctions for main() which are not intended for re-use elsewere
     def build_procedure_table(procs):
         lines = [
@@ -481,13 +535,23 @@ def main():
             return default_tags
 
     def validate_sidecar_tag_coverage(procs, sidecar_tags, entity_type="procedures"):
-        missing = [proc["name"] for proc in procs if proc["name"]
-                   not in sidecar_tags.get(entity_type, {})]
+        tag_map = sidecar_tags.get(entity_type, {})
+        missing = []
+
+        for proc in procs:
+            name = proc.get("name")
+            tags = tag_map.get(name)
+
+            if not tags or not isinstance(tags, list) or all(t.strip() == "" for t in tags):
+                missing.append(name)
+
         if missing:
             print(
-                f"⚠️ {len(missing)} {entity_type} missing tag mappings in tags.json:")
+                f"⚠️ {len(missing)} {entity_type} missing or empty tag mappings in tags.json:")
             for name in missing:
                 print(f"  - {name}")
+        else:
+            print(f"✅ All {entity_type} have valid tag mappings in tags.json.")
 
     def build_auto_proc_tag_table(procs):
         lines = [
@@ -500,6 +564,40 @@ def main():
             tags = ", ".join(proc.get("tags", [])) or "—"
             lines.append(f"| {name} | {tags} |")
         return "\n".join(lines)
+
+    def write_github_output(line: str):
+        """
+        Safely writes a line to the GitHub Actions output file if available.
+
+        This is used to pass data between workflow steps in GitHub Actions.
+        Locally, GITHUB_OUTPUT is not set, so this function silently skips.
+
+        Args:
+            line (str): The line to write, typically in the format "key=value".
+        """
+        path = os.environ.get("GITHUB_OUTPUT")
+        if path:
+            with open(path, "a") as f:
+                f.write(line + "\n")
+
+    def enrich_manual_proc(proc, verbosity):
+        """
+        Enriches a validated manual procedure with fallback fields for summary rendering.
+
+        - Ensures 'handler' and 'returns' fields are present for markdown summary blocks.
+        - Emits verbose narration confirming handler resolution and signature match.
+        - Used during dry-run or deploy to maintain parity with declarative procedure narration.
+
+        Args:
+            proc (dict): The manual procedure dictionary to enrich.
+            verbosity (str): Verbosity level; emits narration if set to 'verbose'.
+        """
+        proc["handler"] = proc.get("handler", "—")
+        proc["returns"] = proc.get("returns", "—")
+        if verbosity == "verbose":
+            print(f"✅ {proc['name']} resolved handler: {proc['handler']}")
+            print(
+                f"✅ {proc['name']} matches expected signature: {proc['params']}")
 
     # Step 0:  Validate CLI version before anything else
     if not validate_cli_version(min_required="3.0.0"):
@@ -572,6 +670,8 @@ def main():
         else:
             excluded_declarative.append(register_exclusion(
                 proc, "Tag not allowed in environment"))
+        if verbosity == "verbose":
+            print(f"✅ Injected tags for {proc_name}: {proc['tags']}")
 
     # Narrate procedures that aren’t tagged in tags.json
     validate_sidecar_tag_coverage(
@@ -697,32 +797,50 @@ def main():
             verbosity=verbosity
         )
 
+        # Load and enrich manual procedures for tag filtering, validation, and summary narration
         raw_manual_procs = manager.register_manual()
 
-        # manual_registered = [
-        #     proc for proc in raw_manual_procs
-        #     if is_tag_allowed(proc.get("tags", []), tags)
-        # ]
-
-        # excluded_manual = [
-        #     proc for proc in raw_manual_procs
-        #     if not is_tag_allowed(proc.get("tags", []), tags)
-        # ]
         manual_registered = []
         excluded_manual = []
 
         for proc in raw_manual_procs:
-            if is_tag_allowed(proc.get("tags", []), tags):
-                proc["source"] = "manual"
-                proc["status"] = "valid"
-                manual_registered.append(proc)
-            else:
-                excluded_manual.append(register_exclusion(
-                    proc, "Tag not allowed in environment"))
+            if not is_tag_allowed(proc.get("tags", []), tags):
+                proc["excluded"] = True
+                proc["exclusion_reason"] = "Tag not allowed in environment"
+                excluded_manual.append(proc)
+                continue
+
+            if not resolve_handler(proc):
+                excluded_manual.append(proc)
+                continue
+
+            expected_params = proc.get("expected_params", [])
+            if not validate_signature(proc, expected_params):
+                excluded_manual.append(proc)
+                continue
+
+            if not validate_return_type(proc):
+                excluded_manual.append(proc)
+                continue
+
+            # ✅ Safe to enrich and narrate after validation passes
+            enrich_manual_proc(proc, verbosity)
+
+            proc["status"] = "valid"
+            manual_registered.append(proc)
 
         if verbosity == "verbose" and excluded_manual:
             print(
-                f"🚫 {len(excluded_manual)} manual procedures excluded due to tag filtering for env '{env_name}'")
+                f"🚫 {len(excluded_manual)} manual procedures excluded due to validation or tag filtering for env '{env_name}'"
+            )
+
+        # ✅ Emit full narration block for manual procs
+        if verbosity == "verbose":
+            print(build_manual_proc_narration(
+                manual_registered + excluded_manual,
+                changed_files,
+                dry_run=dry_run
+            ))
 
         manager.emit_summary()
     else:
@@ -914,9 +1032,13 @@ def main():
     )
 
     # 🔹 Emit JSON artifact to GitHub Actions output
+    # json_output = json.dumps(summary_artifact).replace("\n", "\\n")
+    # with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+    #     f.write(f"deploy_summary={json_output}\n")
+
+    # Emit summary artifact to GitHub Actions output (if available)
     json_output = json.dumps(summary_artifact).replace("\n", "\\n")
-    with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-        f.write(f"deploy_summary={json_output}\n")
+    write_github_output(f"deploy_summary={json_output}")
 
     # 🔹 Emit JSON artifact to local file for debugging
     with open("deploy_summary.json", "w") as f:
@@ -935,28 +1057,9 @@ def main():
         f.write(f"- DAGs: `{len(dag_list) if dag_list else 0}`\n")
         f.write(f"- Duration: `{duration:.2f} seconds`\n")
         f.write(f"- Timestamp: `{summary_time}`\n")
-        # f.write("\n### Registered Procedures\n")
-        # f.write("| Name | Source | Handler | Returns | Status |\n")
-        # f.write("|------|--------|---------|---------|--------|\n")
-        # for proc in all_procs:
-        #     f.write(
-        #         f"| {escape_md(proc.get('name','—'))} | {escape_md(proc.get('source','—'))} | "
-        #         f"{escape_md(proc.get('handler','—'))} | {escape_md(proc.get('return_type','—'))} | "
-        #         f"{escape_md(proc.get('status','—'))} |\n"
-        #
+
         f.write(build_procedure_table(all_procs))
 
-        # f.write(f"\n### 🚫 Excluded Procedures\n")
-        # if excluded_procs:
-        #     for proc in excluded_procs:
-        #         name = proc.get("name", "unknown")
-        #         tags = proc.get("tags", [])
-        #         f.write(
-        #             f"- `{name}` excluded due to tags: `{', '.join(tags)}`\n")
-        # else:
-        #     f.write("- None\n")
-
-        # f.write(build_excluded_procs_list(excluded_procs))
         f.write("\n### 🚫 Excluded Procedures\n")
         if excluded_procs:
             f.write("| Name | Tags | Reason |\n")
