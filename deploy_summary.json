@@ -1,0 +1,111 @@
+{
+  "app": "DE_PROJECT_1",
+  "env": "dev",
+  "changed_files": [],
+  "stage": "dev_deployment",
+  "tags": [
+    "core",
+    "experimental",
+    "diagnostic"
+  ],
+  "tag_validation": "\ud83d\udd0d Tag validation for `dev`:\n\u2705 Valid tags: core, experimental, diagnostic",
+  "tags_validated": {
+    "valid": [
+      "core",
+      "experimental",
+      "diagnostic"
+    ],
+    "invalid": []
+  },
+  "tag_coverage": {
+    "core": {
+      "included": 1,
+      "excluded": 0
+    },
+    "experimental": {
+      "included": 3,
+      "excluded": 0
+    }
+  },
+  "sidecar_tags": {
+    "_comment": "Temporary workaround until Snowflake Native App v2 supports metadata tags in snowflake.yml",
+    "procedures": {
+      "hello_procedure": [
+        "core"
+      ],
+      "hello_procedure2": [
+        "experimental"
+      ],
+      "test_procedure": [
+        "experimental"
+      ],
+      "test_procedure_two": [
+        "experimental"
+      ]
+    },
+    "functions": {
+      "hello_function": [
+        "core"
+      ]
+    },
+    "dags": {}
+  },
+  "dry_run": true,
+  "summary_title": "\ud83e\uddea Dry-Run Summary",
+  "status": "dry_run",
+  "verbosity": "verbose",
+  "duration_seconds": 13.88,
+  "timestamp": "2025-09-30 12:48 PDT",
+  "auto_count": 4,
+  "manual_count": 0,
+  "manual_simulated": 0,
+  "total_procedures": 4,
+  "total_dags": 0,
+  "dags": [],
+  "auto_proc_tags": {
+    "hello_procedure": [
+      "core"
+    ],
+    "hello_procedure2": [
+      "experimental"
+    ],
+    "test_procedure": [
+      "experimental"
+    ],
+    "test_procedure_two": [
+      "experimental"
+    ]
+  },
+  "dag_tags": {},
+  "procedures": [
+    {
+      "name": "hello_procedure",
+      "source": "auto",
+      "handler": "app.python.procedures_auto.hello_procedure",
+      "returns": "string",
+      "status": "valid"
+    },
+    {
+      "name": "hello_procedure2",
+      "source": "auto",
+      "handler": "app.python.procedures_auto.hello_procedure2",
+      "returns": "string",
+      "status": "valid"
+    },
+    {
+      "name": "test_procedure",
+      "source": "auto",
+      "handler": "app.python.procedures_auto.test_procedure",
+      "returns": "string",
+      "status": "valid"
+    },
+    {
+      "name": "test_procedure_two",
+      "source": "auto",
+      "handler": "app.python.procedures_auto.test_procedure_two",
+      "returns": "string",
+      "status": "valid"
+    }
+  ],
+  "excluded_procs": []
+}

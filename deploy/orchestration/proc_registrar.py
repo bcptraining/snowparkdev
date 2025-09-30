@@ -201,7 +201,7 @@ class ProcRegistrar:
         print(
             f"🚀 Ready for deploy via: snow snowpark deploy --app {self.app_path.name}")
 
-    def validate_all(self) -> bool:
+    def validate_all(self, narrate: bool = True) -> bool:
         """
         Runs the full declarative validation suite for all procedures defined in snowflake.yml.
 
@@ -209,55 +209,37 @@ class ProcRegistrar:
         - Handler resolution
         - Signature validation (excluding 'session')
         - Return type normalization (Snowflake → Python)
-        - Summary table narration
+        - Optional narration of validation steps and summary table
+
+        Args:
+            narrate (bool): If True, emits validation narration and summary table.
+                            If False, runs silently (used during deploy to avoid duplicate output).
 
         Returns:
             bool: True if all procedures pass validation, False if any are invalid or unresolved.
 
-        Intended usage:
+        Usage:
+            - Dry-run mode: narrate=True to emit full validation logs
+            - Deploy mode: narrate=False to reuse validation silently
             - CI pipelines: fail fast if declarative procedures are broken
-            - Deploy orchestration: gate registration or artifact creation
-            - Dry-run mode: narrate validation without side effects
 
         Example:
             registrar = ProcRegistrar(app_path, verbose=True, dry_run=True)
-            if not registrar.validate_all():
+            if not registrar.validate_all(narrate=True):
                 sys.exit(1)  # Abort deploy
         """
+
         self.load_declarative_procs()
         self.validate_handlers()
         self.validate_signatures()
         self.validate_returns()
-        self.summarize_validation()
 
-        all_valid = True
-        for proc in self.declared:
-            # Re-inspect each handler’s signature and return type
-            # If any mismatch or error, flip all_valid to False
-            try:
-                module_path, func_name = proc["handler"].rsplit(".", 1)
-                module = importlib.import_module(module_path)
-                func = getattr(module, func_name)
-                sig = inspect.signature(func)
+        if narrate:
+            self.summarize_validation()
+            if not self.dry_run:
+                self.emit_final_summary()
 
-                actual_params = [p.name for p in sig.parameters.values()]
-                if actual_params and actual_params[0] == "session":
-                    actual_params = actual_params[1:]
-                sig_valid = actual_params == [p["name"]
-                                              for p in proc.get("signature", [])]
-
-                actual_return = sig.return_annotation
-                expected_python_type = self.TYPE_MAP.get(
-                    proc.get("returns"), proc.get("returns"))
-                return_valid = actual_return.__name__ == expected_python_type
-
-                if not sig_valid or not return_valid:
-                    all_valid = False
-
-            except Exception:
-                all_valid = False
-
-        return all_valid
+        return all(p["status"] == "valid" for p in self.validated_procs)
 
     @property
     def validated_procs(self) -> list[dict]:
