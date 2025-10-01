@@ -7,11 +7,22 @@ from pathlib import Path
 # Definitions
 TYPE_MAP = {
     "string": StringType(),
-    "date": DateType(),
+    "StringType": StringType(),
+    "int": IntegerType(),
     "integer": IntegerType(),
+    "IntegerType": IntegerType(),
     "float": FloatType(),
-    "boolean": BooleanType()
+    "FloatType": FloatType(),
+    "boolean": BooleanType(),
+    "BooleanType": BooleanType(),
+    "date": DateType(),
+    "DateType": DateType(),
+    "timestamp": TimestampType()
 }
+
+#  The paths to config and schema for
+COPY_TO_TABLE_PROC_CONFIG_PATH = Path("app/config/copy_to_snowstg_udemy.json")
+COPY_TO_TABLE_PROC_SCHEMA_PATH = Path("app/schemas/schemas.json")
 
 
 def print_hello(name: str):
@@ -77,6 +88,22 @@ def copy_to_table(session, config_file, schema: Optional[StructType] = None):
 
     qid = get_copy_query_id(query_history)
     return copied_into_result, qid
+# ✅ Function to convert JSON schema to StructType
+
+
+def json_to_struct_type(schema_json: list) -> StructType:
+    """
+    Converts a JSON schema definition into a Snowpark StructType.
+    Each field must contain 'name' and 'type', where 'type' matches a key in TYPE_MAP.
+    """
+    fields = []
+    for field in schema_json:
+        key = field["type"].lower()
+        field_type = TYPE_MAP.get(key)
+        if not field_type:
+            raise ValueError(f"Unsupported type: {field['type']}")
+        fields.append(StructField(field["name"], field_type))
+    return StructType(fields)
 
 
 def load_schema_from_json(json_path: str, schema_name: str) -> StructType:

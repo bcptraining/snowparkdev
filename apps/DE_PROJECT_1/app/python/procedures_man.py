@@ -13,7 +13,9 @@ import importlib.util
 import os
 from snowflake.snowpark.types import StructType
 from tabulate import tabulate  # For tabular outputs
-from common.common import json_to_struct_type
+from common.helpers import json_to_struct_type
+from app.python.manual_procs import copy_to_table_proc
+
 
 # Tip: Requires config_file and schema....
 # from common.common import json_to_struct_type
@@ -70,85 +72,17 @@ def vprint(msg: str, verbosity: str):
 
 # 🛠️ Define your manual procedure
 
-# Load config file
-CONFIG_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json"
-SCHEMA_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/schemas/schemas.json"
+# Load config file -- moved to helpers.py
+# CONFIG_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json"
+# SCHEMA_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/schemas/schemas.json"
 
 # def copy_to_table_proc(session: Session, source_table: str, target_table: str) -> str:
 
-#  Example procedure to copy data from one table to another using dynamic config and schema files
 
-
-def copy_to_table_proc(session: Session, schema_key: str) -> str:
-    """
-    tags: core
-    description: This procedure handles core dev logic.
-    """
-    def format_copy_results(copy_result_rows):
-        table_data = []
-        # Build table data summarizing copy results
-        for row in copy_result_rows:
-            file_name = row.file.split("/")[-1]
-            status = row.status
-            loaded = row.rows_loaded
-            parsed = row.rows_parsed
-            errors = row.errors_seen
-            if errors:
-                error_msg = f"{row.first_error} (line {row.first_error_line}, column {row.first_error_column_name})"
-            else:
-                error_msg = "—"
-            table_data.append([file_name, status, loaded,
-                               parsed, errors, error_msg])
-
-        headers = ["📄 File Name", "Status", "Rows Loaded",
-                   "Rows Parsed", "Errors Seen", "First Error"]
-        print("\n✅ Copy Result Summary\n")
-        print(tabulate(table_data, headers=headers, tablefmt="github"))
-
-    # Load config from JSON
-    with open(CONFIG_PATH, "r") as f:
-        config_file = json.load(f)
-
-    # Load schema file
-    with open(SCHEMA_PATH, "r") as f:
-        schema_file = json.load(f)
-
-    # Extract raw schema by key
-    raw_schema = schema_file.get(schema_key)
-
-    if not raw_schema:
-        available_keys = list(schema_file.keys())
-        return (
-            f"❌ Schema key '{schema_key}' not found in schema file.\n"
-            f"📂 Available schema keys: {available_keys}"
-        )
-
-    # Convert raw schema to StructType
-    try:
-        schema = json_to_struct_type(raw_schema)
-    except Exception as e:
-        return f"❌ Failed to convert schema for key '{schema_key}': {e}"
-
-    # Execute copy
-    copied_into_result, qid = copy_to_table(
-        session, config_file, schema=schema)
-
-    # Narrate Partial Loads in Deploy Summary
-    # for row in copied_into_result:
-    #     print(f"📄 {row.file}")
-    #     print(f"   Status: {row.status}")
-    #     print(f"   Rows: {row.rows_loaded}/{row.rows_parsed} loaded")
-    #     if row.errors_seen:
-    #         print(
-    #             f"   ⚠️ Error: {row.first_error} at line {row.first_error_line}, column {row.first_error_column_name}")
-
-    summary_text = format_copy_results(copied_into_result)
-
-    # return f"Copy Result: {copied_into_result}, Query ID: {qid}"
-    return f"✅ Copy completed.\n\nQuery ID: {qid}"
-
-
-copy_to_table_proc.__module__ = "app.python.procedures_man"
+# This line is a Snowflake workaround. The "__module__" attribute is used  during pickling to locate the function’s origin.
+# If your procedure is defined in a dynamic context (like a script or REPL), Snowflake might fail to resolve it unless
+# you explicitly alias it to a known module path.
+copy_to_table_proc.__module__ = "app.python.manual_procs"
 
 MANUAL_PROCS = [
     {
@@ -156,7 +90,8 @@ MANUAL_PROCS = [
         "name": "copy_to_table_proc",
         "input_types": [StringType(), StringType()],
         "return_type": StringType(),
-        "tags": ["experimental"]
+        "tags": ["experimental"],
+        "source": "manual"
     },
     # Add more procedures here as needed
 ]

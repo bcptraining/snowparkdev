@@ -1,31 +1,6 @@
-# Common functions and utilities for the DE_PROJECT_1 application
 from snowflake.snowpark.types import StructType
-from snowflake.snowpark.types import StructType, StructField, StringType, IntegerType, FloatType, BooleanType, DateType
 import os
 import sys
-# ✅ Type mapping for schema conversion (helper for json_to_struct_type)
-
-TYPE_MAP = {
-    "string": StringType(),
-    "StringType": StringType(),
-    "int": IntegerType(),
-    "integer": IntegerType(),
-    "IntegerType": IntegerType(),
-    "float": FloatType(),
-    "FloatType": FloatType(),
-    "boolean": BooleanType(),
-    "BooleanType": BooleanType(),
-    "date": DateType(),
-    "DateType": DateType()
-}
-
-# ✅ Simple hello world function
-
-
-def print_hello(name: str):
-    return f"Hello {name}!"
-
-# ✅ Function to copy data from source to target table based on config and schema
 
 
 def copy_to_table(session, config_file: dict, schema: StructType) -> tuple:
@@ -59,15 +34,3 @@ def copy_to_table(session, config_file: dict, schema: StructType) -> tuple:
             break
 
     return copied_into_result, qid
-
-
-# ✅ Function to convert JSON schema to StructType
-
-def json_to_struct_type(schema_json: list) -> StructType:
-    fields = []
-    for field in schema_json:
-        field_type = TYPE_MAP.get(field["type"])
-        if not field_type:
-            raise ValueError(f"Unsupported type: {field['type']}")
-        fields.append(StructField(field["name"], field_type))
-    return StructType(fields)
