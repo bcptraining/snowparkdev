@@ -2,7 +2,7 @@ from snowflake.snowpark.types import StructType
 from snowflake.snowpark import Session
 from tabulate import tabulate
 import json
-from common.helpers import copy_to_table, json_to_struct_type
+from app.common.helpers import copy_to_table, json_to_struct_type
 # Import example schema and config for copy_to_table_proc
 from common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SCHEMA_PATH
 
