@@ -1,7 +1,9 @@
 {
   "app": "DE_PROJECT_1",
   "env": "dev",
-  "changed_files": [],
+  "changed_files": [
+    "apps/DE_PROJECT_1/app/python/manual_procs.py"
+  ],
   "stage": "dev_deployment",
   "tags": [
     "core",
@@ -24,7 +26,7 @@
     },
     "experimental": {
       "included": 3,
-      "excluded": 0
+      "excluded": 2
     }
   },
   "sidecar_tags": {
@@ -54,8 +56,8 @@
   "summary_title": "\ud83e\uddea Dry-Run Summary",
   "status": "dry_run",
   "verbosity": "verbose",
-  "duration_seconds": 12.01,
-  "timestamp": "2025-10-01 16:13 PDT",
+  "duration_seconds": 11.66,
+  "timestamp": "2025-10-02 12:10 PDT",
   "auto_count": 4,
   "manual_count": 0,
   "manual_simulated": 0,
@@ -107,5 +109,20 @@
       "status": "valid"
     }
   ],
-  "excluded_procs": []
+  "excluded_procs": [
+    {
+      "name": "copy_to_table_proc",
+      "tags": [
+        "experimental"
+      ],
+      "reason": "Not specified"
+    },
+    {
+      "name": "test_manual_proc",
+      "tags": [
+        "experimental"
+      ],
+      "reason": "Not specified"
+    }
+  ]
 }

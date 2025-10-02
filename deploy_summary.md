@@ -1,13 +1,13 @@
 # 🧪 Dry-Run Summary — DE_PROJECT_1
 - Environment: `dev`
-- Changed Files: `None`
+- Changed Files: `apps/DE_PROJECT_1/app/python/manual_procs.py`
 - Stage: `dev_deployment`
 - Tags: `core, experimental, diagnostic`
 - Auto Procedures: `4`
 - Manual Procedures: `0`
 - DAGs: `0`
-- Duration: `12.01 seconds`
-- Timestamp: `2025-10-01 16:13 PDT`
+- Duration: `11.66 seconds`
+- Timestamp: `2025-10-02 12:10 PDT`
 
 ### Registered Procedures
 | Name | Source | Handler | Returns | Status |
@@ -17,13 +17,16 @@
 | test_procedure | auto | app.python.procedures_auto.test_procedure | string | valid |
 | test_procedure_two | auto | app.python.procedures_auto.test_procedure_two | string | valid |
 ### 🚫 Excluded Procedures
-- None
+| Name | Tags | Reason |
+|------|------|--------|
+| copy_to_table_proc | experimental | Not specified |
+| test_manual_proc | experimental | Not specified |
 
 ### 🏷️ Tag Coverage
 | Tag | Included | Excluded |
 |------|----------|----------|
 | core | 1 | 0 |
-| experimental | 3 | 0 |
+| experimental | 3 | 2 |
 ### 🏷️ Auto Procedure Tags
 | Procedure Name | Tags |
 |----------------|------|

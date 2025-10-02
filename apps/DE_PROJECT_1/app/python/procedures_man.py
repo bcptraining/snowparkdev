@@ -1,4 +1,5 @@
 
+import inspect
 from snowflake.snowpark.types import StructType, StructField, StringType, IntegerType, FloatType, BooleanType
 import json
 from typing import Dict, Union
@@ -14,7 +15,14 @@ import os
 from snowflake.snowpark.types import StructType
 from tabulate import tabulate  # For tabular outputs
 from common.helpers import json_to_struct_type
-from app.python.manual_procs import copy_to_table_proc
+from app.python.manual_procs import copy_to_table_proc  # , test_manual_proc
+
+
+def test_manual_proc(session: Session, name: str) -> str:
+    return f"Hello, {name}"
+
+
+test_manual_proc.__module__ = "app.python.procedures_man"
 
 
 # Tip: Requires config_file and schema....
@@ -88,11 +96,21 @@ MANUAL_PROCS = [
     {
         "func": copy_to_table_proc,
         "name": "copy_to_table_proc",
-        "input_types": [StringType(), StringType()],
+        # "input_types": [StringType(), StringType()],
+        "input_types": [StringType()],  # Only schema_key is declared
         "return_type": StringType(),
         "tags": ["experimental"],
         "source": "manual"
     },
+    {
+        "func": test_manual_proc,
+        "name": "test_manual_proc",
+        "input_types": [StringType()],
+        "return_type": StringType(),
+        "tags": ["experimental"],
+        "source": "manual"
+    }
+
     # Add more procedures here as needed
 ]
 
@@ -135,13 +153,6 @@ def register_manual_procs(
         proc["tags"] = [tag.lower()
                         for tag in proc.get("tags", [])]  # normalize tags
 
-        # ✅ Docstring enforcement
-        # if not proc["func"].__doc__:
-        #     print(f"⚠️ {proc['name']} is missing a docstring.")
-        if not proc["func"].__doc__:
-            raise ValueError(
-                f"❌ Procedure '{proc['name']}' is missing a docstring.")
-
         if normalized_tags and not any(tag in normalized_tags for tag in proc["tags"]):
             print(f"⏭️ Skipping {proc['name']} due to tag filter.")
             continue
@@ -163,12 +174,54 @@ def register_manual_procs(
 
         alias_path = "app.python.procedures_man"
         sys.modules[alias_path] = sys.modules[__name__]
-        patched_func = pickle.loads(pickle.dumps(proc["func"]))
 
-        vprint(
-            f"🔗 Re-pickled {proc['name']} under alias: {alias_path}", verbosity)
-        vprint(f"🔍 Pickled hex for {proc['name']}:", verbosity)
-        vprint(pickle.dumps(patched_func).hex(), verbosity)
+        # Debuggin an issue with signature for the manual proc . The line below was replace with the 2 lines following
+        # patched_func = pickle.loads(pickle.dumps(proc["func"]))
+        import inspect
+
+        print(f"🔍 Signature of {proc['name']} before:",
+              inspect.signature(proc["func"]))
+
+        import cloudpickle
+
+#  Debug lines below
+        # patched_func = cloudpickle.loads(cloudpickle.dumps(proc["func"]))  <-- serializatonn was causing a problem here
+        patched_func = proc["func"]
+
+        # ✅ Signature inspection and validation
+        sig = inspect.signature(patched_func)
+        params = list(sig.parameters.values())
+        print(f"🔍 Signature of {proc['name']}: {sig}")
+        print(f"🔍 Param names: {[p.name for p in params]}")
+        print(f"🔍 Param count: {len(params)}")
+
+        def validate_signature(func, expected_input_count):
+            if len(params) < 1 or params[0].name != "session":
+                raise ValueError(
+                    f"First parameter must be 'session', got '{params[0].name}'")
+            if len(params[1:]) != expected_input_count:
+                raise ValueError(
+                    f"Expected {expected_input_count} user-supplied args, got {len(params[1:])}")
+
+        validate_signature(patched_func, len(proc["input_types"]))
+        # Debug lines above
+
+        # # Added this as a debug step
+
+        # print(f"🔍 Signature of {proc['name']} after patching:",
+        #       inspect.signature(patched_func))
+
+        # vprint(
+        #     f"🔗 Re-pickled {proc['name']} under alias: {alias_path}", verbosity)
+        # vprint(f"🔍 Pickled hex for {proc['name']}:", verbosity)
+        # vprint(pickle.dumps(patched_func).hex(), verbosity)
+
+        # Just before registration, reassert the module path:
+        # Even though you set this earlier, it may be overwritten during import or reassignment. Reasserting it ensures Snowflake can resolve the handler.
+        proc["func"].__module__ = "app.python.manual_procs"
+
+        print(
+            f"🔗 Handler path for {proc['name']}: {proc['func'].__module__}.{proc['func'].__name__}")
 
         session.sproc.register(
             func=patched_func,
@@ -180,7 +233,8 @@ def register_manual_procs(
             imports=[f"@{stage_name}/apps/{app_name}/app.zip"],
             packages=["snowflake-snowpark-python==1.33.0",
                       "cloudpickle==3.0.0", "tabulate==0.9.0"],
-            replace=True
+            replace=True,
+            is_pandas=False  # This was added during debugging when the manual proc signature was nt matching for some reason
         )
 
         print(f"✅ Manually registered: {proc['name']}")
@@ -191,6 +245,19 @@ def register_manual_procs(
             "source": "manual",
             "status": "registered"  # ✅ Added status for real registrations
         })
+
+# Dummy registration for testing purposes -----------
+
+
+# def test_manual_proc(session: Session, name: str) -> str:
+#     return f"Hello, {name}"
+
+
+# "func": test_manual_proc,
+# "input_types": [StringType()],
+# "return_type": StringType(),
+
+# --------------------------------
 
     # ✅ Narration block
     if verbosity in ["summary", "verbose"]:

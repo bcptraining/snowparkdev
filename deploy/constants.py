@@ -5,6 +5,7 @@ VALID_TAGS = {
 }
 MANUAL_PROC_TRIGGER_SUFFIXES = [
     "app/python/procedures_man.py",
+    "app/python/manual_procs.py",
     "app/schemas/schemas.json",
     "app/common/common.py"
 ]
