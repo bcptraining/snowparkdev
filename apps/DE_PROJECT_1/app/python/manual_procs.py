@@ -4,7 +4,7 @@ from tabulate import tabulate
 import json
 from app.common.helpers import copy_to_table, json_to_struct_type
 # Import example schema and config for copy_to_table_proc
-from common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SCHEMA_PATH
+from app.common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SCHEMA_PATH
 
 
 #  Example procedure to copy data from one table to another using dynamic config and schema files
