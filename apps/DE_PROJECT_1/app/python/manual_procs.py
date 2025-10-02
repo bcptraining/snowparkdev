@@ -9,6 +9,10 @@ from common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SC
 
 #  Example procedure to copy data from one table to another using dynamic config and schema files
 
+def test_manual_proc(session: Session, name: str) -> str:
+    return f"Hello, {name}"
+
+
 def copy_to_table_proc(session: Session, schema_key: str) -> str:
     # Note: metadata in doc string is just documentation as the real metadata is provided in the MANUAL_PROCS registration dict in procedures_man.py
     """

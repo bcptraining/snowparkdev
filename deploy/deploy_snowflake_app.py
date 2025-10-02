@@ -621,9 +621,12 @@ def main():
         "valid": tag_check["valid"],
         "invalid": tag_check["invalid"]
     }
+
     # Commit info context needed to determine if code or config for manual proc has changed and so needs to be deployed
-    previous_commit = os.environ.get("previous_commit", "").strip('"')
-    current_commit = os.environ.get("current_commit", "").strip('"')
+    previous_commit = os.getenv("previous_commit") or subprocess.check_output([
+        "git", "rev-parse", "HEAD~1"]).decode().strip()
+    current_commit = os.getenv("current_commit") or subprocess.check_output([
+        "git", "rev-parse", "HEAD"]).decode().strip()
 
     # Step 1.1: Ensure app/python is importable as 'app.python'
     # sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
@@ -906,7 +909,6 @@ def main():
 #  Step 12: Summary and Validation
 
     # Escape Markdown-sensitive characters for safe table rendering
-
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")
