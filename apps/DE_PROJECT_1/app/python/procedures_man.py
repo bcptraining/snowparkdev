@@ -15,11 +15,11 @@ import os
 from snowflake.snowpark.types import StructType
 from tabulate import tabulate  # For tabular outputs
 from common.helpers import json_to_struct_type
-from app.python.manual_procs import copy_to_table_proc  # , test_manual_proc
+from app.python.manual_procs import copy_to_table_proc, test_manual_proc
 
 
-def test_manual_proc(session: Session, name: str) -> str:
-    return f"Hello, {name}"
+# def test_manual_proc(session: Session, name: str) -> str:
+#     return f"Hello, {name}"
 
 
 test_manual_proc.__module__ = "app.python.procedures_man"
