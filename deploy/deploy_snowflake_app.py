@@ -650,10 +650,10 @@ def main():
     }
 
     # Commit info context needed to determine if code or config for manual proc has changed and so needs to be deployed
-    # previous_commit = os.getenv("previous_commit") or subprocess.check_output([
-    #     "git", "rev-parse", "HEAD~1"]).decode().strip()
-    # current_commit = os.getenv("current_commit") or subprocess.check_output([
-    #     "git", "rev-parse", "HEAD"]).decode().strip()
+    previous_commit = os.getenv("previous_commit") or subprocess.check_output([
+        "git", "rev-parse", "HEAD~1"]).decode().strip()
+    current_commit = os.getenv("current_commit") or subprocess.check_output([
+        "git", "rev-parse", "HEAD"]).decode().strip()
     previous_commit = _sanitize_or_fallback_commit(os.environ.get(
         "PREV_COMMIT", "") or previous_commit if 'previous_commit' in globals() else "")
 
