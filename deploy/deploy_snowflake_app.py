@@ -650,15 +650,45 @@ def main():
     }
 
     # Commit info context needed to determine if code or config for manual proc has changed and so needs to be deployed
-    previous_commit = os.getenv("previous_commit") or subprocess.check_output([
-        "git", "rev-parse", "HEAD~1"]).decode().strip()
-    current_commit = os.getenv("current_commit") or subprocess.check_output([
-        "git", "rev-parse", "HEAD"]).decode().strip()
-    previous_commit = _sanitize_or_fallback_commit(os.environ.get(
-        "PREV_COMMIT", "") or previous_commit if 'previous_commit' in globals() else "")
+    # previous_commit = os.getenv("previous_commit") or subprocess.check_output([
+    #     "git", "rev-parse", "HEAD~1"]).decode().strip()
+    # current_commit = os.getenv("current_commit") or subprocess.check_output([
+    #     "git", "rev-parse", "HEAD"]).decode().strip()
+    # previous_commit = _sanitize_or_fallback_commit(os.environ.get(
+    #     "PREV_COMMIT", "") or previous_commit if 'previous_commit' in globals() else "")
 
-    current_commit = _sanitize_or_fallback_commit(os.environ.get(
-        "CURR_COMMIT", "") or current_commit if 'current_commit' in globals() else "")
+    # current_commit = _sanitize_or_fallback_commit(os.environ.get(
+    #     "CURR_COMMIT", "") or current_commit if 'current_commit' in globals() else "")
+
+    # ...existing code...
+
+    # Prefer CI/env variables, fallback to local git rev-parse
+    raw_prev = os.getenv("PREV_COMMIT") or os.getenv(
+        "previous_commit") or os.getenv("GITHUB_PREV_COMMIT", "")
+    raw_curr = os.getenv("CURR_COMMIT") or os.getenv(
+        "current_commit") or os.getenv("GITHUB_SHA", "")
+
+    # If env vars were absent, fall back to local rev-parse values
+    if not raw_prev:
+        try:
+            raw_prev = subprocess.check_output(
+                ["git", "rev-parse", "HEAD~1"]).decode().strip()
+        except Exception:
+            raw_prev = ""
+    if not raw_curr:
+        try:
+            raw_curr = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"]).decode().strip()
+        except Exception:
+            raw_curr = ""
+
+    # Use helper sanitizer that strips quotes and falls back to HEAD/HEAD~1 as needed
+    prev_fallback = "HEAD~1" if _git_commit_exists("HEAD~1") else "HEAD"
+    previous_commit = _sanitize_or_fallback_commit(
+        raw_prev, fallback=prev_fallback)
+    current_commit = _sanitize_or_fallback_commit(raw_curr, fallback="HEAD")
+
+    # ...existing code...
 
     # Step 1.1: Ensure app/python is importable as 'app.python'
     # sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
