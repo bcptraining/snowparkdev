@@ -89,12 +89,22 @@ class DeployManager:
             dry_run=self.dry_run,
             verbosity=self.verbosity
         )
+        # for proc in result or []:
+        #     proc["source_file"] = "app/python/procedures_man.py"
+        #     proc["source"] = "manual"
+        #     proc["tags"] = proc.get("tags", [])
+        #     proc["status"] = "valid"
+        #     proc["handler"] = proc.get("handler", "—")
+        #     proc["name"] = proc.get("name", "—")
+
         for proc in result or []:
             proc["source_file"] = "app/python/procedures_man.py"
             proc["source"] = "manual"
             proc["tags"] = proc.get("tags", [])
-            proc["status"] = "valid"
-            proc["handler"] = proc.get("handler", "—")
+            proc["status"] = proc.get("status", "registered")
+            proc["handler"] = f"app.python.manual_procs.{proc['name']}"
+            proc["return_type"] = proc.get(
+                "return_type", "string")  # or infer dynamically
             proc["name"] = proc.get("name", "—")
 
         self.manual_procs = result or []

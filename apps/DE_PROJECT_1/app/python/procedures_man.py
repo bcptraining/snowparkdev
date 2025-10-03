@@ -18,18 +18,10 @@ from common.helpers import json_to_struct_type
 from app.python.manual_procs import copy_to_table_proc, test_manual_proc
 
 
-# def test_manual_proc(session: Session, name: str) -> str:
-#     return f"Hello, {name}"
-
-
 test_manual_proc.__module__ = "app.python.procedures_man"
 
 
-# Tip: Requires config_file and schema....
-# from common.common import json_to_struct_type
-# print("🔗 Imported json_to_struct_type:", callable(json_to_struct_type))
-
-# Dynamically add the project root to PYTHONPATH
+# Dynamically add the project root to PYTHONPATH.
 ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../"))
 sys.path.insert(0, ROOT_DIR)
@@ -56,11 +48,6 @@ sys.path.insert(0, ROOT_DIR)
 # json_to_struct_type = common.json_to_struct_type
 
 
-def load_copy_to_table():
-    from DE_PROJECT_1.app.common.common import copy_to_table
-    return copy_to_table
-
-
 # 🧠 Optional tag validation fallback
 ValidateTagsType = Callable[[List[str], Optional[str]], List[str]]
 try:
@@ -78,19 +65,14 @@ def vprint(msg: str, verbosity: str):
         print(msg)
 
 
-# 🛠️ Define your manual procedure
+# 🛠️ Define your manual procedures
 
-# Load config file -- moved to helpers.py
-# CONFIG_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json"
-# SCHEMA_PATH = "/workspaces/snowparkdev/apps/DE_PROJECT_1/app/schemas/schemas.json"
-
-# def copy_to_table_proc(session: Session, source_table: str, target_table: str) -> str:
+def load_copy_to_table():
+    from DE_PROJECT_1.app.common.common import copy_to_table
+    return copy_to_table
 
 
-# This line is a Snowflake workaround. The "__module__" attribute is used  during pickling to locate the function’s origin.
-# If your procedure is defined in a dynamic context (like a script or REPL), Snowflake might fail to resolve it unless
-# you explicitly alias it to a known module path.
-copy_to_table_proc.__module__ = "app.python.manual_procs"
+# copy_to_table_proc.__module__ = "app.python.manual_procs"
 
 MANUAL_PROCS = [
     {
@@ -176,16 +158,14 @@ def register_manual_procs(
         sys.modules[alias_path] = sys.modules[__name__]
 
         # Debuggin an issue with signature for the manual proc . The line below was replace with the 2 lines following
-        # patched_func = pickle.loads(pickle.dumps(proc["func"]))
-        import inspect
+        # # patched_func = pickle.loads(pickle.dumps(proc["func"]))
+        # import inspect
 
-        print(f"🔍 Signature of {proc['name']} before:",
-              inspect.signature(proc["func"]))
+        # print(f"🔍 Signature of {proc['name']} before:",
+        #       inspect.signature(proc["func"]))
 
-        import cloudpickle
+        # import cloudpickle
 
-#  Debug lines below
-        # patched_func = cloudpickle.loads(cloudpickle.dumps(proc["func"]))  <-- serializatonn was causing a problem here
         patched_func = proc["func"]
 
         # ✅ Signature inspection and validation
@@ -195,7 +175,7 @@ def register_manual_procs(
         print(f"🔍 Param names: {[p.name for p in params]}")
         print(f"🔍 Param count: {len(params)}")
 
-        def validate_signature(func, expected_input_count):
+        def validate_manual_proc_signature(func, expected_input_count):
             if len(params) < 1 or params[0].name != "session":
                 raise ValueError(
                     f"First parameter must be 'session', got '{params[0].name}'")
@@ -203,7 +183,7 @@ def register_manual_procs(
                 raise ValueError(
                     f"Expected {expected_input_count} user-supplied args, got {len(params[1:])}")
 
-        validate_signature(patched_func, len(proc["input_types"]))
+        validate_manual_proc_signature(patched_func, len(proc["input_types"]))
         # Debug lines above
 
         # # Added this as a debug step
@@ -216,8 +196,7 @@ def register_manual_procs(
         # vprint(f"🔍 Pickled hex for {proc['name']}:", verbosity)
         # vprint(pickle.dumps(patched_func).hex(), verbosity)
 
-        # Just before registration, reassert the module path:
-        # Even though you set this earlier, it may be overwritten during import or reassignment. Reasserting it ensures Snowflake can resolve the handler.
+        # This is critical for Snowflake to resolve the handler path correctly
         proc["func"].__module__ = "app.python.manual_procs"
 
         print(
@@ -245,19 +224,6 @@ def register_manual_procs(
             "source": "manual",
             "status": "registered"  # ✅ Added status for real registrations
         })
-
-# Dummy registration for testing purposes -----------
-
-
-# def test_manual_proc(session: Session, name: str) -> str:
-#     return f"Hello, {name}"
-
-
-# "func": test_manual_proc,
-# "input_types": [StringType()],
-# "return_type": StringType(),
-
-# --------------------------------
 
     # ✅ Narration block
     if verbosity in ["summary", "verbose"]:
