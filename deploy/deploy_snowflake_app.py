@@ -800,6 +800,8 @@ def main():
     print("⚠️ Note: Declarative procedures were deployed live. Dry-run mode does not simulate Snowpark deploy.")
 
     # Step 10: Register manual procedures and apply tag filtering
+# ...existing code...
+    # Step 10: Register manual procedures and apply tag filtering
     if args.include_manual_procs:
         manager = DeployManager(
             session=session,
@@ -811,50 +813,52 @@ def main():
             verbosity=verbosity
         )
 
-        # Load and enrich manual procedures for tag filtering, validation, and summary narration
-        raw_manual_procs = manager.register_manual()
+        # Load manual procs (may be None)
+        raw_manual_procs = manager.register_manual() or []
 
         manual_registered = []
         excluded_manual = []
 
         for proc in raw_manual_procs:
+            # normalize tags to lowercase for consistent comparisons
+            proc["tags"] = [t.lower() for t in proc.get("tags", [])]
+
+            # Tag filtering
             if not is_tag_allowed(proc.get("tags", []), tags):
-                proc["excluded"] = True
-                proc["exclusion_reason"] = "Tag not allowed in environment"
-                excluded_manual.append(proc)
+                excluded_manual.append(register_exclusion(
+                    proc, "Tag not allowed in environment"))
                 continue
 
+            # Resolve handler (returns truthy on success)
             if not resolve_handler(proc):
-                excluded_manual.append(proc)
+                excluded_manual.append(register_exclusion(
+                    proc, "Handler resolution failed"))
                 continue
 
+            # Signature and return-type validation (expected params may be empty list)
             expected_params = proc.get("expected_params", [])
             if not validate_signature(proc, expected_params):
-                excluded_manual.append(proc)
+                excluded_manual.append(
+                    register_exclusion(proc, "Signature mismatch"))
                 continue
 
             if not validate_return_type(proc):
-                excluded_manual.append(proc)
+                excluded_manual.append(register_exclusion(
+                    proc, "Return type mismatch"))
                 continue
 
-            # ✅ Safe to enrich and narrate after validation passes
+            # Enrich for summary output and mark as valid
             enrich_manual_proc(proc, verbosity)
-
             proc["status"] = "valid"
             manual_registered.append(proc)
 
         if verbosity == "verbose" and excluded_manual:
             print(
-                f"🚫 {len(excluded_manual)} manual procedures excluded due to validation or tag filtering for env '{env_name}'"
-            )
+                f"🚫 {len(excluded_manual)} manual procedures excluded due to validation or tag filtering for env '{env_name}'")
 
-        # ✅ Emit full narration block for manual procs
         if verbosity == "verbose":
-            print(build_manual_proc_narration(
-                manual_registered + excluded_manual,
-                changed_files,
-                dry_run=dry_run
-            ))
+            print(build_manual_proc_narration(manual_registered +
+                  excluded_manual, changed_files, dry_run=dry_run))
 
         manager.emit_summary()
     else:
@@ -909,6 +913,7 @@ def main():
 #  Step 12: Summary and Validation
 
     # Escape Markdown-sensitive characters for safe table rendering
+
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")
