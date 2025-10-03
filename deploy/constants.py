@@ -1,7 +1,7 @@
 VALID_TAGS = {
     "core", "dev", "qa", "prod", "staging", "experimental",
     "utility", "test", "internal", "public", "deprecated",
-    "custom", "analytics", "etl", "diagnostic"
+    "custom", "analytics", "etl", "diagnostic", "example"
 }
 MANUAL_PROC_TRIGGER_SUFFIXES = [
     "app/python/procedures_man.py",

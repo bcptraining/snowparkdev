@@ -89,7 +89,7 @@ MANUAL_PROCS = [
         "name": "test_manual_proc",
         "input_types": [StringType()],
         "return_type": StringType(),
-        "tags": ["sample"],
+        "tags": ["example"],
         "source": "manual"
     }
 
