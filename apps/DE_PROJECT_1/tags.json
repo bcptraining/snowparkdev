@@ -2,9 +2,9 @@
   "_comment": "Temporary workaround until Snowflake Native App v2 supports metadata tags in snowflake.yml",
   "procedures": {
     "hello_procedure": ["core"],
-    "hello_procedure2": ["experimental"],
+    "hello_procedure2": ["example"],
     "test_procedure": ["experimental"],
-    "test_procedure_two": ["experimental"]
+    "test_procedure_two": ["example"]
   },
   "functions": {
     "hello_function": ["core"]

@@ -820,7 +820,21 @@ def main():
         excluded_manual = []
 
         for proc in raw_manual_procs:
-            # normalize tags to lowercase for consistent comparisons
+            # If register_manual_procs already performed registration it returns
+            # a minimal summary dict (status == "registered" or "dry_run").
+            # Accept those directly to avoid re-resolving handlers that no longer exist
+            # on the returned shape.
+            if proc.get("status") in ("registered", "dry_run"):
+                proc["tags"] = [t.lower() for t in proc.get("tags", [])]
+                proc.setdefault("kind", "procedure")
+                proc.setdefault("source", "manual")
+                # Ensure we have a handler value for summaries (best-effort)
+                proc.setdefault(
+                    "handler", f"app.python.manual_procs.{proc.get('name','')}")
+                manual_registered.append(proc)
+                continue
+
+            # Otherwise treat proc as a raw definition and run validations/enrichment
             proc["tags"] = [t.lower() for t in proc.get("tags", [])]
 
             # Tag filtering
