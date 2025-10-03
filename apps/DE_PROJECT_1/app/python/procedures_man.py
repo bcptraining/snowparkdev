@@ -21,7 +21,7 @@ from app.python.manual_procs import copy_to_table_proc, test_manual_proc
 test_manual_proc.__module__ = "app.python.procedures_man"
 
 
-# Dynamically add the project root to PYTHONPATH...
+# Dynamically add the project root to PYTHONPATH....
 ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../"))
 sys.path.insert(0, ROOT_DIR)
