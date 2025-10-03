@@ -3,5 +3,5 @@
 TAG_SETS = {
     "dev": ["core", "experimental", "diagnostic"],
     "qa": ["core", "stable"],
-    "prod": ["core", "stable", "secure"]
+    "prod": ["core", "stable", "secure", "sample", "example"]
 }
