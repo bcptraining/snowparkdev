@@ -600,38 +600,27 @@ def main():
                 f"✅ {proc['name']} matches expected signature: {proc['params']}")
 
     def _git_commit_exists(commit: str) -> bool:
-        """Return True if the given commit SHA (or ref) exists locally as a commit."""
         if not commit:
             return False
         c = commit.strip().strip('"').strip("'")
         try:
-            subprocess.run(
-                ["git", "rev-parse", "--verify", f"{c}^{{commit}}"],
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            subprocess.run(["git", "rev-parse", "--verify", f"{c}^{{commit}}"],
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return True
         except Exception:
             return False
 
-    def _sanitize_or_fallback_commit(raw_commit: str, fallback: str = "HEAD") -> str:
-        """Normalize a raw commit string and fall back to `fallback` if the commit is not present."""
-        if not raw_commit:
-            return fallback
-        commit = raw_commit.strip().strip('"').strip("'")
-        if _git_commit_exists(commit):
-            return commit
-        print(
-            f"⚠️ Commit {commit!r} not available locally — falling back to {fallback}")
-        return fallback
+    def _sanitize_commit(raw: str) -> str:
+        if not raw:
+            return ""
+        return raw.strip().strip('"').strip("'")
 
-    # Step 0:  Validate CLI version before anything else
-    if not validate_cli_version(min_required="3.0.0"):
-        raise RuntimeError(
-            "Snowflake CLI version is too old. Please upgrade to 3.0.0 or later.")
+        # Step 0:  Validate CLI version before anything else
+        if not validate_cli_version(min_required="3.0.0"):
+            raise RuntimeError(
+                "Snowflake CLI version is too old. Please upgrade to 3.0.0 or later.")
 
-    # Step 1: Parse CLI arguments and initialize context
+        # Step 1: Parse CLI arguments and initialize context
     args = parse_cli_args()
     app_name = args.app
     env_name = args.env
@@ -660,21 +649,18 @@ def main():
     # current_commit = _sanitize_or_fallback_commit(os.environ.get(
     #     "CURR_COMMIT", "") or current_commit if 'current_commit' in globals() else "")
 
-    # ...existing code...
-
-    # Prefer CI/env variables, fallback to local git rev-parse
-    raw_prev = os.getenv("PREV_COMMIT") or os.getenv(
-        "previous_commit") or os.getenv("GITHUB_PREV_COMMIT", "")
+    # compute raw values (prefer CI envs, else local rev-parse)
+    raw_prev = os.getenv("PREV_COMMIT") or os.getenv("previous_commit") or ""
     raw_curr = os.getenv("CURR_COMMIT") or os.getenv(
-        "current_commit") or os.getenv("GITHUB_SHA", "")
+        "current_commit") or os.getenv("GITHUB_SHA") or ""
 
-    # If env vars were absent, fall back to local rev-parse values
     if not raw_prev:
         try:
             raw_prev = subprocess.check_output(
                 ["git", "rev-parse", "HEAD~1"]).decode().strip()
         except Exception:
             raw_prev = ""
+
     if not raw_curr:
         try:
             raw_curr = subprocess.check_output(
@@ -682,13 +668,17 @@ def main():
         except Exception:
             raw_curr = ""
 
+    previous_commit = _sanitize_commit(raw_prev) or (
+        "HEAD~1" if _git_commit_exists("HEAD~1") else "HEAD")
+    current_commit = _sanitize_commit(raw_curr) or "HEAD"
+
     # Use helper sanitizer that strips quotes and falls back to HEAD/HEAD~1 as needed
     prev_fallback = "HEAD~1" if _git_commit_exists("HEAD~1") else "HEAD"
-    previous_commit = _sanitize_or_fallback_commit(
+    previous_commit = _sanitize_commit(
         raw_prev, fallback=prev_fallback)
     current_commit = _sanitize_or_fallback_commit(raw_curr, fallback="HEAD")
-
-    # ...existing code...
+    print(
+        f"🔍 Using commits: previous={previous_commit!r}, current={current_commit!r}", file=sys.stderr)
 
     # Step 1.1: Ensure app/python is importable as 'app.python'
     # sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
