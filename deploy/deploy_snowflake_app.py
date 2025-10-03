@@ -599,6 +599,33 @@ def main():
             print(
                 f"✅ {proc['name']} matches expected signature: {proc['params']}")
 
+    def _git_commit_exists(commit: str) -> bool:
+        """Return True if the given commit SHA (or ref) exists locally as a commit."""
+        if not commit:
+            return False
+        c = commit.strip().strip('"').strip("'")
+        try:
+            subprocess.run(
+                ["git", "rev-parse", "--verify", f"{c}^{{commit}}"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return True
+        except Exception:
+            return False
+
+    def _sanitize_or_fallback_commit(raw_commit: str, fallback: str = "HEAD") -> str:
+        """Normalize a raw commit string and fall back to `fallback` if the commit is not present."""
+        if not raw_commit:
+            return fallback
+        commit = raw_commit.strip().strip('"').strip("'")
+        if _git_commit_exists(commit):
+            return commit
+        print(
+            f"⚠️ Commit {commit!r} not available locally — falling back to {fallback}")
+        return fallback
+
     # Step 0:  Validate CLI version before anything else
     if not validate_cli_version(min_required="3.0.0"):
         raise RuntimeError(
@@ -623,10 +650,15 @@ def main():
     }
 
     # Commit info context needed to determine if code or config for manual proc has changed and so needs to be deployed
-    previous_commit = os.getenv("previous_commit") or subprocess.check_output([
-        "git", "rev-parse", "HEAD~1"]).decode().strip()
-    current_commit = os.getenv("current_commit") or subprocess.check_output([
-        "git", "rev-parse", "HEAD"]).decode().strip()
+    # previous_commit = os.getenv("previous_commit") or subprocess.check_output([
+    #     "git", "rev-parse", "HEAD~1"]).decode().strip()
+    # current_commit = os.getenv("current_commit") or subprocess.check_output([
+    #     "git", "rev-parse", "HEAD"]).decode().strip()
+    previous_commit = _sanitize_or_fallback_commit(os.environ.get(
+        "PREV_COMMIT", "") or previous_commit if 'previous_commit' in globals() else "")
+
+    current_commit = _sanitize_or_fallback_commit(os.environ.get(
+        "CURR_COMMIT", "") or current_commit if 'current_commit' in globals() else "")
 
     # Step 1.1: Ensure app/python is importable as 'app.python'
     # sys.path.insert(0, str((APPS_DIR / app_name).resolve()))
@@ -927,7 +959,6 @@ def main():
 #  Step 12: Summary and Validation
 
     # Escape Markdown-sensitive characters for safe table rendering
-
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")
