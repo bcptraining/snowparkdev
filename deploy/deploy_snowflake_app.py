@@ -600,20 +600,34 @@ def main():
                 f"✅ {proc['name']} matches expected signature: {proc['params']}")
 
     def _git_commit_exists(commit: str) -> bool:
+        """Return True if the given commit/ref exists locally as a commit object."""
         if not commit:
             return False
         c = commit.strip().strip('"').strip("'")
         try:
-            subprocess.run(["git", "rev-parse", "--verify", f"{c}^{{commit}}"],
-                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(
+                ["git", "rev-parse", "--verify", f"{c}^{{commit}}"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
             return True
         except Exception:
             return False
 
-    def _sanitize_commit(raw: str) -> str:
-        if not raw:
-            return ""
-        return raw.strip().strip('"').strip("'")
+    def _sanitize_or_fallback_commit(raw_commit: str, fallback: str = "HEAD") -> str:
+        """
+        Normalize a raw commit string (strip surrounding quotes) and fall back to `fallback`
+        if the commit is not present locally.
+        """
+        if not raw_commit:
+            return fallback
+        commit = raw_commit.strip().strip('"').strip("'")
+        if _git_commit_exists(commit):
+            return commit
+        print(
+            f"⚠️ Commit {commit!r} not available locally — falling back to {fallback}")
+        return fallback
 
         # Step 0:  Validate CLI version before anything else
         if not validate_cli_version(min_required="3.0.0"):
@@ -650,10 +664,23 @@ def main():
     #     "CURR_COMMIT", "") or current_commit if 'current_commit' in globals() else "")
 
     # compute raw values (prefer CI envs, else local rev-parse)
-    raw_prev = os.getenv("PREV_COMMIT") or os.getenv("previous_commit") or ""
-    raw_curr = os.getenv("CURR_COMMIT") or os.getenv(
-        "current_commit") or os.getenv("GITHUB_SHA") or ""
+    raw_prev = (
+        os.getenv("PREV_COMMIT")
+        or os.getenv("previous_commit")
+        or os.getenv("GITHUB_PREV_COMMIT")
+        or ""
+    )
+    raw_curr = (
+        os.getenv("CURR_COMMIT")
+        or os.getenv("current_commit")
+        or os.getenv("GITHUB_SHA")
+        or ""
+    )
+    # Strip accidental surrounding quotes immediately
+    raw_prev = raw_prev.strip().strip('"').strip("'")
+    raw_curr = raw_curr.strip().strip('"').strip("'")
 
+    # compute raw values (prefer CI envs, else local rev-parse)
     if not raw_prev:
         try:
             raw_prev = subprocess.check_output(
@@ -668,15 +695,12 @@ def main():
         except Exception:
             raw_curr = ""
 
-    previous_commit = _sanitize_commit(raw_prev) or (
-        "HEAD~1" if _git_commit_exists("HEAD~1") else "HEAD")
-    current_commit = _sanitize_commit(raw_curr) or "HEAD"
-
-    # Use helper sanitizer that strips quotes and falls back to HEAD/HEAD~1 as needed
+    # Use HEAD~1 as previous-fallback when available, otherwise HEAD
     prev_fallback = "HEAD~1" if _git_commit_exists("HEAD~1") else "HEAD"
-    previous_commit = _sanitize_commit(
+    previous_commit = _sanitize_or_fallback_commit(
         raw_prev, fallback=prev_fallback)
     current_commit = _sanitize_or_fallback_commit(raw_curr, fallback="HEAD")
+
     print(
         f"🔍 Using commits: previous={previous_commit!r}, current={current_commit!r}", file=sys.stderr)
 
