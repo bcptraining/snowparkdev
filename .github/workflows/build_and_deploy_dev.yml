@@ -28,6 +28,11 @@ jobs:
           repository: bcptraining/snowparkdev
           ref: ${{ github.event.inputs.target_branch || github.ref_name }}
 
+      - name: Ensure git history is available
+        run: |
+          git fetch --all --prune
+          git fetch --unshallow || git fetch --depth=1000
+
       - name: Setup Python 3.11
         uses: actions/setup-python@v4
         with:
