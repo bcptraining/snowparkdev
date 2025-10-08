@@ -6,8 +6,8 @@
 - Auto Procedures: `2`
 - Manual Procedures: `1`
 - DAGs: `0`
-- Duration: `122.72 seconds`
-- Timestamp: `2025-10-07 16:51 PDT`
+- Duration: `4.62 seconds`
+- Timestamp: `2025-10-08 16:34 PDT`
 
 ### Registered Procedures
 | Name | Source | Handler | Returns | Status |
@@ -18,8 +18,8 @@
 ### 🚫 Excluded Procedures
 | Name | Tags | Reason |
 |------|------|--------|
-| hello_procedure2 | example | Tag not allowed in environment |
-| test_procedure_two | example | Tag not allowed in environment |
+| hello_procedure2 | example | Tag not allowed in environment or not declared by app |
+| test_procedure_two | example | Tag not allowed in environment or not declared by app |
 
 ### 🏷️ Tag Coverage
 | Tag | Included | Excluded |

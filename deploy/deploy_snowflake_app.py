@@ -59,12 +59,95 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # }
 
 
+# ...existing code...
 def validate_tags(tags: list[str], proc_name: str | None = None) -> list[str]:
     invalid = [t for t in tags if t not in VALID_TAGS]
     if invalid:
         raise ValueError(
             f"❌ Procedure '{proc_name}' has invalid tags: {invalid}")
     return tags
+
+# -------------------------
+# Tag helpers (NEW)
+# -------------------------
+def _normalize_tags(tags):
+    """Normalize a list of tags to lower-case strings."""
+    return [t.lower() for t in (tags or [])]
+
+
+def load_app_declared_tags(app_path: Path) -> list[str]:
+    """
+    Determine the app-level declared tags.
+
+    Priority:
+      1. apps/<app>/tags.json (explicit app-level list or derived from 'procedures'/'functions' sections)
+      2. apps/<app>/tags.txt (simple newline list)
+      3. Fallback: empty list
+    """
+    declared = set()
+    tags_json = app_path / "tags.json"
+    tags_txt = app_path / "tags.txt"
+
+    try:
+        if tags_json.exists():
+            with open(tags_json, "r") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                declared.update(_normalize_tags(data))
+            elif isinstance(data, dict):
+                # explicit app-level field
+                if "__app_tags__" in data and isinstance(data["__app_tags__"], list):
+                    declared.update(_normalize_tags(data["__app_tags__"]))
+                else:
+                    # derive from per-entity mappings (procedures/functions/dags)
+                    for section in ("procedures", "functions", "dags"):
+                        for v in data.get(section, {}).values():
+                            if isinstance(v, list):
+                                declared.update(_normalize_tags(v))
+        elif tags_txt.exists():
+            for line in tags_txt.read_text().splitlines():
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    declared.add(line.lower())
+    except Exception as e:
+        print(f"⚠️ Could not derive app-declared tags from {app_path}: {e}")
+
+    return sorted(declared)
+
+
+def is_proc_allowed(proc_tags: list[str], app_tags: list[str], env_tags: list[str]) -> bool:
+    """
+    Decide if a procedure should be included for deployment.
+
+    Rules:
+      - Normalize all tags to lower-case.
+      - Procedure negative tags (prefixed with '!') explicitly exclude if they match app or env tag sets.
+      - A procedure is allowed only if at least one positive tag appears in BOTH
+        the app's declared tags and the environment's allowed tags.
+      - If a procedure has no positive tags, exclude conservatively.
+    """
+    proc = _normalize_tags(proc_tags)
+    app_set = set(_normalize_tags(app_tags or []))
+    env_set = set(_normalize_tags(env_tags or []))
+
+    # Negative tags on procedure explicitly exclude if matching app or env
+    for t in proc:
+        if t.startswith("!"):
+            neg = t[1:]
+            if neg in app_set or neg in env_set:
+                return False
+
+    positives = [t for t in proc if not t.startswith("!")]
+    if not positives:
+        # Conservative: exclude procs without any positive tag
+        return False
+
+    # Require at least one positive tag to be present in BOTH app and env sets
+    for t in positives:
+        if t in app_set and t in env_set:
+            return True
+
+    return False
 
 
 # These functions are not currently used but might be helpful for future enhancements to compare existing procedure definitions.
@@ -253,14 +336,14 @@ def zip_source_code(source_dir: Path, zip_name: str = "app.zip", verbosity: str 
     return zip_path
 
 
-def is_tag_allowed(proc_tags: list[str], env_tags: list[str]) -> bool:
-    if not proc_tags:
-        return True  # No tags means always allowed
+# def is_tag_allowed(proc_tags: list[str], env_tags: list[str]) -> bool:
+#     if not proc_tags:
+#         return True  # No tags means always allowed
 
-    allowed = set(t for t in env_tags if not t.startswith("!"))
-    blocked = set(t[1:] for t in env_tags if t.startswith("!"))
+#     allowed = set(t for t in env_tags if not t.startswith("!"))
+#     blocked = set(t[1:] for t in env_tags if t.startswith("!"))
 
-    return any(tag in allowed for tag in proc_tags) and not any(tag in blocked for tag in proc_tags)
+#     return any(tag in allowed for tag in proc_tags) and not any(tag in blocked for tag in proc_tags)
 
 
 # ------------------------------------------- Class testing ProcRegistrar
@@ -753,6 +836,12 @@ def main():
 
     from app.common.validation import resolve_handler, validate_signature, validate_return_type
     sidecar_tags = load_sidecar_tags(app_path)
+
+ # Derive app-declared tags so we can require that a proc's tag is declared by the app
+    app_declared_tags = load_app_declared_tags(app_path)
+    if verbosity == "verbose":
+        print(f"🧾 App-declared tags: {app_declared_tags}")
+
     # Step 2.2: Perform validations
     registrar = ProcRegistrar(
         app_path=app_path,
@@ -765,39 +854,23 @@ def main():
     registrar.validate_returns()
     registrar.summarize_validation()
 
-    # Step 3: Filter declarative procs by tag relevance defined for the environment
-    #  This version of step 3 is for use when snowflake.yml version supports metadata. The sidecar solution is just a stop-gap.
-    # validated_declarative_procs = [
-    #     proc for proc in registrar.validated_procs
-    #     if is_tag_allowed(proc.get("tags", []), tags)
-    # ]
-    # for proc in validated_declarative_procs:
-    #     proc["source"] = "auto"
+    # Step 3:  Filter declarative procs by app-declared + environment tag relevance
 
-    # excluded_declarative = [
-    #     register_exclusion(proc, "Tag not allowed in environment")
-    #     for proc in registrar.validated_procs
-    #     if not is_tag_allowed(proc.get("tags", []), tags)
-    # ]
-
-    # if verbosity == "verbose" and excluded_declarative:
-    #     print(
-    #         f"🚫 {len(excluded_declarative)} declarative procedures excluded due to tag filtering for env '{env_name}'")
-
-    # This replaces the old metadata-based tagging and ensures every auto proc is tagged from the sidecar.
     validated_declarative_procs = []
     excluded_declarative = []
 
     for proc in registrar.validated_procs:
         proc_name = proc.get("name")
         proc["tags"] = sidecar_tags.get("procedures", {}).get(proc_name, [])
-        if is_tag_allowed(proc["tags"], tags):
+        if is_proc_allowed(proc["tags"], app_declared_tags, tags):
             proc["source"] = "auto"
             proc["status"] = "valid"
             validated_declarative_procs.append(proc)
         else:
             excluded_declarative.append(register_exclusion(
-                proc, "Tag not allowed in environment"))
+                proc, "Tag not allowed in environment or not declared by app"))
+            if verbosity == "verbose":
+                print(f"⏭️ Excluding auto-proc '{proc_name}' — tags {proc['tags']} not allowed (app tags={app_declared_tags}, env tags={tags})")
         if verbosity == "verbose":
             print(f"✅ Injected tags for {proc_name}: {proc['tags']}")
 
@@ -904,15 +977,24 @@ def main():
         "--schema", schema
     ]
     # run_command(deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
-    try:
-        run_command(
-            deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
+    # try:
+    #     run_command(
+    #         deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
 
-    except Exception as e:
-        print(f"❌ Snowpark deploy failed: {e}")
-        sys.exit(1)
+    # except Exception as e:
+    #     print(f"❌ Snowpark deploy failed: {e}")
+    #     sys.exit(1)
 
-    print("⚠️ Note: Declarative procedures were deployed live. Dry-run mode does not simulate Snowpark deploy.")
+    # print("⚠️ Note: Declarative procedures were deployed live. Dry-run mode does not simulate Snowpark deploy.")
+
+    if not dry_run:
+            try:
+                run_command(deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
+            except Exception as e:
+                print(f"❌ Snowpark deploy failed: {e}")
+                sys.exit(1)
+    else:
+            print("🧪 Dry-run: Skipping Snowpark deploy (deploy command suppressed).")
 
     # Step 10: Register manual procedures and apply tag filtering
 # ...existing code...
