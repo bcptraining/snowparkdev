@@ -34,6 +34,15 @@ print(f"cwd = {os.getcwd()}")
 print(f"sys.path = {sys.path}")
 
 
+def inject_app_path(app_name: str):
+    app_root = Path("apps") / app_name
+    if not app_root.exists():
+        print(f"❌ App path not found: {app_root}")
+        sys.exit(1)
+    sys.path.insert(0, str(app_root.resolve()))
+    print(f"🧭 Injected PYTHONPATH: {app_root.resolve()}")
+
+
 def vprint(msg: str, verbosity: str):
     if verbosity == "verbose":
         print(msg)
@@ -629,13 +638,38 @@ def main():
             f"⚠️ Commit {commit!r} not available locally — falling back to {fallback}")
         return fallback
 
-        # Step 0:  Validate CLI version before anything else
-        if not validate_cli_version(min_required="3.0.0"):
-            raise RuntimeError(
-                "Snowflake CLI version is too old. Please upgrade to 3.0.0 or later.")
 
-        # Step 1: Parse CLI arguments and initialize context
+    # Step 0:  Validate CLI version before anything else
+    def validate_cli_version(min_required="3.0.0") -> bool:
+        import subprocess
+        import re
+
+        def version_tuple(v):
+            return tuple(map(int, v.split(".")))
+
+        try:
+            result = subprocess.run(["snow", "--version"], capture_output=True, text=True)
+            version_line = result.stdout.strip()
+            match = re.search(r"(\d+\.\d+\.\d+)", version_line)
+            if match:
+                current_version = match.group(1)
+                print(f"🧠 Snowflake CLI version detected: {current_version}")
+                if version_tuple(current_version) < version_tuple(min_required):
+                    print(f"❌ CLI version {current_version} is below required minimum {min_required}.")
+                    return False
+                print(f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
+                return True
+            else:
+                print("⚠️ Could not parse CLI version from output.")
+                return False
+        except Exception as e:
+            print(f"❌ Error running snow --version: {e}")
+            return False
+
+
+    # Step 1: Parse CLI arguments and initialize context
     args = parse_cli_args()
+    inject_app_path(args.app)
     app_name = args.app
     env_name = args.env
     verbosity = args.verbosity
@@ -651,6 +685,7 @@ def main():
         "valid": tag_check["valid"],
         "invalid": tag_check["invalid"]
     }
+
 
     # Commit info context needed to determine if code or config for manual proc has changed and so needs to be deployed
     # previous_commit = os.getenv("previous_commit") or subprocess.check_output([
@@ -694,6 +729,10 @@ def main():
                 ["git", "rev-parse", "HEAD"]).decode().strip()
         except Exception:
             raw_curr = ""
+
+
+
+
 
     # Use HEAD~1 as previous-fallback when available, otherwise HEAD
     prev_fallback = "HEAD~1" if _git_commit_exists("HEAD~1") else "HEAD"

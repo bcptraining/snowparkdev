@@ -5,27 +5,9 @@
     "ghcr.io/devcontainers/features/conda:1": {
       "installMiniconda": true,
       "pythonVersion": "3.11"
-    },
-    "ghcr.io/devcontainers/features/env-secrets:1": {
-      "secrets": [
-        "SNOWFLAKE_ACCOUNT",
-        "SNOWFLAKE_USER",
-        "SNOWFLAKE_PASSWORD",
-        "SNOWFLAKE_ROLE",
-        "SNOWFLAKE_WAREHOUSE",
-        "SNOWFLAKE_DATABASE",
-        "SNOWFLAKE_SCHEMA"
-      ]
     }
   },
   "postCreateCommand": ".devcontainer/setup.sh",
-  "customizations": {
-    "vscode": {
-      "settings": {
-        "python.pythonPath": "/usr/local/bin/python"
-      },
-      "extensions": ["ms-python.python", "ms-toolsai.jupyter"]
-    }
-  },
+
   "remoteUser": "vscode"
 }
