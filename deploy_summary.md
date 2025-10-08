@@ -1,40 +1,38 @@
 # 🧪 Dry-Run Summary — DE_PROJECT_1
 - Environment: `dev`
-- Changed Files: `apps/DE_PROJECT_1/app/python/manual_procs.py`
+- Changed Files: `apps/DE_PROJECT_1/app/python/procedures_man.py`
 - Stage: `dev_deployment`
 - Tags: `core, experimental, diagnostic`
-- Auto Procedures: `4`
-- Manual Procedures: `0`
+- Auto Procedures: `2`
+- Manual Procedures: `1`
 - DAGs: `0`
-- Duration: `11.66 seconds`
-- Timestamp: `2025-10-02 12:10 PDT`
+- Duration: `122.72 seconds`
+- Timestamp: `2025-10-07 16:51 PDT`
 
 ### Registered Procedures
 | Name | Source | Handler | Returns | Status |
 |------|--------|---------|---------|--------|
 | hello_procedure | auto | app.python.procedures_auto.hello_procedure | string | valid |
-| hello_procedure2 | auto | app.python.procedures_auto.hello_procedure2 | string | valid |
 | test_procedure | auto | app.python.procedures_auto.test_procedure | string | valid |
-| test_procedure_two | auto | app.python.procedures_auto.test_procedure_two | string | valid |
+| copy_to_table_proc | manual | app.python.manual_procs.copy_to_table_proc | string | dry_run |
 ### 🚫 Excluded Procedures
 | Name | Tags | Reason |
 |------|------|--------|
-| copy_to_table_proc | experimental | Not specified |
-| test_manual_proc | experimental | Not specified |
+| hello_procedure2 | example | Tag not allowed in environment |
+| test_procedure_two | example | Tag not allowed in environment |
 
 ### 🏷️ Tag Coverage
 | Tag | Included | Excluded |
 |------|----------|----------|
 | core | 1 | 0 |
-| experimental | 3 | 2 |
+| example | 0 | 2 |
+| experimental | 2 | 0 |
 ### 🏷️ Auto Procedure Tags
 | Procedure Name | Tags |
 |----------------|------|
 | hello_procedure | core |
-| hello_procedure2 | experimental |
 | test_procedure | experimental |
-| test_procedure_two | experimental |
 ### 🧠 Environment Context
 - Python Version: `3.11.13`
-- Python Executable: `/opt/conda/envs/py311_env/bin/python`
-- Snow CLI Path: `/opt/conda/envs/py311_env/bin/snow`
+- Python Executable: `/opt/conda/envs/snowparkdev/bin/python`
+- Snow CLI Path: `/opt/conda/envs/snowparkdev/bin/snow`

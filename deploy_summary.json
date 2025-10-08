@@ -2,7 +2,7 @@
   "app": "DE_PROJECT_1",
   "env": "dev",
   "changed_files": [
-    "apps/DE_PROJECT_1/app/python/manual_procs.py"
+    "apps/DE_PROJECT_1/app/python/procedures_man.py"
   ],
   "stage": "dev_deployment",
   "tags": [
@@ -24,9 +24,13 @@
       "included": 1,
       "excluded": 0
     },
-    "experimental": {
-      "included": 3,
+    "example": {
+      "included": 0,
       "excluded": 2
+    },
+    "experimental": {
+      "included": 2,
+      "excluded": 0
     }
   },
   "sidecar_tags": {
@@ -36,13 +40,13 @@
         "core"
       ],
       "hello_procedure2": [
-        "experimental"
+        "example"
       ],
       "test_procedure": [
         "experimental"
       ],
       "test_procedure_two": [
-        "experimental"
+        "example"
       ]
     },
     "functions": {
@@ -55,26 +59,20 @@
   "dry_run": true,
   "summary_title": "\ud83e\uddea Dry-Run Summary",
   "status": "dry_run",
-  "verbosity": "verbose",
-  "duration_seconds": 11.66,
-  "timestamp": "2025-10-02 12:10 PDT",
-  "auto_count": 4,
-  "manual_count": 0,
-  "manual_simulated": 0,
-  "total_procedures": 4,
+  "verbosity": "summary",
+  "duration_seconds": 122.72,
+  "timestamp": "2025-10-07 16:51 PDT",
+  "auto_count": 2,
+  "manual_count": 1,
+  "manual_simulated": 1,
+  "total_procedures": 3,
   "total_dags": 0,
   "dags": [],
   "auto_proc_tags": {
     "hello_procedure": [
       "core"
     ],
-    "hello_procedure2": [
-      "experimental"
-    ],
     "test_procedure": [
-      "experimental"
-    ],
-    "test_procedure_two": [
       "experimental"
     ]
   },
@@ -88,13 +86,6 @@
       "status": "valid"
     },
     {
-      "name": "hello_procedure2",
-      "source": "auto",
-      "handler": "app.python.procedures_auto.hello_procedure2",
-      "returns": "string",
-      "status": "valid"
-    },
-    {
       "name": "test_procedure",
       "source": "auto",
       "handler": "app.python.procedures_auto.test_procedure",
@@ -102,27 +93,27 @@
       "status": "valid"
     },
     {
-      "name": "test_procedure_two",
-      "source": "auto",
-      "handler": "app.python.procedures_auto.test_procedure_two",
+      "name": "copy_to_table_proc",
+      "source": "manual",
+      "handler": "app.python.manual_procs.copy_to_table_proc",
       "returns": "string",
-      "status": "valid"
+      "status": "dry_run"
     }
   ],
   "excluded_procs": [
     {
-      "name": "copy_to_table_proc",
+      "name": "hello_procedure2",
       "tags": [
-        "experimental"
+        "example"
       ],
-      "reason": "Not specified"
+      "reason": "Tag not allowed in environment"
     },
     {
-      "name": "test_manual_proc",
+      "name": "test_procedure_two",
       "tags": [
-        "experimental"
+        "example"
       ],
-      "reason": "Not specified"
+      "reason": "Tag not allowed in environment"
     }
   ]
 }
