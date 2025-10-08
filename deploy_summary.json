@@ -59,9 +59,9 @@
   "dry_run": true,
   "summary_title": "\ud83e\uddea Dry-Run Summary",
   "status": "dry_run",
-  "verbosity": "summary",
-  "duration_seconds": 122.72,
-  "timestamp": "2025-10-07 16:51 PDT",
+  "verbosity": "verbose",
+  "duration_seconds": 4.62,
+  "timestamp": "2025-10-08 16:34 PDT",
   "auto_count": 2,
   "manual_count": 1,
   "manual_simulated": 1,
@@ -106,14 +106,14 @@
       "tags": [
         "example"
       ],
-      "reason": "Tag not allowed in environment"
+      "reason": "Tag not allowed in environment or not declared by app"
     },
     {
       "name": "test_procedure_two",
       "tags": [
         "example"
       ],
-      "reason": "Tag not allowed in environment"
+      "reason": "Tag not allowed in environment or not declared by app"
     }
   ]
 }

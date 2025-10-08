@@ -1,6 +1,11 @@
 # ~/.bashrc — restored for Snowpark devcontainer
 echo "📣 .bashrc sourced on shell startup"
 
+# Prevent double-sourcing or recursive growth
+[[ $BASHRC_ALREADY_SOURCED ]] && return
+export BASHRC_ALREADY_SOURCED=true
+
+
 # Optional aliases
 alias ll='ls -la'
 alias snowflake='snow'
@@ -29,4 +34,12 @@ else
 fi
 
 # apps/DE_PROJECT_1 to PYTHONPATH
-echo 'export PYTHONPATH=/workspaces/snowparkdev/apps/DE_PROJECT_1:$PYTHONPATH' >> ~/.bashrc
+# echo 'export PYTHONPATH=/workspaces/snowparkdev/apps/DE_PROJECT_1:$PYTHONPATH' >> ~/.bashrc
+export PYTHONPATH=/workspaces/snowparkdev/apps/DE_PROJECT_1:$PYTHONPATH
+
+parse_git_branch() {
+  git branch 2>/dev/null | sed -n '/\* /s///p'
+}
+
+export PS1="\u@\h:\w [\$(parse_git_branch)]\$ "
+
