@@ -28,6 +28,9 @@ from deploy.constants import VALID_TAGS
 from deploy.deploy_manager import DeployManager
 from deploy.utils.change_detection import get_changed_files_for_app
 from deploy.utils.tag_validation import validate_tags_for_env
+# These are needed to support pruning snowflake.yml declarative entities via application of tag filtering
+import tempfile
+import shutil
 
 print(f"__name__ = {__name__}")
 print(f"cwd = {os.getcwd()}")
@@ -721,6 +724,41 @@ def main():
             f"⚠️ Commit {commit!r} not available locally — falling back to {fallback}")
         return fallback
 
+    def _create_filtered_project_copy(app_path: Path, allowed_proc_names: list[str]) -> Path:
+        """
+        Copy app_path to a temporary directory and rewrite snowflake.yml
+        to include only procedures whose names appear in allowed_proc_names.
+        Returns the temp project path. Caller should delete it when done.
+        """
+        tmpdir = Path(tempfile.mkdtemp(prefix=f"build_{app_path.name}_"))
+        # copy entire app directory
+        shutil.copytree(app_path, tmpdir / app_path.name, dirs_exist_ok=True)
+        project_root = tmpdir / app_path.name
+
+        yml_path = project_root / "snowflake.yml"
+        if not yml_path.exists():
+            return project_root
+
+        try:
+            with open(yml_path, "r") as f:
+                cfg = yaml.safe_load(f)
+            # Guard: different snowflake.yml shapes exist; try to prune declared procedures
+            entities = cfg.get("entities", {})
+            new_entities = {}
+            for key, ent in entities.items():
+                if ent.get("type") == "procedure":
+                    name = ent.get("identifier", {}).get("name")
+                    if name in allowed_proc_names:
+                        new_entities[key] = ent
+                else:
+                    new_entities[key] = ent
+            cfg["entities"] = new_entities
+            with open(yml_path, "w") as f:
+                yaml.safe_dump(cfg, f)
+        except Exception as e:
+            print(f"⚠️ Could not rewrite snowflake.yml in temp project: {e}")
+        return project_root
+
 
     # Step 0:  Validate CLI version before anything else
     def validate_cli_version(min_required="3.0.0") -> bool:
@@ -923,26 +961,46 @@ def main():
         sys.exit(1)
 
     # Step 7: Build Snowpark project and inject shared modules
-    build_cmd = [
-        "snow", "snowpark", "build",
-        "--project", str(APPS_DIR / app_name),
-        "--temporary-connection",
-        "--account", account,
-        "--user", user,
-        "--role", role,
-        "--warehouse", warehouse,
-        "--database", database,
-        "--schema", schema,
-        "--allow-shared-libraries"
-    ]
-    run_command(build_cmd, f"Building Snowpark project for app: {app_name}")
-    inject_shared_modules(app_path)
+    # Pick a project source for build/deploy. If any declarative procs were excluded by tag
+    # filtering, create a temporary copy with snowflake.yml pruned to only allowed procs.
+    allowed_proc_names = [p["name"] for p in validated_declarative_procs]
+    build_source = app_path
+    temp_build_root = None
+    if excluded_declarative:
+        build_source = _create_filtered_project_copy(app_path, allowed_proc_names)
+        temp_build_root = build_source.parent
+
+    try:
+        build_cmd = [
+            "snow", "snowpark", "build",
+            "--project", str(build_source),
+            "--temporary-connection",
+            "--account", account,
+            "--user", user,
+            "--role", role,
+            "--warehouse", warehouse,
+            "--database", database,
+            "--schema", schema,
+            "--allow-shared-libraries"
+        ]
+        run_command(build_cmd, f"Building Snowpark project for app: {app_name}")
+        # Inject shared modules into the project actually being built
+        inject_shared_modules(build_source)
+    except Exception:
+        # If build failed, ensure we clean up the temp copy before exiting
+        if temp_build_root:
+            try:
+                shutil.rmtree(temp_build_root)
+            except Exception:
+                pass
+        raise
 
     # Step 8: Zip source code and upload to stage
     stage_name = f"{env_name}_deployment"
     stage_target = f"@{stage_name}/apps/{app_name}"
+    # Zip the actual build_source (may be a temp filtered copy)
     zip_file = zip_source_code(
-        app_path, zip_name="app.zip", verbosity=verbosity)
+        build_source, zip_name="app.zip", verbosity=verbosity)
     # print(f"📦 Zipping source code in: {app_path}") # redundant
     # print(f"📦 Created zip: {zip_file}") # redundant
 
@@ -968,7 +1026,7 @@ def main():
     # Step 9: Deploy Snowpark App
     deploy_cmd = [
         "snow", "snowpark", "deploy", "--replace", "--temporary-connection",
-        "--project", str(APPS_DIR / app_name),
+        "--project", str(build_source),
         "--account", account,
         "--user", user,
         "--role", role,
@@ -992,12 +1050,23 @@ def main():
                 run_command(deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
             except Exception as e:
                 print(f"❌ Snowpark deploy failed: {e}")
+                # cleanup temp copy if present
+                if temp_build_root:
+                    try:
+                        shutil.rmtree(temp_build_root)
+                    except Exception:
+                        pass
                 sys.exit(1)
     else:
             print("🧪 Dry-run: Skipping Snowpark deploy (deploy command suppressed).")
 
-    # Step 10: Register manual procedures and apply tag filtering
-# ...existing code...
+    # cleanup temp copy if present (non-fatal)
+    if temp_build_root:
+        try:
+            shutil.rmtree(temp_build_root)
+        except Exception:
+            vprint(f"⚠️ Failed to remove temporary build dir: {temp_build_root}", verbosity)
+
     # Step 10: Register manual procedures and apply tag filtering
     if args.include_manual_procs:
         manager = DeployManager(
@@ -1259,7 +1328,7 @@ def main():
         excluded_procs
     )
 
-    # 🔹 Emit JSON artifact to GitHub Actions output
+    # 🔹 Emit JSON artifact to GitHub Actions output (if available)
     # json_output = json.dumps(summary_artifact).replace("\n", "\\n")
     # with open(os.environ["GITHUB_OUTPUT"], "a") as f:
     #     f.write(f"deploy_summary={json_output}\n")
