@@ -29,23 +29,49 @@ def print_hello(name: str):
     return f"Hello {name}!"
 
 
-def extract_copy_config(config: dict) -> tuple:
-    required_keys = [
-        "database_name", "schema_name", "target_table",
-        "target_columns", "on_error", "source_location", "source_file_type"
+def _normalize_config_keys(cfg: dict) -> dict:
+    """
+    Normalize config keys to lowercase underscored names so callers may supply
+    either PascalCase / camelCase keys (as in your JSON) or the expected
+    lowercase keys used by the helper functions.
+    """
+    if not isinstance(cfg, dict):
+        return cfg
+    return {str(k).strip().lower(): v for k, v in cfg.items()}
+
+
+def extract_copy_config(config_file: dict):
+    """
+    Backwards-compatible extractor: accepts config files with mixed-case keys
+    and returns the canonical tuple expected by copy_to_table.
+    """
+    cfg = _normalize_config_keys(config_file)
+
+    required = [
+        "database_name",
+        "schema_name",
+        "target_table",
+        "source_location",
+        "source_file_type",
     ]
-    missing = [key for key in required_keys if key not in config]
+    missing = [k for k in required if k not in cfg]
     if missing:
         raise KeyError(f"Missing required config keys: {missing}")
 
+    # Optional values
+    reject_table = cfg.get("reject_table") or cfg.get("rejecttable")
+    target_columns = cfg.get("target_columns") or cfg.get("targetcolumns")
+    on_error = cfg.get("on_error") or cfg.get("onerror") or "CONTINUE"
+
     return (
-        config["database_name"],
-        config["schema_name"],
-        config["target_table"],
-        config["target_columns"],
-        config["on_error"],
-        config["source_location"],
-        config["source_file_type"]
+        cfg["database_name"],
+        cfg["schema_name"],
+        cfg["target_table"],
+        reject_table,
+        cfg["source_location"],
+        cfg["source_file_type"],
+        target_columns,
+        on_error,
     )
 
 
