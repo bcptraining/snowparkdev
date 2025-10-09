@@ -91,6 +91,17 @@ def get_copy_query_id(query_history) -> Optional[str]:
     return None
 
 
+def _sql_literal(val):
+    """Return a SQL literal for string-like values (escape single quotes)."""
+    if val is None:
+        return "NULL"
+    if isinstance(val, (dict, list)):
+        s = json.dumps(val)
+    else:
+        s = str(val)
+    return f"'{s.replace(\"'\", \"''\")}'"
+
+
 def copy_to_table(session, config_file, schema=None, **kwargs):
     """
     Execute a COPY using the supplied config_file (dict). This function expects
@@ -110,18 +121,83 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     # Normalize / provide a sane default for on_error if missing
     on_error = (on_error or "CONTINUE").upper()
 
-    df = read_source_data(session, source_location, source_file_type, schema)
+    # Allow overriding validation_mode via config; default to RETURN_ERRORS so we can capture rejects
+    validation_mode = (config_file.get("validation_mode") or "RETURN_ERRORS").upper()
 
-    with session.query_history() as query_history:
-        copied_into_result = df.copy_into_table(
-            f"{database_name}.{schema_name}.{target_table}",
-            target_columns=target_columns,
-            force=True,
-            on_error=on_error
-        )
+    # Ensure reject table exists (safe schema using VARIANT payload)
+    if reject_table:
+        session.sql(
+            f"""
+            CREATE TABLE IF NOT EXISTS {database_name}.{schema_name}.{reject_table} (
+              payload VARIANT,
+              error_message VARCHAR,
+              error_code VARCHAR,
+              source_file VARCHAR,
+              source_row INTEGER,
+              load_ts TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        ).collect()
 
-    qid = get_copy_query_id(query_history)
-    return copied_into_result, qid
+    # Build COPY statement (use VALIDATION_MODE to return errors for inspection)
+    copy_sql = f"""
+      COPY INTO {database_name}.{schema_name}.{target_table}
+      FROM '{source_location}'
+      FILE_FORMAT = (TYPE = '{source_file_type}')
+      VALIDATION_MODE = '{validation_mode}'
+      ON_ERROR = '{on_error}'
+    """
+
+    # Execute COPY and capture returned rows (errors) if any
+    rows = session.sql(copy_sql).collect()
+
+    # If VALIDATION_MODE='RETURN_ERRORS', Snowflake returns error rows describing rejects.
+    # Persist them into the reject table if configured.
+    if reject_table and rows:
+        for r in rows:
+            try:
+                d = r.asDict()
+            except Exception:
+                # Best-effort fallback for row->dict
+                try:
+                    d = dict(r)
+                except Exception:
+                    d = {"raw": str(r)}
+
+            # Best-effort mapping: adapt keys depending on returned structure
+            payload = d.get("row") or d.get("content") or d.get("record") or d.get("raw")
+            err_msg = d.get("error") or d.get("message") or d.get("err") or ""
+            err_code = d.get("code") or d.get("error_code") or ""
+            src_file = d.get("file") or d.get("source") or d.get("src_file") or ""
+            src_row = d.get("line") or d.get("row_number") or d.get("row") or None
+
+            # Insert into reject table (use PARSE_JSON for payload when possible)
+            payload_literal = (
+                "PARSE_JSON(NULL)"
+                if payload is None
+                else f"PARSE_JSON({_sql_literal(payload)})"
+            )
+            err_msg_lit = _sql_literal(err_msg)
+            err_code_lit = _sql_literal(err_code)
+            src_file_lit = _sql_literal(src_file)
+            src_row_lit = str(src_row) if src_row is not None else "NULL"
+
+            insert_sql = f"""
+                INSERT INTO {database_name}.{schema_name}.{reject_table}
+                  (payload, error_message, error_code, source_file, source_row)
+                VALUES ({payload_literal}, {err_msg_lit}, {err_code_lit}, {src_file_lit}, {src_row_lit})
+            """
+            session.sql(insert_sql).collect()
+
+    # Return the rows and a pseudo qid (adapt as your code expects)
+    # If COPY returns a query id elsewhere, preserve that; otherwise return the rows
+    qid = None
+    try:
+        qid = session.sql("SELECT LAST_QUERY_ID()").collect()[0][0]
+    except Exception:
+        qid = None
+
+    return rows, qid
 # ✅ Function to convert JSON schema to StructType
 
 
