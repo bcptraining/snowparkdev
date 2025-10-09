@@ -4,6 +4,7 @@ from tabulate import tabulate
 import json
 from importlib import resources
 from pathlib import Path
+from typing import Optional
 
 from app.common.helpers import copy_to_table, json_to_struct_type
 # Import example schema and config for copy_to_table_proc
@@ -17,19 +18,25 @@ def test_manual_proc(session: Session, name: str) -> str:
 
 
 def copy_to_table_proc(session: Session, schema_key: str) -> str:
-    # prefer package resource (works when running from app.zip inside Snowflake)
+    """
+    tags: core
+    description: Copy staging data into target table using a schema key to select
+                 the schema from app/schemas/schemas.json. Config is loaded from
+                 app/config/copy_to_snowstg_udemy.json (packaged resource preferred).
+    """
+    # Load config (prefer package resource inside app.zip, fallback to file)
     cfg_name = Path(COPY_TO_TABLE_PROC_CONFIG_PATH).name
     try:
         cfg_text = resources.files("app").joinpath("config", cfg_name).read_text()
         config_file = json.loads(cfg_text)
     except Exception:
-        # local/dev fallback
         try:
             with open(COPY_TO_TABLE_PROC_CONFIG_PATH, "r") as f:
                 config_file = json.load(f)
         except Exception as e:
             return f"❌ Failed to load config: {e}"
 
+    # Load schemas (prefer packaged resource)
     schema_name = Path(COPY_TO_TABLE_PROC_SCHEMA_PATH).name
     try:
         schemas_text = resources.files("app").joinpath("schemas", schema_name).read_text()
@@ -43,7 +50,6 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
 
     # Extract raw schema by key
     raw_schema = schema_file.get(schema_key)
-
     if not raw_schema:
         available_keys = list(schema_file.keys())
         return (
@@ -58,11 +64,13 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
         return f"❌ Failed to convert schema for key '{schema_key}': {e}"
 
     # Execute copy
-    copied_into_result, qid = copy_to_table(
-        session, config_file, schema=schema)
+    try:
+        copied_into_result, qid = copy_to_table(session, config_file, schema=schema)
+    except Exception as e:
+        return f"❌ Copy operation failed: {e}"
 
     # -----------------------
-    # small helper to format results (reintroduced)
+    # Helper to format results (kept in place)
     # -----------------------
     def format_copy_results(copy_result_rows):
         table_data = []
@@ -87,4 +95,4 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
     # Narrate Partial Loads in Deploy Summary
     summary_text = format_copy_results(copied_into_result)
 
-    return f"✅ Copy completed.\n\nQuery ID: {qid}"
+    return f"✅ Copy completed.\n\nQuery ID: {qid}\n\n{summary_text}"

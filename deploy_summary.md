@@ -1,13 +1,13 @@
 # 🧪 Dry-Run Summary — DE_PROJECT_1
 - Environment: `dev`
-- Changed Files: `apps/DE_PROJECT_1/app/python/procedures_man.py`
+- Changed Files: `apps/DE_PROJECT_1/app/common/helpers.py, apps/DE_PROJECT_1/app/python/procedures_man.py`
 - Stage: `dev_deployment`
 - Tags: `core, experimental, diagnostic`
 - Auto Procedures: `2`
 - Manual Procedures: `1`
 - DAGs: `0`
-- Duration: `4.36 seconds`
-- Timestamp: `2025-10-09 13:02 PDT`
+- Duration: `3.82 seconds`
+- Timestamp: `2025-10-09 15:49 PDT`
 
 ### Registered Procedures
 | Name | Source | Handler | Returns | Status |
