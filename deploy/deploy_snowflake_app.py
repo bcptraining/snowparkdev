@@ -711,6 +711,7 @@ def main():
             return False
 
     def _strip_surrounding_quotes(s: str) -> str:
+        """Remove surrounding single/double quotes and whitespace."""
         if not s:
             return ""
         return s.strip().strip('"').strip("'")
@@ -723,7 +724,6 @@ def main():
         raw_clean = _strip_surrounding_quotes(raw or "")
         if raw_clean and _git_commit_exists(raw_clean):
             return raw_clean
-        # fallback may be HEAD or HEAD~1; ensure it's valid
         return fallback if _git_commit_exists(fallback) else raw_clean
 
     def _create_filtered_project_copy(app_path: Path, allowed_proc_names: list[str]) -> Path:
@@ -852,7 +852,6 @@ def main():
                 ["git", "rev-parse", "HEAD"]).decode().strip()
         except Exception:
             raw_curr = ""
-
 
 
 
