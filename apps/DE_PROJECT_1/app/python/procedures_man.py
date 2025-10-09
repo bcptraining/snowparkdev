@@ -13,7 +13,7 @@ import pickle
 import importlib.util
 import os
 from snowflake.snowpark.types import StructType
-from tabulate import tabulate  # For tabular outputs...
+from tabulate import tabulate  # For tabular outputs....
 from common.helpers import json_to_struct_type
 from app.python.manual_procs import copy_to_table_proc, test_manual_proc
 
