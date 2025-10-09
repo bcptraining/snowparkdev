@@ -99,7 +99,9 @@ def _sql_literal(val):
         s = json.dumps(val)
     else:
         s = str(val)
-    return f"'{s.replace(\"'\", \"''\")}'"
+    # escape single quotes for SQL and wrap in single quotes
+    escaped = s.replace("'", "''")
+    return f"'{escaped}'"
 
 
 def copy_to_table(session, config_file, schema=None, **kwargs):
