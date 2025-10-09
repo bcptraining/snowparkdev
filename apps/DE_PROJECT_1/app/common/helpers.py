@@ -91,16 +91,24 @@ def get_copy_query_id(query_history) -> Optional[str]:
     return None
 
 
-def copy_to_table(session, config_file, schema: Optional[StructType] = None):
+def copy_to_table(session, config_file, schema=None, **kwargs):
+    """
+    Execute a COPY using the supplied config_file (dict). This function expects
+    extract_copy_config(...) to return eight values including `on_error`.
+    """
     (
         database_name,
         schema_name,
         target_table,
+        reject_table,
+        source_location,
+        source_file_type,
         target_columns,
         on_error,
-        source_location,
-        source_file_type
     ) = extract_copy_config(config_file)
+
+    # Normalize / provide a sane default for on_error if missing
+    on_error = (on_error or "CONTINUE").upper()
 
     df = read_source_data(session, source_location, source_file_type, schema)
 
