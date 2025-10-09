@@ -710,19 +710,21 @@ def main():
         except Exception:
             return False
 
-    def _sanitize_or_fallback_commit(raw_commit: str, fallback: str = "HEAD") -> str:
+    def _strip_surrounding_quotes(s: str) -> str:
+        if not s:
+            return ""
+        return s.strip().strip('"').strip("'")
+
+    def _sanitize_or_fallback_commit(raw: str, fallback: str = "HEAD") -> str:
         """
-        Normalize a raw commit string (strip surrounding quotes) and fall back to `fallback`
-        if the commit is not present locally.
+        Normalize a raw commit-ish value: strip quotes/whitespace and
+        return the raw if it exists in git, otherwise the fallback.
         """
-        if not raw_commit:
-            return fallback
-        commit = raw_commit.strip().strip('"').strip("'")
-        if _git_commit_exists(commit):
-            return commit
-        print(
-            f"⚠️ Commit {commit!r} not available locally — falling back to {fallback}")
-        return fallback
+        raw_clean = _strip_surrounding_quotes(raw or "")
+        if raw_clean and _git_commit_exists(raw_clean):
+            return raw_clean
+        # fallback may be HEAD or HEAD~1; ensure it's valid
+        return fallback if _git_commit_exists(fallback) else raw_clean
 
     def _create_filtered_project_copy(app_path: Path, allowed_proc_names: list[str]) -> Path:
         """
