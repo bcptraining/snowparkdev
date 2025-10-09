@@ -21,31 +21,11 @@ from app.python.manual_procs import copy_to_table_proc, test_manual_proc
 test_manual_proc.__module__ = "app.python.procedures_man"
 
 
-# Dynamically add the project root to PYTHONPATH............
+# Dynamically add the project root to PYTHONPATH.............
 ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../"))
 sys.path.insert(0, ROOT_DIR)
 
-# Dynamically load the common module
-
-# Yes, Cory — you should completely remove that load_common_module() function from procedures_man.py and replace it with a direct import:from common import json_to_struct_type
-
-# def load_common_module():
-#     common_path = os.path.abspath(os.path.join(
-#         os.path.dirname(__file__), "../common/common.py"))
-#     spec = importlib.util.spec_from_file_location("common", common_path)
-#     if spec is None or spec.loader is None:
-#         raise ImportError(
-#             f"Could not load module spec or loader for {common_path}")
-#     common = importlib.util.module_from_spec(spec)
-#     spec.loader.exec_module(common)
-#     print(f"🔍 Loading common.py from: {common_path}")
-#     return common
-
-
-# Load shared schema converter
-# common = load_common_module()
-# json_to_struct_type = common.json_to_struct_type
 
 
 # 🧠 Optional tag validation fallback
@@ -157,14 +137,6 @@ def register_manual_procs(
         alias_path = "app.python.procedures_man"
         sys.modules[alias_path] = sys.modules[__name__]
 
-        # Debuggin an issue with signature for the manual proc . The line below was replace with the 2 lines following
-        # # patched_func = pickle.loads(pickle.dumps(proc["func"]))
-        # import inspect
-
-        # print(f"🔍 Signature of {proc['name']} before:",
-        #       inspect.signature(proc["func"]))
-
-        # import cloudpickle
 
         patched_func = proc["func"]
 
