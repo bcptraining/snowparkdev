@@ -1,13 +1,13 @@
 # ✅ Deployment Summary — DE_PROJECT_1
 - Environment: `dev`
-- Changed Files: `apps/DE_PROJECT_1/app/python/procedures_man.py`
+- Changed Files: `apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json, apps/DE_PROJECT_1/app/python/procedures_man.py`
 - Stage: `dev_deployment`
 - Tags: `core, experimental, diagnostic`
 - Auto Procedures: `2`
 - Manual Procedures: `1`
 - DAGs: `0`
-- Duration: `12.54 seconds`
-- Timestamp: `2025-10-09 18:47 PDT`
+- Duration: `17.47 seconds`
+- Timestamp: `2025-10-09 19:24 PDT`
 
 ### Registered Procedures
 | Name | Source | Handler | Returns | Status |

@@ -2,6 +2,7 @@
   "app": "DE_PROJECT_1",
   "env": "dev",
   "changed_files": [
+    "apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json",
     "apps/DE_PROJECT_1/app/python/procedures_man.py"
   ],
   "stage": "dev_deployment",
@@ -60,8 +61,8 @@
   "summary_title": "\u2705 Deployment Summary",
   "status": "deployed",
   "verbosity": "verbose",
-  "duration_seconds": 12.54,
-  "timestamp": "2025-10-09 18:47 PDT",
+  "duration_seconds": 17.47,
+  "timestamp": "2025-10-09 19:24 PDT",
   "auto_count": 2,
   "manual_count": 1,
   "manual_simulated": null,
