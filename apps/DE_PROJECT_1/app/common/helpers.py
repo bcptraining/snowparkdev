@@ -269,33 +269,24 @@ def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
     return config, schema
 
 
-#  This version was working. Refactoring to helpers.py
-#  but leaving here for reference.
-# def copy_to_table(session, config_file, schema: Optional[StructType] = None):
-#     database_name = config_file.get("database_name")
-#     schema_name = config_file.get("schema_name")
-#     target_table = config_file.get("target_table")
-#     target_columns = config_file.get("target_columns")
-#     on_error = config_file.get("on_error")
-#     source_location = config_file.get("source_location")
-
-#     if config_file.get("source_file_type") == 'csv':
-#         if schema is None:
-#             raise ValueError("Schema must be provided for CSV source files.")
-#         df = session.read.schema(schema).csv(source_location)
-
-#     with session.query_history() as query_history:
-#         copied_into_result = df.copy_into_table(
-#             f"{database_name}.{schema_name}.{target_table}",
-#             target_columns=target_columns,
-#             force=True,
-#             on_error=on_error
-#         )
-
-#     qid = None
-#     for query in query_history.queries:
-#         if "COPY" in query.sql_text:
-#             qid = query.query_id
-#             break
-
-#     return copied_into_result, qid
+def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS"):
+    """
+    Persist results returned by COPY (VALIDATION_MODE='RETURN_ERRORS') into the reject table.
+    Must be run in the same session immediately after the COPY so RESULT_SCAN(LAST_QUERY_ID()) is available.
+    Stores the full returned row as VARIANT in PAYLOAD and extracts common fields if present.
+    """
+    insert_sql = f"""
+    INSERT INTO {reject_table_full_name} (PAYLOAD, ERROR_MESSAGE, ERROR_CODE, SOURCE_FILE, SOURCE_ROW)
+    SELECT
+      obj                                 AS PAYLOAD,
+      COALESCE(obj:"error"::string, obj:"message"::string, '') AS ERROR_MESSAGE,
+      COALESCE(obj:"code"::string, obj:"error_code"::string, '') AS ERROR_CODE,
+      COALESCE(obj:"file"::string, obj:"source"::string, '')   AS SOURCE_FILE,
+      TRY_CAST(COALESCE(obj:"line"::string, obj:"row_number"::string, obj:"row"::string) AS NUMBER) AS SOURCE_ROW
+    FROM (
+      SELECT OBJECT_CONSTRUCT(*) AS obj
+      FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
+    );
+    """
+    # run and materialize
+    session.sql(insert_sql).collect()
