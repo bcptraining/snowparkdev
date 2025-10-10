@@ -153,6 +153,22 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     # Execute COPY and capture returned rows (errors) if any
     rows = session.sql(copy_sql).collect()
 
+    # DEBUG: show how many rows COPY returned and sample shape
+    try:
+        print(f"📋 COPY returned {len(rows)} result rows")
+        if rows:
+            try:
+                sample = rows[0].asDict()
+            except Exception:
+                # fallback for row-like objects
+                try:
+                    sample = dict(rows[0])
+                except Exception:
+                    sample = str(rows[0])
+            print("📌 Sample returned row:", sample)
+    except Exception:
+        pass
+
     # If VALIDATION_MODE='RETURN_ERRORS', Snowflake returns error rows describing rejects.
     # Persist them into the reject table if configured.
     if reject_table and rows:
