@@ -2,7 +2,6 @@
   "app": "DE_PROJECT_1",
   "env": "dev",
   "changed_files": [
-    "apps/DE_PROJECT_1/app/common/helpers.py",
     "apps/DE_PROJECT_1/app/python/procedures_man.py"
   ],
   "stage": "dev_deployment",
@@ -57,15 +56,15 @@
     },
     "dags": {}
   },
-  "dry_run": true,
-  "summary_title": "\ud83e\uddea Dry-Run Summary",
-  "status": "dry_run",
+  "dry_run": false,
+  "summary_title": "\u2705 Deployment Summary",
+  "status": "deployed",
   "verbosity": "verbose",
-  "duration_seconds": 3.82,
-  "timestamp": "2025-10-09 15:49 PDT",
+  "duration_seconds": 12.54,
+  "timestamp": "2025-10-09 18:47 PDT",
   "auto_count": 2,
   "manual_count": 1,
-  "manual_simulated": 1,
+  "manual_simulated": null,
   "total_procedures": 3,
   "total_dags": 0,
   "dags": [],
@@ -98,7 +97,7 @@
       "source": "manual",
       "handler": "app.python.manual_procs.copy_to_table_proc",
       "returns": "string",
-      "status": "dry_run"
+      "status": "registered"
     }
   ],
   "excluded_procs": [
