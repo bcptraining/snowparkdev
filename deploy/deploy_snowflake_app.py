@@ -1,8 +1,4 @@
-import inspect
-import re
 import yaml
-# -- supports an experimental refactor to use a class-based approach
-# from orchestration.proc_registrar import ProcRegistrar
 from deploy.orchestration.proc_registrar import ProcRegistrar
 from deploy.tag_registry import TAG_SETS
 import pytz
@@ -19,7 +15,6 @@ import argparse
 from pathlib import Path
 from snowflake.core import Root
 from snowflake.core.task.dagv1 import DAGOperation
-import re  # for regex operations
 # Defines set of tags applicable to each environment
 from deploy.constants import VALID_TAGS
 
@@ -29,8 +24,6 @@ from deploy.deploy_manager import DeployManager
 from deploy.utils.change_detection import get_changed_files_for_app
 from deploy.utils.tag_validation import validate_tags_for_env
 # These are needed to support pruning snowflake.yml declarative entities via application of tag filtering
-import tempfile
-import shutil
 
 print(f"__name__ = {__name__}")
 print(f"cwd = {os.getcwd()}")
@@ -62,7 +55,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # }
 
 
-# ...existing code...
 def validate_tags(tags: list[str], proc_name: str | None = None) -> list[str]:
     invalid = [t for t in tags if t not in VALID_TAGS]
     if invalid:
@@ -593,7 +585,7 @@ def main():
     def build_environment_context_block():
         import platform
         import sys
-        import shutil
+        # import shutil
 
         python_version = platform.python_version()
         python_exec = sys.executable
@@ -1104,10 +1096,11 @@ def main():
             # Otherwise treat proc as a raw definition and run validations/enrichment
             proc["tags"] = [t.lower() for t in proc.get("tags", [])]
 
-            # Tag filtering
-            if not is_tag_allowed(proc.get("tags", []), tags):
+            # Tag filtering: require proc tag declared by the app and allowed by the env.
+            # Use is_proc_allowed which enforces both app-declared and env tags.
+            if not is_proc_allowed(proc.get("tags", []), app_declared_tags, tags):
                 excluded_manual.append(register_exclusion(
-                    proc, "Tag not allowed in environment"))
+                    proc, "Tag not allowed in environment or not declared by app"))
                 continue
 
             # Resolve handler (returns truthy on success)
