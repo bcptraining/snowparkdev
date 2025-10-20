@@ -1,32 +1,36 @@
 
-import inspect
-from snowflake.snowpark.types import StructType, StructField, StringType, IntegerType, FloatType, BooleanType
-import json
-from typing import Dict, Union
-from datetime import datetime
-from snowflake.snowpark import Session
-from snowflake.snowpark.types import StringType
-from typing import List, Optional, Callable
-from pathlib import Path
-import sys
-import pickle
-import importlib.util
 import os
-from snowflake.snowpark.types import StructType
+import sys
+from pathlib import Path
+
+# Dynamically add the project root to PYTHONPATH before any repo-local imports
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+import inspect
+import json
+from typing import Dict, Union, List, Optional, Callable
+from datetime import datetime
+import importlib.util
+
+from snowflake.snowpark import Session
+from snowflake.snowpark.types import (
+    StructType,
+    StructField,
+    StringType,
+    IntegerType,
+    FloatType,
+    BooleanType,
+)
 from tabulate import tabulate  # For tabular outputs
+
+# Repo-local imports (safe now that ROOT_DIR is on sys.path)
 from common.helpers import json_to_struct_type
 from app.python.manual_procs import copy_to_table_proc, test_manual_proc
 
-
 test_manual_proc.__module__ = "app.python.procedures_man"
-
-
-# Dynamically add the project root to PYTHONPATH...
-ROOT_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../../"))
-sys.path.insert(0, ROOT_DIR)
-
-
+copy_to_table_proc.__module__ = "app.python.procedures_man"
 
 # 🧠 Optional tag validation fallback
 ValidateTagsType = Callable[[List[str], Optional[str]], List[str]]
@@ -148,14 +152,15 @@ def register_manual_procs(
         print(f"🔍 Param count: {len(params)}")
 
         def validate_manual_proc_signature(func, expected_input_count):
-            if len(params) < 1 or params[0].name != "session":
-                raise ValueError(
-                    f"First parameter must be 'session', got '{params[0].name}'")
-            if len(params[1:]) != expected_input_count:
-                raise ValueError(
-                    f"Expected {expected_input_count} user-supplied args, got {len(params[1:])}")
+                if len(params) < 1 or params[0].name != "session":
+                    raise ValueError(
+                        f"First parameter must be 'session', got '{params[0].name}'")
+                if len(params[1:]) != expected_input_count:
+                    raise ValueError(
+                        f"Expected {expected_input_count} user-supplied args, got {len(params[1:])}")
 
         validate_manual_proc_signature(patched_func, len(proc["input_types"]))
+
         # Debug lines above
 
         # # Added this as a debug step
@@ -169,7 +174,9 @@ def register_manual_procs(
         # vprint(pickle.dumps(patched_func).hex(), verbosity)
 
         # This is critical for Snowflake to resolve the handler path correctly
-        proc["func"].__module__ = "app.python.manual_procs"
+        # proc["func"].__module__ = "app.python.manual_procs"
+        # Set module to the alias used above so Snowflake resolves the handler path
+        proc["func"].__module__ = alias_path
 
         print(
             f"🔗 Handler path for {proc['name']}: {proc['func'].__module__}.{proc['func'].__name__}")
