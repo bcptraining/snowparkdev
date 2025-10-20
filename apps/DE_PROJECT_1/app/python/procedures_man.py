@@ -23,7 +23,7 @@ from snowflake.snowpark.types import (
     FloatType,
     BooleanType,
 )
-from tabulate import tabulate  # For tabular outputs
+from tabulate import tabulate  # For tabular outputs.
 
 # Repo-local imports (safe now that ROOT_DIR is on sys.path)
 from app.common.helpers import json_to_struct_type
