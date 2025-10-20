@@ -176,34 +176,48 @@ def register_manual_procs(
         # This is critical for Snowflake to resolve the handler path correctly
         # proc["func"].__module__ = "app.python.manual_procs"
         # Set module to the alias used above so Snowflake resolves the handler path
-        proc["func"].__module__ = alias_path
+        # proc["func"].__module__ = alias_path
 
-        print(
-            f"🔗 Handler path for {proc['name']}: {proc['func'].__module__}.{proc['func'].__name__}")
+        # print(
+        #     f"🔗 Handler path for {proc['name']}: {proc['func'].__module__}.{proc['func'].__name__}")
 
-        session.sproc.register(
-            func=patched_func,
-            name=proc["name"],
-            input_types=proc["input_types"],
-            return_type=proc["return_type"],
-            is_permanent=True,
-            stage_location=f"@{stage_name}",
-            imports=[f"@{stage_name}/apps/{app_name}/app.zip"],
-            packages=["snowflake-snowpark-python==1.33.0",
-                      "cloudpickle==3.0.0", "tabulate==0.9.0"],
-            replace=True,
-            is_pandas=False  # This was added during debugging when the manual proc signature was nt matching for some reason
-        )
+        # session.sproc.register(
+        #     func=patched_func,
+        # Temporarily set patched func module to the alias used in the uploaded package
+        orig_module = getattr(patched_func, "__module__", None)
+        try:
+            patched_func.__module__ = alias_path
+            print(
+                f"🔗 Handler path for {proc['name']}: {patched_func.__module__}.{patched_func.__name__}"
+            )
 
-        print(f"✅ Manually registered: {proc['name']}")
-        registered.append({
-            "name": proc["name"],
-            "kind": "procedure",
-            "tags": proc["tags"],
-            "source": "manual",
-            "status": "registered"  # ✅ Added status for real registrations
-        })
+            session.sproc.register(
+                func=patched_func,
+                name=proc["name"],
+                input_types=proc["input_types"],
+                return_type=proc["return_type"],
+                is_permanent=True,
+                stage_location=f"@{stage_name}",
+                imports=[f"@{stage_name}/apps/{app_name}/app.zip"],
+                packages=["snowflake-snowpark-python==1.33.0",
+                        "cloudpickle==3.0.0", "tabulate==0.9.0"],
+                replace=True,
+                is_pandas=False  # This was added during debugging when the manual proc signature was nt matching for some reason
+            )
 
+            # success logging / summary record
+            print(f"✅ Manually registered: {proc['name']}")
+            registered.append({
+                "name": proc["name"],
+                "kind": "procedure",
+                "tags": proc["tags"],
+                "source": "manual",
+                "status": "registered"  # ✅ Added status for real registrations
+            })
+        finally:
+            # always restore original module to avoid side-effects
+            if orig_module is not None:
+                patched_func.__module__ = orig_module
     # ✅ Narration block
     if verbosity in ["summary", "verbose"]:
         print(
