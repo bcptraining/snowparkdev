@@ -24,7 +24,7 @@ from deploy.deploy_manager import DeployManager
 from deploy.utils.change_detection import get_changed_files_for_app
 from deploy.utils.tag_validation import validate_tags_for_env
 # These are needed to support pruning snowflake.yml declarative entities via application of tag filtering
-
+import tempfile
 print(f"__name__ = {__name__}")
 print(f"cwd = {os.getcwd()}")
 print(f"sys.path = {sys.path}")
