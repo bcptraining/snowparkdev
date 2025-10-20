@@ -26,7 +26,7 @@ from snowflake.snowpark.types import (
 from tabulate import tabulate  # For tabular outputs
 
 # Repo-local imports (safe now that ROOT_DIR is on sys.path)
-from common.helpers import json_to_struct_type
+from app.common.helpers import json_to_struct_type
 from app.python.manual_procs import copy_to_table_proc, test_manual_proc
 
 test_manual_proc.__module__ = "app.python.procedures_man"
