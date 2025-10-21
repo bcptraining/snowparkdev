@@ -190,10 +190,9 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             src_row = d.get("line") or d.get("row_number") or d.get("row") or None
 
             # Insert into reject table (use PARSE_JSON for payload when possible)
+            # Emit NULL when payload is missing to avoid PARSE_JSON(NULL) SQL error
             payload_literal = (
-                "PARSE_JSON(NULL)"
-                if payload is None
-                else f"PARSE_JSON({_sql_literal(payload)})"
+                "NULL" if payload is None else f"PARSE_JSON({_sql_literal(payload)})"
             )
             err_msg_lit = _sql_literal(err_msg)
             err_code_lit = _sql_literal(err_code)
