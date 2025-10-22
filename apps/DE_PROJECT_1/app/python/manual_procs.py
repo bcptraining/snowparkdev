@@ -100,22 +100,6 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
     # Narrate Partial Loads in Deploy Summary
     summary_text = format_copy_results(copied_into_result)
 
-    # replace existing COPY INTO EMPLOYEE2 with this
-    copy_sql = """
-    COPY INTO DEMO_DB.PUBLIC.EMPLOYEE2
-    FROM (
-      SELECT
-        $1 AS FIRST_NAME,
-        $2 AS LAST_NAME,
-        $3 AS EMAIL,
-        $4 AS ADDRESS,
-        $5 AS CITY,
-        TO_DATE($6, 'MM/DD/YYYY') AS DOJ
-      FROM @my_s3_stage/{file_name} (FILE_FORMAT => 'DEMO_DB.PUBLIC.DEMO_CSV_FMT')
-    )
-    ON_ERROR='ABORT_STATEMENT'
-    FORCE=TRUE;
-    """.format(file_name=csv_file_name)  # set csv_file_name appropriately
-    session.sql(copy_sql).collect()
-
+    # The actual copy is handled by copy_to_table(...) above.
+    # Removed the redundant manual COPY which referenced an undefined csv_file_name.
     return f"✅ Copy completed.\n\nQuery ID: {qid}\n\n{summary_text}"
