@@ -124,7 +124,8 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     on_error = (on_error or "CONTINUE").upper()
 
     # Allow overriding validation_mode via config; default to RETURN_ERRORS so we can capture rejects
-    validation_mode = (config_file.get("validation_mode") or "RETURN_ERRORS").upper()
+    validation_mode = (config_file.get("validation_mode")
+                       or "RETURN_ERRORS").upper()
 
     # Ensure reject table exists (safe schema using VARIANT payload)
     if reject_table:
@@ -183,11 +184,14 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                     d = {"raw": str(r)}
 
             # Best-effort mapping: adapt keys depending on returned structure
-            payload = d.get("row") or d.get("content") or d.get("record") or d.get("raw")
+            payload = d.get("row") or d.get(
+                "content") or d.get("record") or d.get("raw")
             err_msg = d.get("error") or d.get("message") or d.get("err") or ""
             err_code = d.get("code") or d.get("error_code") or ""
-            src_file = d.get("file") or d.get("source") or d.get("src_file") or ""
-            src_row = d.get("line") or d.get("row_number") or d.get("row") or None
+            src_file = d.get("file") or d.get(
+                "source") or d.get("src_file") or ""
+            src_row = d.get("line") or d.get(
+                "row_number") or d.get("row") or None
 
             # Insert into reject table (use PARSE_JSON for payload when possible)
             # Emit NULL when payload is missing to avoid PARSE_JSON(NULL) SQL error
@@ -270,22 +274,63 @@ def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
 
 def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS"):
     """
-    Persist results returned by COPY (VALIDATION_MODE='RETURN_ERRORS') into the reject table.
-    Must be run in the same session immediately after the COPY so RESULT_SCAN(LAST_QUERY_ID()) is available.
-    Stores the full returned row as VARIANT in PAYLOAD and extracts common fields if present.
+    Read the result of the most recent COPY (via RESULT_SCAN(LAST_QUERY_ID()))
+    and persist per-file error metadata into the configured reject table.
+    This function is defensive about available columns and uses an explicit
+    INSERT column list to avoid column-misalignment issues.
     """
-    insert_sql = f"""
-    INSERT INTO {reject_table_full_name} (PAYLOAD, ERROR_MESSAGE, ERROR_CODE, SOURCE_FILE, SOURCE_ROW)
-    SELECT
-      obj                                 AS PAYLOAD,
-      COALESCE(obj:"error"::string, obj:"message"::string, '') AS ERROR_MESSAGE,
-      COALESCE(obj:"code"::string, obj:"error_code"::string, '') AS ERROR_CODE,
-      COALESCE(obj:"file"::string, obj:"source"::string, '')   AS SOURCE_FILE,
-      TRY_CAST(COALESCE(obj:"line"::string, obj:"row_number"::string, obj:"row"::string) AS NUMBER) AS SOURCE_ROW
-    FROM (
-      SELECT OBJECT_CONSTRUCT(*) AS obj
-      FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
-    );
-    """
-    # run and materialize
-    session.sql(insert_sql).collect()
+    try:
+        rows = session.sql(
+            "SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))").collect()
+    except Exception:
+        # nothing to persist or could not read last query result
+        return
+
+    def q(s):
+        return ("'" + str(s).replace("'", "''") + "'") if s is not None and str(s) != "" else "NULL"
+
+    for r in rows:
+        try:
+            d = r.asDict()
+        except Exception:
+            try:
+                d = dict(r)
+            except Exception:
+                d = {"raw": str(r)}
+
+        # robust field extraction (different COPY outputs expose slightly different names)
+        errors = d.get("errors_seen") or d.get("errors") or 0
+        if not errors:
+            continue
+
+        file_name = (d.get("file") or d.get("file_name")
+                     or d.get("filename") or "").split("/")[-1]
+        status = d.get("status") or ""
+        rows_loaded = d.get("rows_loaded") if d.get(
+            "rows_loaded") is not None else d.get("rows_parsed")
+        rows_parsed = d.get("rows_parsed")
+        first_error = d.get("first_error") or d.get(
+            "first_error_message") or ""
+        first_error_line = d.get("first_error_line") or d.get(
+            "first_error_line_number")
+        first_error_column = d.get(
+            "first_error_column_name") or d.get("first_error_column")
+
+        insert_sql = f"""
+        INSERT INTO {reject_table_full_name}
+          (FILE_NAME, STATUS, ROWS_LOADED, ROWS_PARSED, ERRORS_SEEN,
+           FIRST_ERROR_MESSAGE, FIRST_ERROR_LINE_NUMBER, FIRST_ERROR_COLUMN_NAME, LOAD_TS)
+        VALUES (
+          {q(file_name)}, {q(status)}, {rows_loaded if rows_loaded is not None else 'NULL'},
+          {rows_parsed if rows_parsed is not None else 'NULL'}, {errors},
+          {q(first_error)}, {first_error_line if first_error_line is not None else 'NULL'},
+          {q(first_error_column)}, CURRENT_TIMESTAMP()
+        );
+        """
+        try:
+            session.sql(insert_sql).collect()
+        except Exception:
+            import sys
+            import traceback
+            print("Warning: failed to persist reject metadata", file=sys.stderr)
+            traceback.print_exc()
