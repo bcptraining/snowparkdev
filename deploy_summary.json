@@ -2,7 +2,7 @@
   "app": "DE_PROJECT_1",
   "env": "dev",
   "changed_files": [
-    "apps/DE_PROJECT_1/app/python/procedures_man.py"
+    "apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json"
   ],
   "stage": "dev_deployment",
   "tags": [
@@ -29,7 +29,7 @@
       "excluded": 2
     },
     "experimental": {
-      "included": 2,
+      "included": 1,
       "excluded": 0
     }
   },
@@ -56,16 +56,16 @@
     },
     "dags": {}
   },
-  "dry_run": true,
-  "summary_title": "\ud83e\uddea Dry-Run Summary",
-  "status": "dry_run",
+  "dry_run": false,
+  "summary_title": "\u2705 Deployment Summary",
+  "status": "deployed",
   "verbosity": "verbose",
-  "duration_seconds": 6.29,
-  "timestamp": "2025-10-20 13:07 PDT",
+  "duration_seconds": 6.83,
+  "timestamp": "2025-10-21 15:29 PDT",
   "auto_count": 2,
-  "manual_count": 1,
-  "manual_simulated": 1,
-  "total_procedures": 3,
+  "manual_count": 0,
+  "manual_simulated": null,
+  "total_procedures": 2,
   "total_dags": 0,
   "dags": [],
   "auto_proc_tags": {
@@ -91,13 +91,6 @@
       "handler": "app.python.procedures_auto.test_procedure",
       "returns": "string",
       "status": "valid"
-    },
-    {
-      "name": "copy_to_table_proc",
-      "source": "manual",
-      "handler": "app.python.manual_procs.copy_to_table_proc",
-      "returns": "string",
-      "status": "dry_run"
     }
   ],
   "excluded_procs": [
