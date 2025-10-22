@@ -1,20 +1,19 @@
-# 🧪 Dry-Run Summary — DE_PROJECT_1
+# ✅ Deployment Summary — DE_PROJECT_1
 - Environment: `dev`
-- Changed Files: `apps/DE_PROJECT_1/app/python/procedures_man.py`
+- Changed Files: `apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json`
 - Stage: `dev_deployment`
 - Tags: `core, experimental, diagnostic`
 - Auto Procedures: `2`
-- Manual Procedures: `1`
+- Manual Procedures: `0`
 - DAGs: `0`
-- Duration: `6.29 seconds`
-- Timestamp: `2025-10-20 13:07 PDT`
+- Duration: `6.83 seconds`
+- Timestamp: `2025-10-21 15:29 PDT`
 
 ### Registered Procedures
 | Name | Source | Handler | Returns | Status |
 |------|--------|---------|---------|--------|
 | hello_procedure | auto | app.python.procedures_auto.hello_procedure | string | valid |
 | test_procedure | auto | app.python.procedures_auto.test_procedure | string | valid |
-| copy_to_table_proc | manual | app.python.manual_procs.copy_to_table_proc | string | dry_run |
 ### 🚫 Excluded Procedures
 | Name | Tags | Reason |
 |------|------|--------|
@@ -26,7 +25,7 @@
 |------|----------|----------|
 | core | 1 | 0 |
 | example | 0 | 2 |
-| experimental | 2 | 0 |
+| experimental | 1 | 0 |
 ### 🏷️ Auto Procedure Tags
 | Procedure Name | Tags |
 |----------------|------|
