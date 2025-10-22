@@ -316,21 +316,19 @@ def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB
         first_error_column = d.get(
             "first_error_column_name") or d.get("first_error_column")
 
-        insert_sql = f"""
-        INSERT INTO {reject_table_full_name}
-          (FILE_NAME, STATUS, ROWS_LOADED, ROWS_PARSED, ERRORS_SEEN,
-           FIRST_ERROR_MESSAGE, FIRST_ERROR_LINE_NUMBER, FIRST_ERROR_COLUMN_NAME, LOAD_TS)
-        VALUES (
-          {q(file_name)}, {q(status)}, {rows_loaded if rows_loaded is not None else 'NULL'},
-          {rows_parsed if rows_parsed is not None else 'NULL'}, {errors},
-          {q(first_error)}, {first_error_line if first_error_line is not None else 'NULL'},
-          {q(first_error_column)}, CURRENT_TIMESTAMP()
-        );
-        """
-        try:
-            session.sql(insert_sql).collect()
-        except Exception:
-            import sys
-            import traceback
-            print("Warning: failed to persist reject metadata", file=sys.stderr)
-            traceback.print_exc()
+        # Align insert to the reject table schema:
+        # PAYLOAD VARIANT, ERROR_MESSAGE VARCHAR, ERROR_CODE VARCHAR,
+        # SOURCE_FILE VARCHAR, SOURCE_ROW NUMBER, LOAD_TS TIMESTAMP_LTZ
+        payload = d.get("row") or d.get("content") or d.get(
+            "record") or d.get("raw") or d
+        err_msg = first_error or d.get("error") or d.get("message") or ""
+        err_code = d.get("code") or d.get("error_code") or ""
+        src_file = file_name or ""
+        src_row = first_error_line if first_error_line is not None else None
+
+        # Prepare SQL literals (use module _sql_literal for safe quoting/JSON)
+        payload_literal = "NULL" if payload is None else f"PARSE_JSON({_sql_literal(payload)})"
+        err_msg_lit = _sql_literal(err_msg)
+        err_code_lit = _sql_literal(err_code)
+        src_file_lit = _sql_literal(src_file)
+        src_row_lit = str(src_row) if src_row is not None
