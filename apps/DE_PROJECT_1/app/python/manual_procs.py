@@ -27,7 +27,8 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
     # Load config (prefer package resource inside app.zip, fallback to file)
     cfg_name = Path(COPY_TO_TABLE_PROC_CONFIG_PATH).name
     try:
-        cfg_text = resources.files("app").joinpath("config", cfg_name).read_text()
+        cfg_text = resources.files("app").joinpath(
+            "config", cfg_name).read_text()
         config_file = json.loads(cfg_text)
     except Exception:
         try:
@@ -39,7 +40,8 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
     # Load schemas (prefer packaged resource)
     schema_name = Path(COPY_TO_TABLE_PROC_SCHEMA_PATH).name
     try:
-        schemas_text = resources.files("app").joinpath("schemas", schema_name).read_text()
+        schemas_text = resources.files("app").joinpath(
+            "schemas", schema_name).read_text()
         schema_file = json.loads(schemas_text)
     except Exception:
         try:
@@ -65,7 +67,8 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
 
     # Execute copy
     try:
-        copied_into_result, qid = copy_to_table(session, config_file, schema=schema)
+        copied_into_result, qid = copy_to_table(
+            session, config_file, schema=schema)
     except Exception as e:
         return f"❌ Copy operation failed: {e}"
 
@@ -84,9 +87,11 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
                 error_msg = f"{getattr(row, 'first_error', '')} (line {getattr(row, 'first_error_line', '')}, column {getattr(row, 'first_error_column_name', '')})"
             else:
                 error_msg = "—"
-            table_data.append([file_name, status, loaded, parsed, errors, error_msg])
+            table_data.append([file_name, status, loaded,
+                              parsed, errors, error_msg])
 
-        headers = ["📄 File Name", "Status", "Rows Loaded", "Rows Parsed", "Errors Seen", "First Error"]
+        headers = ["📄 File Name", "Status", "Rows Loaded",
+                   "Rows Parsed", "Errors Seen", "First Error"]
         summary = tabulate(table_data, headers=headers, tablefmt="github")
         print("\n✅ Copy Result Summary\n")
         print(summary)
@@ -94,5 +99,23 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
 
     # Narrate Partial Loads in Deploy Summary
     summary_text = format_copy_results(copied_into_result)
+
+    # replace existing COPY INTO EMPLOYEE2 with this
+    copy_sql = """
+    COPY INTO DEMO_DB.PUBLIC.EMPLOYEE2
+    FROM (
+      SELECT
+        $1 AS FIRST_NAME,
+        $2 AS LAST_NAME,
+        $3 AS EMAIL,
+        $4 AS ADDRESS,
+        $5 AS CITY,
+        TO_DATE($6, 'MM/DD/YYYY') AS DOJ
+      FROM @my_s3_stage/{file_name} (FILE_FORMAT => 'DEMO_DB.PUBLIC.DEMO_CSV_FMT')
+    )
+    ON_ERROR='ABORT_STATEMENT'
+    FORCE=TRUE;
+    """.format(file_name=csv_file_name)  # set csv_file_name appropriately
+    session.sql(copy_sql).collect()
 
     return f"✅ Copy completed.\n\nQuery ID: {qid}\n\n{summary_text}"
