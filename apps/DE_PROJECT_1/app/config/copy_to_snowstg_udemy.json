@@ -10,7 +10,7 @@
   "file_format": {
     "type": "CSV",
     "field_delimiter": ",",
-    "skip_header": 1,
+    "skip_header": 0,
     "field_optionally_enclosed_by": "\"",
     "null_if": ["", "NULL"],
     "encoding": "UTF8"
