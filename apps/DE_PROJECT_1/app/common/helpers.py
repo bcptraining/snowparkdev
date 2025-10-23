@@ -145,18 +145,24 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     # Build FILE_FORMAT clause from config.file_format (if present)
     ff_conf = config_file.get("file_format") or {}
     ff_items = []
+    create_ff_items = []
     for k, v in ff_conf.items():
         key = k.upper()
         if isinstance(v, bool):
             val = "TRUE" if v else "FALSE"
+            lit = val
         elif isinstance(v, (list, tuple)):
-            val = "(" + ", ".join([_sql_literal(x) for x in v]) + ")"
+            lit = "(" + ", ".join([_sql_literal(x) for x in v]) + ")"
         else:
-            val = _sql_literal(v) if isinstance(v, str) else str(v)
-        # Use '=>' as the table-function requires
-        ff_items.append(f"{key} => {val}")
+            lit = _sql_literal(v) if isinstance(v, str) else str(v)
+        # For COPY without SELECT wrapper we will use the "(KEY => VAL)" form in the table-function
+        ff_items.append(f"{key} => {lit}")
+        # For CREATE FILE FORMAT we need "KEY = VAL" form
+        create_ff_items.append(f"{key} = {lit}")
     ff_inner = ", ".join(
         ff_items) if ff_items else f"TYPE = '{source_file_type}'"
+    create_ff_inner = ", ".join(
+        create_ff_items) if create_ff_items else f"TYPE = '{source_file_type}'"
 
     # qualify target_table if needed
     if "." not in target_table:
@@ -169,6 +175,20 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     # If target_columns provided, build SELECT wrapper (explicit conversions).
     # VALIDATION_MODE is not allowed with transformations, so only include it when not using the wrapper.
     if target_columns:
+        # create a temporary/permanent file format object and use its name (table-function requires a constant)
+        fmt_name = (
+            config_file.get("file_format_object")
+            or f"{database_name}.{schema_name}.PROC_COPY_FMT"
+        )
+        # make sure fully qualified
+        if "." not in fmt_name:
+            fmt_name = f"{database_name}.{schema_name}.{fmt_name}"
+        # create or replace file format using config props
+        create_ff_sql = f"CREATE OR REPLACE FILE FORMAT {fmt_name} ({create_ff_inner})"
+        session.sql(create_ff_sql).collect()
+        # e.g. 'DEMO_DB.PUBLIC.PROC_COPY_FMT'
+        fmt_literal = _sql_literal(fmt_name)
+
         sel_parts = []
         for idx, col in enumerate(target_columns, start=1):
             if str(col).strip().upper() == "DOJ":
@@ -176,12 +196,13 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             else:
                 sel_parts.append(f"${idx} AS {col}")
         select_clause = ", ".join(sel_parts)
-        # omit VALIDATION_MODE when using transformation
+
+        # Use the file-format object name as a constant (string literal) for the table-function
         copy_sql = f"""
           COPY INTO {target_table}
           FROM (
             SELECT {select_clause}
-            FROM {from_loc} (FILE_FORMAT => ({ff_inner}))
+            FROM {from_loc} (FILE_FORMAT => {fmt_literal})
           )
           ON_ERROR = '{on_error}'
         """
