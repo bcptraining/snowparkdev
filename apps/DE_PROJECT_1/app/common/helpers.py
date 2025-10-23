@@ -142,14 +142,54 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             """
         ).collect()
 
-    # Build COPY statement (use VALIDATION_MODE to return errors for inspection)
-    copy_sql = f"""
-      COPY INTO {database_name}.{schema_name}.{target_table}
-      FROM '{source_location}'
-      FILE_FORMAT = (TYPE = '{source_file_type}')
-      VALIDATION_MODE = '{validation_mode}'
-      ON_ERROR = '{on_error}'
-    """
+    # Build FILE_FORMAT clause from config.file_format (if present)
+    ff_conf = config_file.get("file_format") or {}
+    ff_items = []
+    for k, v in ff_conf.items():
+        key = k.upper()
+        if isinstance(v, bool):
+            val = "TRUE" if v else "FALSE"
+        elif isinstance(v, (list, tuple)):
+            val = "(" + ", ".join([_sql_literal(x) for x in v]) + ")"
+        else:
+            val = _sql_literal(v) if isinstance(v, str) else str(v)
+        ff_items.append(f"{key} = {val}")
+    ff_inner = ", ".join(
+        ff_items) if ff_items else f"TYPE = '{source_file_type}'"
+
+    # qualify target_table if needed
+    if "." not in target_table:
+        target_table = f"{database_name}.{schema_name}.{target_table}"
+    target_table = target_table.strip()
+
+    # Use raw stage token (expecting '@my_s3_stage' or '@my_s3_stage/path') - do NOT quote it
+    from_loc = source_location
+
+    # If target_columns provided, build SELECT wrapper (explicit conversions)
+    if target_columns:
+        sel_parts = []
+        for idx, col in enumerate(target_columns, start=1):
+            if str(col).strip().upper() == "DOJ":
+                sel_parts.append(f"TO_DATE(${idx}, 'MM/DD/YYYY') AS {col}")
+            else:
+                sel_parts.append(f"${idx} AS {col}")
+        select_clause = ", ".join(sel_parts)
+        copy_sql = f"""
+          COPY INTO {target_table}
+          FROM (
+            SELECT {select_clause}
+            FROM {from_loc} (FILE_FORMAT => ({ff_inner}))
+          )
+          VALIDATION_MODE = '{validation_mode}'
+          ON_ERROR = '{on_error}'
+        """
+    else:
+        copy_sql = f"""
+          COPY INTO {target_table}
+          FROM {from_loc} (FILE_FORMAT => ({ff_inner}))
+          VALIDATION_MODE = '{validation_mode}'
+          ON_ERROR = '{on_error}'
+        """
 
     # Execute COPY and capture returned rows (errors) if any
     rows = session.sql(copy_sql).collect()
