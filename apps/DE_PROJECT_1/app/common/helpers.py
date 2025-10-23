@@ -165,7 +165,8 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     # Use raw stage token (expecting '@my_s3_stage' or '@my_s3_stage/path') - do NOT quote it
     from_loc = source_location
 
-    # If target_columns provided, build SELECT wrapper (explicit conversions)
+    # If target_columns provided, build SELECT wrapper (explicit conversions).
+    # VALIDATION_MODE is not allowed with transformations, so only include it when not using the wrapper.
     if target_columns:
         sel_parts = []
         for idx, col in enumerate(target_columns, start=1):
@@ -174,16 +175,17 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             else:
                 sel_parts.append(f"${idx} AS {col}")
         select_clause = ", ".join(sel_parts)
+        # omit VALIDATION_MODE when using transformation
         copy_sql = f"""
           COPY INTO {target_table}
           FROM (
             SELECT {select_clause}
             FROM {from_loc} (FILE_FORMAT => ({ff_inner}))
           )
-          VALIDATION_MODE = '{validation_mode}'
           ON_ERROR = '{on_error}'
         """
     else:
+        # safe to include VALIDATION_MODE when there's no SELECT transform
         copy_sql = f"""
           COPY INTO {target_table}
           FROM {from_loc} (FILE_FORMAT => ({ff_inner}))
