@@ -6,7 +6,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Optional
 
-from app.common.helpers import copy_to_table, json_to_struct_type
+from app.common.helpers import copy_to_table, json_to_struct_type, persist_copy_errors_from_last_query
 # Import example schema and config for copy_to_table_proc
 from app.common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SCHEMA_PATH
 
@@ -102,4 +102,30 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
 
     # The actual copy is handled by copy_to_table(...) above.
     # Removed the redundant manual COPY which referenced an undefined csv_file_name.
+    # Respect only the canonical config key "persist_all_copy_results"
+    full_audit_flag = bool(config_file.get("persist_all_copy_results", False))
+    # Resolve reject_table_full_name from config (case-insensitive)
+    reject_table = (
+        config_file.get("Reject_table")
+        or config_file.get("reject_table")
+        or config_file.get("RejectTable")
+    )
+    if reject_table:
+        if "." not in reject_table:
+            db = config_file.get("Database_name") or config_file.get("database")
+            schema = config_file.get("Schema_name") or config_file.get("schema")
+            if db and schema:
+                reject_table_full_name = f"{db}.{schema}.{reject_table}"
+            else:
+                # leave unqualified; rely on session's current DB/SCHEMA
+                reject_table_full_name = reject_table
+        else:
+            reject_table_full_name = reject_table
+
+        persist_copy_errors_from_last_query(
+            session, reject_table_full_name=reject_table_full_name, full_audit=full_audit_flag
+        )
+    else:
+        # No reject table configured; skip persisting copy result rows.
+        print("Info: No Reject_table configured in copy config; skipping persist of copy results.")
     return f"✅ Copy completed.\n\nQuery ID: {qid}\n\n{summary_text}"
