@@ -331,4 +331,11 @@ def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB
         err_msg_lit = _sql_literal(err_msg)
         err_code_lit = _sql_literal(err_code)
         src_file_lit = _sql_literal(src_file)
-        src_row_lit = str(src_row) if src_row is not None
+        src_row_lit = str(src_row) if src_row is not None else "NULL"
+
+        insert_sql = f"""
+            INSERT INTO {reject_table_full_name}
+              (payload, error_message, error_code, source_file, source_row)
+            VALUES ({payload_literal}, {err_msg_lit}, {err_code_lit}, {src_file_lit}, {src_row_lit})
+        """
+        session.sql(insert_sql).collect()
