@@ -340,21 +340,20 @@ def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
 
 def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS"):
     """
-    Read the result of the most recent COPY (via RESULT_SCAN(LAST_QUERY_ID()))
-    and persist per-file error metadata into the configured reject table.
-    This function is defensive about available columns and uses an explicit
-    INSERT column list to avoid column-misalignment issues.
+    Read TABLE(RESULT_SCAN(LAST_QUERY_ID())) and persist each result row as JSON
+    into the reject table. This ensures we always capture whatever Snowflake
+    returned (even when named fields are missing).
     """
     try:
         rows = session.sql(
             "SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))").collect()
     except Exception:
-        # nothing to persist or could not read last query result
         return
 
     def q(s):
         return ("'" + str(s).replace("'", "''") + "'") if s is not None and str(s) != "" else "NULL"
 
+    import json
     for r in rows:
         try:
             d = r.asDict()
@@ -364,36 +363,19 @@ def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB
             except Exception:
                 d = {"raw": str(r)}
 
-        # robust field extraction (different COPY outputs expose slightly different names)
-        errors = d.get("errors_seen") or d.get("errors") or 0
-        if not errors:
-            continue
+        # Always persist the raw RESULT_SCAN row as JSON payload for diagnostics
+        payload_json = json.dumps(d, default=str)
+        payload_lit = f"PARSE_JSON({_sql_literal(payload_json)})"
 
-        file_name = (d.get("file") or d.get("file_name")
-                     or d.get("filename") or "").split("/")[-1]
-        status = d.get("status") or ""
-        rows_loaded = d.get("rows_loaded") if d.get(
-            "rows_loaded") is not None else d.get("rows_parsed")
-        rows_parsed = d.get("rows_parsed")
-        first_error = d.get("first_error") or d.get(
-            "first_error_message") or ""
-        first_error_line = d.get("first_error_line") or d.get(
-            "first_error_line_number")
-        first_error_column = d.get(
-            "first_error_column_name") or d.get("first_error_column")
-
-        # Align insert to the reject table schema:
-        # PAYLOAD VARIANT, ERROR_MESSAGE VARCHAR, ERROR_CODE VARCHAR,
-        # SOURCE_FILE VARCHAR, SOURCE_ROW NUMBER, LOAD_TS TIMESTAMP_LTZ
-        payload = d.get("row") or d.get("content") or d.get(
-            "record") or d.get("raw") or d
-        err_msg = first_error or d.get("error") or d.get("message") or ""
+        # Best-effort extract of common fields for searchable columns
+        err_msg = d.get("first_error") or d.get(
+            "first_error_message") or d.get("error") or d.get("message") or ""
         err_code = d.get("code") or d.get("error_code") or ""
-        src_file = file_name or ""
-        src_row = first_error_line if first_error_line is not None else None
+        src_file = (d.get("file") or d.get("file_name")
+                    or d.get("filename") or "").split("/")[-1]
+        src_row = d.get("first_error_line") or d.get(
+            "first_error_line_number") or d.get("line") or d.get("row") or None
 
-        # Prepare SQL literals (use module _sql_literal for safe quoting/JSON)
-        payload_literal = "NULL" if payload is None else f"PARSE_JSON({_sql_literal(payload)})"
         err_msg_lit = _sql_literal(err_msg)
         err_code_lit = _sql_literal(err_code)
         src_file_lit = _sql_literal(src_file)
@@ -401,7 +383,14 @@ def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB
 
         insert_sql = f"""
             INSERT INTO {reject_table_full_name}
-              (payload, error_message, error_code, source_file, source_row)
-            VALUES ({payload_literal}, {err_msg_lit}, {err_code_lit}, {src_file_lit}, {src_row_lit})
+              (payload, error_message, error_code, source_file, source_row, load_ts)
+            VALUES ({payload_lit}, {err_msg_lit}, {err_code_lit}, {src_file_lit}, {src_row_lit}, CURRENT_TIMESTAMP())
         """
-        session.sql(insert_sql).collect()
+        try:
+            session.sql(insert_sql).collect()
+        except Exception:
+            # avoid failing the proc for logging errors; print for debug
+            import sys
+            import traceback
+            print("Warning: failed to persist reject metadata", file=sys.stderr)
+            traceback.print_exc()
