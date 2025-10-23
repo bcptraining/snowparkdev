@@ -153,7 +153,8 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             val = "(" + ", ".join([_sql_literal(x) for x in v]) + ")"
         else:
             val = _sql_literal(v) if isinstance(v, str) else str(v)
-        ff_items.append(f"{key} = {val}")
+        # Use '=>' as the table-function requires
+        ff_items.append(f"{key} => {val}")
     ff_inner = ", ".join(
         ff_items) if ff_items else f"TYPE = '{source_file_type}'"
 
