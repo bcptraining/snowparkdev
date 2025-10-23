@@ -161,7 +161,8 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
         create_ff_items.append(f"{key} = {lit}")
     ff_inner = ", ".join(
         ff_items) if ff_items else f"TYPE = '{source_file_type}'"
-    create_ff_inner = ", ".join(
+    # CREATE FILE FORMAT expects space-separated key = value pairs (no surrounding parentheses)
+    create_ff_inner = " ".join(
         create_ff_items) if create_ff_items else f"TYPE = '{source_file_type}'"
 
     # qualify target_table if needed
@@ -184,7 +185,8 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
         if "." not in fmt_name:
             fmt_name = f"{database_name}.{schema_name}.{fmt_name}"
         # create or replace file format using config props
-        create_ff_sql = f"CREATE OR REPLACE FILE FORMAT {fmt_name} ({create_ff_inner})"
+        # emit CREATE ... FILE FORMAT without parentheses (valid Snowflake syntax)
+        create_ff_sql = f"CREATE OR REPLACE FILE FORMAT {fmt_name} {create_ff_inner}"
         session.sql(create_ff_sql).collect()
         # e.g. 'DEMO_DB.PUBLIC.PROC_COPY_FMT'
         fmt_literal = _sql_literal(fmt_name)
