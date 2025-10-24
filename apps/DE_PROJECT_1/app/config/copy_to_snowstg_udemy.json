@@ -6,7 +6,8 @@
   "persist_all_copy_results": true,
   "target_columns": ["FIRST_NAME","LAST_NAME","EMAIL","ADDRESS","CITY","DOJ"],
   "on_error": "CONTINUE",
-  "Source_location": "@my_s3_stage",
+  "Source_location_real": "@my_s3_stage",
+  "Source_location": "@dev_internal_stage",
   "Source_file_type": "csv",
   "file_format": {
     "type": "CSV",
