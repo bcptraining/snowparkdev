@@ -7,7 +7,7 @@
   "target_columns": ["FIRST_NAME","LAST_NAME","EMAIL","ADDRESS","CITY","DOJ"],
   "on_error": "CONTINUE",
   "Source_location_real": "@my_s3_stage",
-  "Source_location": "@dev_internal_stage",
+  "Source_location": "@DEMO_DB.PUBLIC.DEV_INTERNAL_STAGE",
   "Source_file_type": "csv",
   "file_format": {
     "type": "CSV",
