@@ -338,59 +338,39 @@ def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
     return config, schema
 
 
-def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS"):
+def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS", full_audit=False):
     """
-    Read TABLE(RESULT_SCAN(LAST_QUERY_ID())) and persist each result row as JSON
-    into the reject table. This ensures we always capture whatever Snowflake
-    returned (even when named fields are missing).
+    Persist results returned by COPY (via RESULT_SCAN) into the reject table.
+    Must be run in the same session immediately after the COPY so RESULT_SCAN(LAST_QUERY_ID()) is available.
+    If full_audit is False only non-LOADED rows are persisted; if True all rows are persisted.
     """
+    # Implementation note: use RESULT_SCAN(LAST_QUERY_ID()) so this must be called
+    # immediately after the COPY (no intervening statements that change LAST_QUERY_ID()).
     try:
-        rows = session.sql(
-            "SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))").collect()
-    except Exception:
-        return
-
-    def q(s):
-        return ("'" + str(s).replace("'", "''") + "'") if s is not None and str(s) != "" else "NULL"
-
-    import json
-    for r in rows:
-        try:
-            d = r.asDict()
-        except Exception:
-            try:
-                d = dict(r)
-            except Exception:
-                d = {"raw": str(r)}
-
-        # Always persist the raw RESULT_SCAN row as JSON payload for diagnostics
-        payload_json = json.dumps(d, default=str)
-        payload_lit = f"PARSE_JSON({_sql_literal(payload_json)})"
-
-        # Best-effort extract of common fields for searchable columns
-        err_msg = d.get("first_error") or d.get(
-            "first_error_message") or d.get("error") or d.get("message") or ""
-        err_code = d.get("code") or d.get("error_code") or ""
-        src_file = (d.get("file") or d.get("file_name")
-                    or d.get("filename") or "").split("/")[-1]
-        src_row = d.get("first_error_line") or d.get(
-            "first_error_line_number") or d.get("line") or d.get("row") or None
-
-        err_msg_lit = _sql_literal(err_msg)
-        err_code_lit = _sql_literal(err_code)
-        src_file_lit = _sql_literal(src_file)
-        src_row_lit = str(src_row) if src_row is not None else "NULL"
+        # only persist non-loaded rows by default (errors/failed/parital). Allow opt-in for full audit.
+        where_clause = "" if full_audit else "WHERE COALESCE(status, '') != 'LOADED'"
 
         insert_sql = f"""
-            INSERT INTO {reject_table_full_name}
-              (payload, error_message, error_code, source_file, source_row, load_ts)
-            VALUES ({payload_lit}, {err_msg_lit}, {err_code_lit}, {src_file_lit}, {src_row_lit}, CURRENT_TIMESTAMP())
+        INSERT INTO {reject_table_full_name} (PAYLOAD, ERROR_MESSAGE, ERROR_CODE, SOURCE_FILE, SOURCE_ROW, LOAD_TS)
+        SELECT
+          OBJECT_CONSTRUCT(*) AS PAYLOAD,
+          (OBJECT_CONSTRUCT(*)):"first_error"::STRING AS ERROR_MESSAGE,
+          (OBJECT_CONSTRUCT(*)):"error_code"::STRING  AS ERROR_CODE,
+          COALESCE((OBJECT_CONSTRUCT(*)):"file"::STRING, (OBJECT_CONSTRUCT(*)):"source_file"::STRING) AS SOURCE_FILE,
+          COALESCE((OBJECT_CONSTRUCT(*)):"first_error_line"::NUMBER, (OBJECT_CONSTRUCT(*)):"source_row"::NUMBER) AS SOURCE_ROW,
+          CURRENT_TIMESTAMP()
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
+        {where_clause}
+        ;
         """
+        # execute the insert in the same session
+        session.sql(insert_sql).collect()
+        return True
+    except Exception as e:
+        # return False or raise depending on caller expectations; stored proc expects callable to run without crashing
+        # keep behavior non-fatal but return/print info
         try:
-            session.sql(insert_sql).collect()
+            print(f"persist_copy_errors_from_last_query: failed: {e}")
         except Exception:
-            # avoid failing the proc for logging errors; print for debug
-            import sys
-            import traceback
-            print("Warning: failed to persist reject metadata", file=sys.stderr)
-            traceback.print_exc()
+            pass
+        return False
