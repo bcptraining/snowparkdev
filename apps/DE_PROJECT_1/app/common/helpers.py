@@ -338,16 +338,22 @@ def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
     return config, schema
 
 
-def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS", full_audit=False):
+def persist_copy_errors_from_last_query(
+    session,
+    reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS",
+    full_audit=False,
+    query_id=None,
+):
     """
-    Persist results returned by COPY (via RESULT_SCAN) into the reject table.
-    Must be run in the same session immediately after the COPY so RESULT_SCAN(LAST_QUERY_ID()) is available.
-    If full_audit is False only non-LOADED rows are persisted; if True all rows are persisted.
+    Persist COPY result rows into reject table. If query_id is provided use RESULT_SCAN('<query_id>')
+    so the call is deterministic even if other statements run in the session.
     """
-    # Implementation note: use RESULT_SCAN(LAST_QUERY_ID()) so this must be called
-    # immediately after the COPY (no intervening statements that change LAST_QUERY_ID()).
     try:
-        # only persist non-loaded rows by default (errors/failed/parital). Allow opt-in for full audit.
+        if query_id:
+            from_clause = f"TABLE(RESULT_SCAN('{query_id}'))"
+        else:
+            from_clause = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
+
         where_clause = "" if full_audit else "WHERE COALESCE(status, '') != 'LOADED'"
 
         insert_sql = f"""
@@ -359,18 +365,12 @@ def persist_copy_errors_from_last_query(session, reject_table_full_name="DEMO_DB
           COALESCE((OBJECT_CONSTRUCT(*)):"file"::STRING, (OBJECT_CONSTRUCT(*)):"source_file"::STRING) AS SOURCE_FILE,
           COALESCE((OBJECT_CONSTRUCT(*)):"first_error_line"::NUMBER, (OBJECT_CONSTRUCT(*)):"source_row"::NUMBER) AS SOURCE_ROW,
           CURRENT_TIMESTAMP()
-        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
+        FROM {from_clause}
         {where_clause}
         ;
         """
-        # execute the insert in the same session
         session.sql(insert_sql).collect()
         return True
     except Exception as e:
-        # return False or raise depending on caller expectations; stored proc expects callable to run without crashing
-        # keep behavior non-fatal but return/print info
-        try:
-            print(f"persist_copy_errors_from_last_query: failed: {e}")
-        except Exception:
-            pass
+        print(f"persist_copy_errors_from_last_query: {e}")
         return False
