@@ -336,24 +336,37 @@ def persist_copy_errors_from_last_query(
 
     - If query_id is provided, use TABLE(RESULT_SCAN('<query_id>')) to avoid LAST_QUERY_ID() races.
     - Normalizes common column names for error_message, error_code, source_file, source_row.
-    - Excludes rows that are simply the output of SELECT LAST_QUERY_ID() (they show up as a single column).
+    - Excludes rows that are simply the output of SELECT LAST_QUERY_ID().
     - When full_audit is False only non-LOADED rows are persisted.
+    - Returns True on success or when there were no rows to persist.
     """
     try:
-        # choose the correct RESULT_SCAN target
+        # choose RESULT_SCAN target deterministically
         if query_id:
             result_table_expr = f"TABLE(RESULT_SCAN('{query_id}'))"
         else:
             result_table_expr = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
 
-        # build a one-column subselect with OBJECT_CONSTRUCT(*) AS obj for uniform extraction
+        # uniform object constructor for extraction
         from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_table_expr})"
 
-        # only persist non-LOADED rows by default
         status_filter = "" if full_audit else "AND COALESCE(obj:'status'::STRING,'') != 'LOADED'"
-
-        # exclude rows that are just LAST_QUERY_ID() results
         exclude_last_qid = "AND obj:'LAST_QUERY_ID()' IS NULL"
+
+        # quick count check: avoid inserting when only LAST_QUERY_ID() or zero rows present
+        count_sql = f"SELECT COUNT(*) FROM {from_subselect} WHERE 1=1 {status_filter} {exclude_last_qid}"
+        try:
+            cnt = int(session.sql(count_sql).collect()[0][0])
+        except Exception:
+            cnt = 0
+
+        if cnt == 0:
+            try:
+                print(
+                    f"persist_copy_errors_from_last_query: no rows to persist (count=0) for query_id={query_id}")
+            except Exception:
+                pass
+            return True
 
         insert_sql = f"""
         INSERT INTO {reject_table_full_name} (PAYLOAD, ERROR_MESSAGE, ERROR_CODE, SOURCE_FILE, SOURCE_ROW, LOAD_TS)
