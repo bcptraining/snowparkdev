@@ -1,7 +1,7 @@
 {
   "Database_name": "DEMO_DB",
   "Schema_name": "PUBLIC",
-  "Target_table": "EMPLOYEE",
+  "Target_table": "EMPLOYEE2",
   "Reject_table": "EMPLOYEE_REJECTS",
   "persist_all_copy_results": true,
   "target_columns": ["FIRST_NAME","LAST_NAME","EMAIL","ADDRESS","CITY","DOJ"],
