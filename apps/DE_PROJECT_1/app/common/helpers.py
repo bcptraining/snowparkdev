@@ -332,32 +332,72 @@ def persist_copy_errors_from_last_query(
     query_id=None,
 ):
     """
-    Persist COPY result rows into reject table. If query_id is provided use RESULT_SCAN('<query_id>')
-    so the call is deterministic even if other statements run in the session.
+    Persist COPY/RESULT_SCAN rows into the reject table in a resilient way.
+
+    - If query_id is provided, use TABLE(RESULT_SCAN('<query_id>')) to avoid LAST_QUERY_ID() races.
+    - Normalizes common column names for error_message, error_code, source_file, source_row.
+    - Excludes rows that are simply the output of SELECT LAST_QUERY_ID() (they show up as a single column).
+    - When full_audit is False only non-LOADED rows are persisted.
     """
     try:
+        # choose the correct RESULT_SCAN target
         if query_id:
-            from_clause = f"TABLE(RESULT_SCAN('{query_id}'))"
+            result_table_expr = f"TABLE(RESULT_SCAN('{query_id}'))"
         else:
-            from_clause = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
+            result_table_expr = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
 
-        where_clause = "" if full_audit else "WHERE COALESCE(status, '') != 'LOADED'"
+        # build a one-column subselect with OBJECT_CONSTRUCT(*) AS obj for uniform extraction
+        from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_table_expr})"
+
+        # only persist non-LOADED rows by default
+        status_filter = "" if full_audit else "AND COALESCE(obj:'status'::STRING,'') != 'LOADED'"
+
+        # exclude rows that are just LAST_QUERY_ID() results
+        exclude_last_qid = "AND obj:'LAST_QUERY_ID()' IS NULL"
 
         insert_sql = f"""
         INSERT INTO {reject_table_full_name} (PAYLOAD, ERROR_MESSAGE, ERROR_CODE, SOURCE_FILE, SOURCE_ROW, LOAD_TS)
         SELECT
-          OBJECT_CONSTRUCT(*) AS PAYLOAD,
-          (OBJECT_CONSTRUCT(*)):"first_error"::STRING AS ERROR_MESSAGE,
-          (OBJECT_CONSTRUCT(*)):"error_code"::STRING  AS ERROR_CODE,
-          COALESCE((OBJECT_CONSTRUCT(*)):"file"::STRING, (OBJECT_CONSTRUCT(*)):"source_file"::STRING) AS SOURCE_FILE,
-          COALESCE((OBJECT_CONSTRUCT(*)):"first_error_line"::NUMBER, (OBJECT_CONSTRUCT(*)):"source_row"::NUMBER) AS SOURCE_ROW,
-          CURRENT_TIMESTAMP()
-        FROM {from_clause}
-        {where_clause}
+          obj AS PAYLOAD,
+          COALESCE(
+            obj:'first_error'::STRING,
+            obj:'error'::STRING,
+            obj:'message'::STRING,
+            obj:'first_error_message'::STRING,
+            ''
+          ) AS ERROR_MESSAGE,
+          COALESCE(
+            obj:'error_code'::STRING,
+            obj:'code'::STRING,
+            obj:'err'::STRING,
+            ''
+          ) AS ERROR_CODE,
+          COALESCE(
+            obj:'file'::STRING,
+            obj:'source'::STRING,
+            obj:'src_file'::STRING,
+            obj:'source_file'::STRING,
+            ''
+          ) AS SOURCE_FILE,
+          COALESCE(
+            obj:'first_error_line'::NUMBER,
+            obj:'source_row'::NUMBER,
+            obj:'row_number'::NUMBER,
+            obj:'line'::NUMBER,
+            NULL
+          ) AS SOURCE_ROW,
+          CURRENT_TIMESTAMP() AS LOAD_TS
+        FROM {from_subselect}
+        WHERE 1=1
+        {status_filter}
+        {exclude_last_qid}
         ;
         """
         session.sql(insert_sql).collect()
         return True
     except Exception as e:
-        print(f"persist_copy_errors_from_last_query: {e}")
+        try:
+            print(f"persist_copy_errors_from_last_query: {e}")
+        except Exception:
+            pass
         return False
