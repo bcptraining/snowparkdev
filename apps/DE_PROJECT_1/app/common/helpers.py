@@ -220,9 +220,16 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     # Execute COPY and capture returned rows (errors) if any
     rows = session.sql(copy_sql).collect()
 
+    # Immediately capture the COPY query id (do this before any other SQL)
+    qid = None
+    try:
+        qid = session.sql("SELECT LAST_QUERY_ID()").collect()[0][0]
+    except Exception:
+        qid = None
+
     # DEBUG: show how many rows COPY returned and sample shape
     try:
-        print(f"📋 COPY returned {len(rows)} result rows")
+        print(f"📋 COPY returned {len(rows)} result rows (qid={qid})")
         if rows:
             try:
                 sample = rows[0].asDict()
@@ -236,46 +243,26 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     except Exception:
         pass
 
-    # If VALIDATION_MODE='RETURN_ERRORS', Snowflake returns error rows describing rejects.
-    # Persist them into the reject table if configured.
+    # Persist COPY result rows into the reject table in a deterministic way
     if reject_table and rows:
-        for r in rows:
-            try:
-                d = r.asDict()
-            except Exception:
-                # Best-effort fallback for row->dict
-                try:
-                    d = dict(r)
-                except Exception:
-                    d = {"raw": str(r)}
-
-            # Best-effort mapping: adapt keys depending on returned structure
-            payload = d.get("row") or d.get(
-                "content") or d.get("record") or d.get("raw")
-            err_msg = d.get("error") or d.get("message") or d.get("err") or ""
-            err_code = d.get("code") or d.get("error_code") or ""
-            src_file = d.get("file") or d.get(
-                "source") or d.get("src_file") or ""
-            src_row = d.get("line") or d.get(
-                "row_number") or d.get("row") or None
-
-            # Insert into reject table (use PARSE_JSON for payload when possible)
-            # Emit NULL when payload is missing to avoid PARSE_JSON(NULL) SQL error
-            payload_literal = (
-                "NULL" if payload is None else f"PARSE_JSON({_sql_literal(payload)})"
+        # prefer using the helper with the explicit query id so RESULT_SCAN is deterministic
+        try:
+            # normalize full table name
+            reject_table_full_name = (
+                reject_table
+                if "." in reject_table
+                else f"{database_name}.{schema_name}.{reject_table}"
             )
-            err_msg_lit = _sql_literal(err_msg)
-            err_code_lit = _sql_literal(err_code)
-            src_file_lit = _sql_literal(src_file)
-            src_row_lit = str(src_row) if src_row is not None else "NULL"
-
-            insert_sql = f"""
-                INSERT INTO {database_name}.{schema_name}.{reject_table}
-                  (payload, error_message, error_code, source_file, source_row)
-                VALUES ({payload_literal}, {err_msg_lit}, {err_code_lit}, {src_file_lit}, {src_row_lit})
-            """
-            session.sql(insert_sql).collect()
-
+            # Use the helper which will call TABLE(RESULT_SCAN('<qid>'))
+            persist_copy_errors_from_last_query(
+                session,
+                reject_table_full_name=reject_table_full_name,
+                full_audit=False,
+                query_id=qid,
+            )
+        except Exception as e:
+            # fallback: if helper not available, leave the old per-row insert logic (or log)
+            print(f"persist_copy_errors helper failed: {e}")
     # Return the rows and a pseudo qid (adapt as your code expects)
     # If COPY returns a query id elsewhere, preserve that; otherwise return the rows
     qid = None
