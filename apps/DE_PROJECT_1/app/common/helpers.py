@@ -382,8 +382,13 @@ def persist_copy_errors_from_last_query(
           COALESCE(
             obj:'error_code'::STRING,
             obj:'code'::STRING,
-            obj:'err'::STRING,
-            ''
+            -- map common COPY error messages to stable error codes
+            CASE
+              WHEN LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%date%' AND LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%not recognized%' THEN 'DATE_PARSE_ERROR'
+              WHEN LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%matching enclosing character%' THEN 'CSV_QUOTE_ERROR'
+              WHEN LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%column count%' OR LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%column count mismatch%' THEN 'COLUMN_COUNT_MISMATCH'
+              ELSE 'COPY_ERROR'
+            END
           ) AS ERROR_CODE,
           COALESCE(
             obj:'file'::STRING,
