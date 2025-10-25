@@ -1,4 +1,3 @@
-
 from app.python.manual_procs import copy_to_table_proc, test_manual_proc
 from app.common.helpers import json_to_struct_type
 from tabulate import tabulate  # For tabular outputs.
@@ -276,6 +275,7 @@ if __name__ == "__main__":
         "account": os.getenv("SNOWFLAKE_ACCOUNT"),
         "user": os.getenv("SNOWFLAKE_USER"),
         "password": os.getenv("SNOWFLAKE_PASSWORD"),
+        "role": os.getenv("SNOWFLAKE_ROLE"),
         "role": os.getenv("SNOWFLAKE_ROLE"),
         "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
         "database": os.getenv("SNOWFLAKE_DATABASE"),
