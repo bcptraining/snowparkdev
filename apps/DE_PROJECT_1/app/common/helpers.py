@@ -120,6 +120,16 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
         on_error,
     ) = extract_copy_config(config_file)
 
+    # Allow callers to override database/schema or provide app_name/schema_key
+    database_name = kwargs.get("database_name") or config_file.get(
+        "database_name") or database_name
+    schema_name = kwargs.get("schema_name") or config_file.get(
+        "schema_name") or schema_name
+    app_name = kwargs.get("app_name") or config_file.get(
+        "app_name") or "DE_PROJECT_1"
+    schema_key = kwargs.get("schema_key") or config_file.get(
+        "schema_key") or None
+
     # Normalize / provide a sane default for on_error if missing
     on_error = (on_error or "CONTINUE").upper()
 
@@ -129,15 +139,31 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
 
     # Ensure reject table exists (safe schema using VARIANT payload)
     if reject_table:
+        # allow caller to supply a simple name; map to fully-qualified name
+        reject_table_full_name = (
+            reject_table if "." in reject_table else f"{database_name}.{schema_name}.{reject_table}"
+        )
+        # create an enriched rejects table schema (idempotent)
         session.sql(
             f"""
-            CREATE TABLE IF NOT EXISTS {database_name}.{schema_name}.{reject_table} (
+            CREATE TABLE IF NOT EXISTS {reject_table_full_name} (
+              id BIGINT AUTOINCREMENT,
+              app_name VARCHAR,                -- application name that owns the load
+              schema_key VARCHAR,              -- optional schema key / version used for validation
               payload VARIANT,
               error_message VARCHAR,
               error_code VARCHAR,
+              source_stage VARCHAR,
               source_file VARCHAR,
               source_row INTEGER,
-              load_ts TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP
+              raw_line STRING,
+              parsed_cols VARIANT,
+              copy_qid VARCHAR,
+              target_table VARCHAR,
+              retry_status VARCHAR DEFAULT 'NEW',
+              attempts INTEGER DEFAULT 0,
+              first_seen_ts TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP,
+              last_attempt_ts TIMESTAMP_LTZ
             )
             """
         ).collect()
@@ -244,34 +270,33 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
         pass
 
     # Persist COPY result rows into the reject table in a deterministic way
+    persisted_count = None
     if reject_table and rows:
         # prefer using the helper with the explicit query id so RESULT_SCAN is deterministic
         try:
-            # normalize full table name
+            # normalize full table name (reuse the one created above)
             reject_table_full_name = (
                 reject_table
                 if "." in reject_table
                 else f"{database_name}.{schema_name}.{reject_table}"
             )
             # Use the helper which will call TABLE(RESULT_SCAN('<qid>'))
-            persist_copy_errors_from_last_query(
+            persisted_count = persist_copy_errors_from_last_query(
                 session,
                 reject_table_full_name=reject_table_full_name,
                 full_audit=False,
                 query_id=qid,
+                target_table=target_table,
+                app_name=app_name,
+                schema_key=schema_key,
             )
+            print(f"persisted_count={persisted_count} for qid={qid}")
         except Exception as e:
             # fallback: if helper not available, leave the old per-row insert logic (or log)
             print(f"persist_copy_errors helper failed: {e}")
-    # Return the rows and a pseudo qid (adapt as your code expects)
-    # If COPY returns a query id elsewhere, preserve that; otherwise return the rows
-    qid = None
-    try:
-        qid = session.sql("SELECT LAST_QUERY_ID()").collect()[0][0]
-    except Exception:
-        qid = None
-
-    return rows, qid
+            persisted_count = None
+    # Return rows, qid and persisted_count (persisted_count may be None)
+    return rows, qid, persisted_count
 # ✅ Function to convert JSON schema to StructType
 
 
@@ -330,15 +355,18 @@ def persist_copy_errors_from_last_query(
     reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS",
     full_audit=False,
     query_id=None,
+    target_table: Optional[str] = None,
+    app_name: Optional[str] = None,
+    schema_key: Optional[str] = None,
 ):
     """
     Persist COPY/RESULT_SCAN rows into the reject table in a resilient way.
 
     - If query_id is provided, use TABLE(RESULT_SCAN('<query_id>')) to avoid LAST_QUERY_ID() races.
-    - Normalizes common column names for error_message, error_code, source_file, source_row.
-    - Excludes rows that are simply the output of SELECT LAST_QUERY_ID().
+    - Persists file-summary rows and per-row rejects; captures raw_line, parsed_cols and copy_qid for recovery.
+    - Adds app_name and schema_key to help tie rejects to the deploying app + validation schema.
     - When full_audit is False only non-LOADED rows are persisted.
-    - Returns True on success or when there were no rows to persist.
+    - Returns number of rows inserted (0 when nothing to persist), or -1 on error.
     """
     try:
         # choose RESULT_SCAN target deterministically
@@ -350,8 +378,8 @@ def persist_copy_errors_from_last_query(
         # uniform object constructor for extraction
         from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_table_expr})"
 
-        status_filter = "" if full_audit else "AND COALESCE(obj:'status'::STRING,'') != 'LOADED'"
-        exclude_last_qid = "AND obj:'LAST_QUERY_ID()' IS NULL"
+        status_filter = "" if full_audit else "AND COALESCE(obj:\"status\"::STRING,'') != 'LOADED'"
+        exclude_last_qid = "AND obj:\"LAST_QUERY_ID()\" IS NULL"
 
         # quick count check: avoid inserting when only LAST_QUERY_ID() or zero rows present
         count_sql = f"SELECT COUNT(*) FROM {from_subselect} WHERE 1=1 {status_filter} {exclude_last_qid}"
@@ -366,45 +394,47 @@ def persist_copy_errors_from_last_query(
                     f"persist_copy_errors_from_last_query: no rows to persist (count=0) for query_id={query_id}")
             except Exception:
                 pass
-            return True
+            return 0
+
+        # prepare SQL literal for copy_qid, target_table, app_name and schema_key
+        copy_qid_lit = _sql_literal(query_id) if query_id else "NULL"
+        target_table_lit = _sql_literal(
+            target_table) if target_table else "NULL"
+        app_name_lit = _sql_literal(app_name) if app_name else "NULL"
+        schema_key_lit = _sql_literal(schema_key) if schema_key else "NULL"
 
         insert_sql = f"""
-        INSERT INTO {reject_table_full_name} (PAYLOAD, ERROR_MESSAGE, ERROR_CODE, SOURCE_FILE, SOURCE_ROW, LOAD_TS)
+        INSERT INTO {reject_table_full_name}
+          (app_name, schema_key, payload, error_message, error_code, source_stage, source_file, source_row, raw_line, parsed_cols, copy_qid, target_table, first_seen_ts)
         SELECT
+          {app_name_lit} AS APP_NAME,
+          {schema_key_lit} AS SCHEMA_KEY,
           obj AS PAYLOAD,
           COALESCE(
-            obj:'first_error'::STRING,
-            obj:'error'::STRING,
-            obj:'message'::STRING,
-            obj:'first_error_message'::STRING,
+            obj:"first_error"::STRING,
+            obj:"error"::STRING,
+            obj:"message"::STRING,
+            obj:"first_error_message"::STRING,
             ''
           ) AS ERROR_MESSAGE,
           COALESCE(
-            obj:'error_code'::STRING,
-            obj:'code'::STRING,
-            -- map common COPY error messages to stable error codes
+            obj:"error_code"::STRING,
+            obj:"code"::STRING,
             CASE
-              WHEN LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%date%' AND LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%not recognized%' THEN 'DATE_PARSE_ERROR'
-              WHEN LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%matching enclosing character%' THEN 'CSV_QUOTE_ERROR'
-              WHEN LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%column count%' OR LOWER(COALESCE(obj:'first_error'::STRING, '')) LIKE '%column count mismatch%' THEN 'COLUMN_COUNT_MISMATCH'
+              WHEN LOWER(COALESCE(obj:"first_error"::STRING, '')) LIKE '%date%' AND LOWER(COALESCE(obj:"first_error"::STRING, '')) LIKE '%not recognized%' THEN 'DATE_PARSE_ERROR'
+              WHEN LOWER(COALESCE(obj:"first_error"::STRING, '')) LIKE '%matching enclosing character%' THEN 'CSV_QUOTE_ERROR'
+              WHEN LOWER(COALESCE(obj:"first_error"::STRING, '')) LIKE '%column count%' OR LOWER(COALESCE(obj:"first_error"::STRING, '')) LIKE '%column count mismatch%' THEN 'COLUMN_COUNT_MISMATCH'
               ELSE 'COPY_ERROR'
             END
           ) AS ERROR_CODE,
-          COALESCE(
-            obj:'file'::STRING,
-            obj:'source'::STRING,
-            obj:'src_file'::STRING,
-            obj:'source_file'::STRING,
-            ''
-          ) AS SOURCE_FILE,
-          COALESCE(
-            obj:'first_error_line'::NUMBER,
-            obj:'source_row'::NUMBER,
-            obj:'row_number'::NUMBER,
-            obj:'line'::NUMBER,
-            NULL
-          ) AS SOURCE_ROW,
-          CURRENT_TIMESTAMP() AS LOAD_TS
+          obj:"stage"::STRING AS SOURCE_STAGE,
+          COALESCE(obj:"file"::STRING, obj:"source_file"::STRING, '') AS SOURCE_FILE,
+          COALESCE(obj:"first_error_line"::NUMBER, obj:"source_row"::NUMBER, obj:"line"::NUMBER, NULL) AS SOURCE_ROW,
+          obj:"row"::STRING AS RAW_LINE,
+          obj:"record"::VARIANT AS PARSED_COLS,
+          {copy_qid_lit} AS COPY_QID,
+          {target_table_lit} AS TARGET_TABLE,
+          CURRENT_TIMESTAMP() AS FIRST_SEEN_TS
         FROM {from_subselect}
         WHERE 1=1
         {status_filter}
@@ -412,10 +442,10 @@ def persist_copy_errors_from_last_query(
         ;
         """
         session.sql(insert_sql).collect()
-        return True
+        return cnt
     except Exception as e:
         try:
             print(f"persist_copy_errors_from_last_query: {e}")
         except Exception:
             pass
-        return False
+        return -1
