@@ -274,12 +274,13 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     if reject_table and rows:
         # prefer using the helper with the explicit query id so RESULT_SCAN is deterministic
         try:
-            # normalize full table name (reuse the one created above)
+            # normalize fully-qualified reject table name (computed once)
             reject_table_full_name = (
                 reject_table
                 if "." in reject_table
                 else f"{database_name}.{schema_name}.{reject_table}"
             )
+
             # Use the helper which will call TABLE(RESULT_SCAN('<qid>'))
             persisted_count = persist_copy_errors_from_last_query(
                 session,
@@ -295,6 +296,7 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             # fallback: if helper not available, leave the old per-row insert logic (or log)
             print(f"persist_copy_errors helper failed: {e}")
             persisted_count = None
+
     # Return rows, qid and persisted_count (persisted_count may be None)
     return rows, qid, persisted_count
 # ✅ Function to convert JSON schema to StructType
