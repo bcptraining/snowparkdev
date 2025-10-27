@@ -153,9 +153,14 @@ def register_manual_procs(
             if len(params) < 1 or params[0].name != "session":
                 raise ValueError(
                     f"First parameter must be 'session', got '{params[0].name}'")
-            if len(params[1:]) != expected_input_count:
+            # ignore var-positional and var-keyword params when counting user-supplied args
+            user_params = [
+                p for p in params[1:]
+                if p.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+            ]
+            if len(user_params) != expected_input_count:
                 raise ValueError(
-                    f"Expected {expected_input_count} user-supplied args, got {len(params[1:])}")
+                    f"Expected {expected_input_count} user-supplied args, got {len(user_params)}")
 
         validate_manual_proc_signature(patched_func, len(proc["input_types"]))
 
