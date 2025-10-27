@@ -4,8 +4,6 @@ from tabulate import tabulate
 import json
 from importlib import resources
 from pathlib import Path
-from typing import Optional
-
 from app.common.helpers import copy_to_table, json_to_struct_type, persist_copy_errors_from_last_query
 # Import example schema and config for copy_to_table_proc
 from app.common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SCHEMA_PATH
