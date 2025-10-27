@@ -7,7 +7,7 @@ from pathlib import Path
 from app.common.helpers import copy_to_table, json_to_struct_type, persist_copy_errors_from_last_query
 # Import example schema and config for copy_to_table_proc
 from app.common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SCHEMA_PATH
-from typing import Optional
+# typing.Optional not used anymore
 
 
 #  Example procedure to copy data from one table to another using dynamic config and schema files
@@ -16,7 +16,7 @@ def test_manual_proc(session: Session, name: str) -> str:
     return f"Hello, {name}"
 
 
-def copy_to_table_proc(session: Session, schema_key: str, schema: Optional[str] = None, **kwargs):
+def copy_to_table_proc(session: Session, schema_key: str, **kwargs):
     """
     tags: core
     description: Copy staging data into target table using a schema key to select
@@ -88,9 +88,7 @@ def copy_to_table_proc(session: Session, schema_key: str, schema: Optional[str] 
     # preserve previous behavior but include persisted_count in logs/result
     if persisted_count is not None:
         print(f"📥 persisted_count={persisted_count}")
-
-    # return a stable 3-tuple (backwards-compatible with callers that handle two values)
-    rows, qid, persisted_count
+    # continue to formatting and final string return below
 
     # -----------------------
     # Helper to format results (kept in place)
