@@ -66,8 +66,15 @@ def copy_to_table_proc(session: Session, schema_key: str, **kwargs):
 
     # Execute copy
     try:
+        # ensure schema_key and app_name flow into the helper
+        new_kwargs = dict(kwargs or {})
+        new_kwargs.setdefault("schema_key", schema_key)
+        new_kwargs.setdefault("app_name", new_kwargs.get(
+            "app_name") or "DE_PROJECT_1")
+
         # call the helper which may return (rows, qid) or (rows, qid, persisted_count)
-        result = copy_to_table(session, config_file, schema=schema, **kwargs)
+        result = copy_to_table(session, config_file,
+                               schema=schema, **new_kwargs)
     except Exception as e:
         return f"❌ Copy operation failed: {e}"
 

@@ -402,9 +402,11 @@ def persist_copy_errors_from_last_query(
         copy_qid_lit = _sql_literal(query_id) if query_id else "NULL"
         target_table_lit = _sql_literal(
             target_table) if target_table else "NULL"
-        app_name_lit = _sql_literal(app_name) if app_name else "NULL"
+        # default app_name to a sensible literal if not supplied
+        app_name_lit = _sql_literal(app_name or "DE_PROJECT_1")
         schema_key_lit = _sql_literal(schema_key) if schema_key else "NULL"
 
+        # Insert only reject-like rows and populate fallbacks for file/row/parsed record keys
         insert_sql = f"""
         INSERT INTO {reject_table_full_name}
           (app_name, schema_key, payload, error_message, error_code, source_stage, source_file, source_row, raw_line, parsed_cols, copy_qid, target_table, first_seen_ts)
@@ -429,11 +431,19 @@ def persist_copy_errors_from_last_query(
               ELSE 'COPY_ERROR'
             END
           ) AS ERROR_CODE,
-          obj:"stage"::STRING AS SOURCE_STAGE,
-          COALESCE(obj:"file"::STRING, obj:"source_file"::STRING, '') AS SOURCE_FILE,
+          -- try multiple common keys for stage
+          COALESCE(obj:"stage"::STRING, obj:"stage_location"::STRING, obj:"stage_path"::STRING, '') AS SOURCE_STAGE,
+          -- try multiple common keys for filename/path
+          COALESCE(obj:"file"::STRING, obj:"source_file"::STRING, obj:"path"::STRING, '') AS SOURCE_FILE,
           COALESCE(obj:"first_error_line"::NUMBER, obj:"source_row"::NUMBER, obj:"line"::NUMBER, NULL) AS SOURCE_ROW,
-          obj:"row"::STRING AS RAW_LINE,
-          obj:"record"::VARIANT AS PARSED_COLS,
+          -- RAW_LINE: prefer obj.row (string) but fallback to textual variants of record/count
+          COALESCE(obj:"row"::STRING,
+                   TRY_TO_VARCHAR(obj:"raw_line"::STRING),
+                   TRY_TO_VARCHAR(obj:"record"::VARIANT),
+                   TRY_TO_VARCHAR(obj:"COUNT(*)"::VARIANT),
+                   '') AS RAW_LINE,
+          -- PARSED_COLS: try several keys that may contain structured record info
+          COALESCE(obj:"record"::VARIANT, obj:"record_values"::VARIANT, obj:"parsed"::VARIANT, NULL) AS PARSED_COLS,
           {copy_qid_lit} AS COPY_QID,
           {target_table_lit} AS TARGET_TABLE,
           CURRENT_TIMESTAMP() AS FIRST_SEEN_TS
