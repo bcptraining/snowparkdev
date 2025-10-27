@@ -7,6 +7,7 @@ from pathlib import Path
 from app.common.helpers import copy_to_table, json_to_struct_type, persist_copy_errors_from_last_query
 # Import example schema and config for copy_to_table_proc
 from app.common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SCHEMA_PATH
+from typing import Optional
 
 
 #  Example procedure to copy data from one table to another using dynamic config and schema files
