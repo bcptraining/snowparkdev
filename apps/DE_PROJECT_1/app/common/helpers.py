@@ -282,16 +282,63 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             )
 
             # Use the helper which will call TABLE(RESULT_SCAN('<qid>'))
-            persisted_count = persist_copy_errors_from_last_query(
-                session,
-                reject_table_full_name=reject_table_full_name,
-                full_audit=False,
-                query_id=qid,
-                target_table=target_table,
-                app_name=app_name,
-                schema_key=schema_key,
-            )
-            print(f"persisted_count={persisted_count} for qid={qid}")
+            try:
+                persisted_count = persist_copy_errors_from_last_query(
+                    session,
+                    reject_table_full_name=reject_table_full_name,
+                    full_audit=False,
+                    query_id=qid,
+                    target_table=target_table,
+                    app_name=app_name,
+                    schema_key=schema_key,
+                )
+                print(f"persisted_count={persisted_count} for qid={qid}")
+            except Exception as e:
+                # RESULT_SCAN may not find the query id (different session / expired results).
+                # Fallback: insert the rows we already collected from session.sql(copy_sql).collect()
+                print(
+                    f"persist_copy_errors helper failed: {e} — falling back to inserting collected rows")
+                try:
+                    app_lit = _sql_literal(app_name)
+                    schema_key_lit = _sql_literal(
+                        schema_key) if schema_key else "NULL"
+                    target_table_lit = _sql_literal(
+                        target_table) if target_table else "NULL"
+                    qid_lit = _sql_literal(qid) if qid else "NULL"
+                    fallback_cnt = 0
+                    for r in rows:
+                        try:
+                            row_obj = r.asDict() if hasattr(r, "asDict") else dict(r)
+                        except Exception:
+                            row_obj = str(r)
+                        payload_lit = _sql_literal(row_obj)
+                        # derive an error message if present in the row object
+                        err_msg = ""
+                        if isinstance(row_obj, dict):
+                            err_msg = row_obj.get("first_error") or row_obj.get(
+                                "error") or row_obj.get("message") or ""
+                        err_lit = _sql_literal(err_msg)
+                        insert_sql = f"""
+                        INSERT INTO {reject_table_full_name}
+                          (app_name, schema_key, payload, error_message, copy_qid, target_table, first_seen_ts)
+                        VALUES (
+                          {app_lit},
+                          {schema_key_lit},
+                          PARSE_JSON({payload_lit}),
+                          {err_lit},
+                          {qid_lit},
+                          {target_table_lit},
+                          CURRENT_TIMESTAMP()
+                        );
+                        """
+                        session.sql(insert_sql).collect()
+                        fallback_cnt += 1
+                    persisted_count = fallback_cnt
+                    print(
+                        f"fallback persisted_count={persisted_count} inserted into {reject_table_full_name}")
+                except Exception as e2:
+                    print(f"fallback insert failed: {e2}")
+                    persisted_count = -1
         except Exception as e:
             # fallback: if helper not available, leave the old per-row insert logic (or log)
             print(f"persist_copy_errors helper failed: {e}")
