@@ -17,7 +17,7 @@ def test_manual_proc(session: Session, name: str) -> str:
     return f"Hello, {name}"
 
 
-def copy_to_table_proc(session: Session, schema_key: str) -> str:
+def copy_to_table_proc(session: Session, schema_key: str, schema: Optional[str] = None, **kwargs):
     """
     tags: core
     description: Copy staging data into target table using a schema key to select
@@ -67,10 +67,31 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
 
     # Execute copy
     try:
-        copied_into_result, qid = copy_to_table(
-            session, config_file, schema=schema)
+        # call the helper which may return (rows, qid) or (rows, qid, persisted_count)
+        result = copy_to_table(session, config_file, schema=schema, **kwargs)
     except Exception as e:
         return f"❌ Copy operation failed: {e}"
+
+    # Robust unpacking: accept old (rows, qid) and new (rows, qid, persisted_count)
+    rows = qid = persisted_count = None
+    if isinstance(result, (tuple, list)):
+        if len(result) == 3:
+            rows, qid, persisted_count = result
+        elif len(result) == 2:
+            rows, qid = result
+            persisted_count = None
+        else:
+            # unexpected shape, keep as single value
+            rows = result
+    else:
+        rows = result
+
+    # preserve previous behavior but include persisted_count in logs/result
+    if persisted_count is not None:
+        print(f"📥 persisted_count={persisted_count}")
+
+    # return a stable 3-tuple (backwards-compatible with callers that handle two values)
+    rows, qid, persisted_count
 
     # -----------------------
     # Helper to format results (kept in place)
@@ -98,7 +119,7 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
         return summary
 
     # Narrate Partial Loads in Deploy Summary
-    summary_text = format_copy_results(copied_into_result)
+    summary_text = format_copy_results(rows)
 
     # The actual copy is handled by copy_to_table(...) above.
     # Removed the redundant manual COPY which referenced an undefined csv_file_name.
@@ -112,8 +133,10 @@ def copy_to_table_proc(session: Session, schema_key: str) -> str:
     )
     if reject_table:
         if "." not in reject_table:
-            db = config_file.get("Database_name") or config_file.get("database")
-            schema = config_file.get("Schema_name") or config_file.get("schema")
+            db = config_file.get(
+                "Database_name") or config_file.get("database")
+            schema = config_file.get(
+                "Schema_name") or config_file.get("schema")
             if db and schema:
                 reject_table_full_name = f"{db}.{schema}.{reject_table}"
             else:
