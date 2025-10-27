@@ -437,11 +437,12 @@ def persist_copy_errors_from_last_query(
           COALESCE(obj:"file"::STRING, obj:"source_file"::STRING, obj:"path"::STRING, '') AS SOURCE_FILE,
           COALESCE(obj:"first_error_line"::NUMBER, obj:"source_row"::NUMBER, obj:"line"::NUMBER, NULL) AS SOURCE_ROW,
           -- RAW_LINE: prefer obj.row (string) but fallback to textual variants of record/count
-          COALESCE(obj:"row"::STRING,
-                   TRY_TO_VARCHAR(obj:"raw_line"::STRING),
-                   TRY_TO_VARCHAR(obj:"record"::VARIANT),
-                   TRY_TO_VARCHAR(obj:"COUNT(*)"::VARIANT),
-                   '') AS RAW_LINE,
+          COALESCE(
+            TRY_CAST(obj:"row"::STRING AS STRING),
+            TRY_CAST(obj:"raw_line"::STRING AS STRING),
+            TRY_CAST(obj:"record"::STRING AS STRING),
+            TRY_CAST(obj:"COUNT(*)"::STRING AS STRING),
+            '') AS RAW_LINE,
           -- PARSED_COLS: try several keys that may contain structured record info
           COALESCE(obj:"record"::VARIANT, obj:"record_values"::VARIANT, obj:"parsed"::VARIANT, NULL) AS PARSED_COLS,
           {copy_qid_lit} AS COPY_QID,
