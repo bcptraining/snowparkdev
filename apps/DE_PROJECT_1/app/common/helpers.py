@@ -380,7 +380,13 @@ def persist_copy_errors_from_last_query(
         # uniform object constructor for extraction
         from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_table_expr})"
 
-        status_filter = "" if full_audit else "AND COALESCE(obj:\"status\"::STRING,'') != 'LOADED'"
+        # If not doing a full audit, only persist rows that look like per-row rejects:
+        # require either a row/record or explicit error and exclude pure summary rows (COUNT(*), totals)
+        status_filter = "" if full_audit else (
+            "AND ( (obj:\"row\" IS NOT NULL OR obj:\"record\" IS NOT NULL "
+            "OR obj:\"first_error\" IS NOT NULL OR obj:\"error\" IS NOT NULL OR obj:\"message\" IS NOT NULL) "
+            "AND obj:\"COUNT(*)\" IS NULL )"
+        )
         exclude_last_qid = "AND obj:\"LAST_QUERY_ID()\" IS NULL"
 
         # quick count check: avoid inserting when only LAST_QUERY_ID() or zero rows present
@@ -399,6 +405,7 @@ def persist_copy_errors_from_last_query(
             return 0
 
         # prepare SQL literal for copy_qid, target_table, app_name and schema_key
+        # literal copy qid OR fall back to fields inside the RESULT_SCAN object
         copy_qid_lit = _sql_literal(query_id) if query_id else "NULL"
         target_table_lit = _sql_literal(
             target_table) if target_table else "NULL"
@@ -445,7 +452,7 @@ def persist_copy_errors_from_last_query(
             '') AS RAW_LINE,
           -- PARSED_COLS: try several keys that may contain structured record info
           COALESCE(obj:"record"::VARIANT, obj:"record_values"::VARIANT, obj:"parsed"::VARIANT, NULL) AS PARSED_COLS,
-          {copy_qid_lit} AS COPY_QID,
+          COALESCE({copy_qid_lit}, TRY_CAST(obj:\"LAST_QUERY_ID()\" AS STRING), TRY_CAST(obj:\"query_id\" AS STRING), NULL) AS COPY_QID,
           {target_table_lit} AS TARGET_TABLE,
           CURRENT_TIMESTAMP() AS FIRST_SEEN_TS
         FROM {from_subselect}
