@@ -246,26 +246,16 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     # Execute COPY and capture returned rows (errors) if any
     rows = session.sql(copy_sql).collect()
 
-    # Immediately capture the COPY query id (do this before any other SQL)
+    # Immediately capture the COPY query id before any other statement
     qid = None
     try:
         qid = session.sql("SELECT LAST_QUERY_ID()").collect()[0][0]
     except Exception:
         qid = None
 
-    # DEBUG: show how many rows COPY returned and sample shape
+    # use qid for RESULT_SCAN and logging from here on
     try:
         print(f"📋 COPY returned {len(rows)} result rows (qid={qid})")
-        if rows:
-            try:
-                sample = rows[0].asDict()
-            except Exception:
-                # fallback for row-like objects
-                try:
-                    sample = dict(rows[0])
-                except Exception:
-                    sample = str(rows[0])
-            print("📌 Sample returned row:", sample)
     except Exception:
         pass
 
