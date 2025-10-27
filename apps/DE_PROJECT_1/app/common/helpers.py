@@ -306,11 +306,47 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                         target_table) if target_table else "NULL"
                     qid_lit = _sql_literal(qid) if qid else "NULL"
                     fallback_cnt = 0
+
+                    def _is_reject_like(obj):
+                        if isinstance(obj, dict):
+                            # fields that indicate a per-row reject object
+                            for k in ("row", "record", "first_error", "error", "message", "COUNT(*)"):
+                                if k in obj:
+                                    return True
+                        return False
+
                     for r in rows:
+                        # normalize row object: try asDict / dict, else try JSON parse of single-col string
                         try:
-                            row_obj = r.asDict() if hasattr(r, "asDict") else dict(r)
+                            if hasattr(r, "asDict"):
+                                row_obj = r.asDict()
+                            else:
+                                try:
+                                    row_obj = dict(r)
+                                except Exception:
+                                    # fall back to extracting single element if present
+                                    try:
+                                        seq = list(r)
+                                        val = seq[0] if len(seq) == 1 else seq
+                                    except Exception:
+                                        val = r
+                                    if isinstance(val, str):
+                                        try:
+                                            row_obj = json.loads(val)
+                                        except Exception:
+                                            row_obj = val
+                                    else:
+                                        row_obj = val
                         except Exception:
                             row_obj = str(r)
+
+                        # Only persist if it's obviously a per-row reject or full_audit is requested
+                        if not full_audit and not _is_reject_like(row_obj):
+                            print(
+                                f"Skipping non-reject fallback row (not per-row): {repr(row_obj)[:200]}")
+                            continue
+
+                        # prepare payload literal (if dict -> JSON, else string)
                         payload_lit = _sql_literal(row_obj)
                         # derive an error message if present in the row object
                         err_msg = ""
