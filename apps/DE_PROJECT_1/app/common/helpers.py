@@ -331,7 +331,8 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                             row_obj = str(r)
 
                         # Only persist if it's obviously a per-row reject or full_audit is requested
-                        if not full_audit and not _is_reject_like(row_obj):
+                        # use the per-call kwarg (fallback happens inside copy_to_table where full_audit is not defined)
+                        if not kwargs.get("full_audit", False) and not _is_reject_like(row_obj):
                             print(
                                 f"Skipping non-reject fallback row (not per-row): {repr(row_obj)[:200]}")
                             continue
