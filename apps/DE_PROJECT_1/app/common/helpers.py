@@ -278,12 +278,13 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                     app_name=app_name,
                     schema_key=schema_key,
                 )
+                # Print persisted count; removed stray RESULT_SCAN debug SQL that broke the module
                 print(f"persisted_count={persisted_count} for qid={qid}")
-            except Exception as e:
-                # RESULT_SCAN may not find the query id (different session / expired results).
-                # Fallback: insert the rows we already collected from session.sql(copy_sql).collect()
-                print(
-                    f"persist_copy_errors helper failed: {e} — falling back to inserting collected rows")
+             except Exception as e:
+                 # RESULT_SCAN may not find the query id (different session / expired results).
+                 # Fallback: insert the rows we already collected from session.sql(copy_sql).collect()
+                 print(
+                     f"persist_copy_errors helper failed: {e} — falling back to inserting collected rows")
                 try:
                     app_lit = _sql_literal(app_name)
                     schema_key_lit = _sql_literal(
