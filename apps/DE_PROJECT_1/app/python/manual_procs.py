@@ -63,6 +63,30 @@ def copy_to_table_proc(session, schema_key, *args, **kwargs):
     except Exception as e:
         return f"❌ Failed to convert schema for key '{schema_key}': {e}"
 
+    # Resolve full_audit flag and reject table full name early so later logic can use them
+    full_audit_flag = bool(config_file.get("persist_all_copy_results", False))
+    reject_table = (
+        config_file.get("Reject_table")
+        or config_file.get("reject_table")
+        or config_file.get("RejectTable")
+    )
+    if reject_table:
+        if "." not in reject_table:
+            db = config_file.get(
+                "Database_name") or config_file.get("database")
+            schema_cfg = config_file.get(
+                "Schema_name") or config_file.get("schema")
+            if db and schema_cfg:
+                reject_table_full_name = f"{db}.{schema_cfg}.{reject_table}"
+            else:
+                reject_table_full_name = reject_table
+        else:
+            reject_table_full_name = reject_table
+    else:
+        reject_table_full_name = None
+    # backward-compatible alias
+    reject_table_full = reject_table_full_name
+
     # Execute copy
     try:
         # ensure schema_key and app_name flow into the helper
