@@ -71,16 +71,29 @@ def copy_to_table_proc(session, schema_key, *args, **kwargs):
         new_kwargs.setdefault("app_name", new_kwargs.get(
             "app_name") or "DE_PROJECT_1")
 
-        # call the core helper (which should return rows, qid, persisted_count)
-        # IMPORTANT: pass new_kwargs so schema_key/app_name are forwarded
+        # call the core helper (which executes the COPY and returns rows, qid, persisted_count)
         rows, qid, persisted_count = copy_to_table(
             session, config_file, schema=schema_key, **new_kwargs)
 
-        # Do not return the human-readable summary as a SQL result (avoids polluting RESULT_SCAN).
-        # Instead persist rejects using the authoritative qid and print the summary to stdout only.
+        # Print summary to stdout only (do not return SQL rows with this text).
         print("✅ Copy completed.")
         if qid:
             print(f"Query ID: {qid}")
+
+        # Persist rejects using that qid (persist_copy_errors_from_last_query will use the qid
+        # to call RESULT_SCAN('<qid>') and must run in the same session but can run after we captured qid).
+        if reject_table_full_name:
+            persist_copy_errors_from_last_query(
+                session,
+                reject_table_full_name=reject_table_full_name,
+                full_audit=full_audit_flag,
+                query_id=qid,
+                app_name=new_kwargs.get("app_name"),
+                schema_key=new_kwargs.get("schema_key"),
+            )
+
+        # Return only the authoritative qid (avoid returning a large human-readable SQL result)
+        return qid
     except Exception as e:
         return f"❌ Copy operation failed: {e}"
 
