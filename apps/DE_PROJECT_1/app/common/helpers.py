@@ -452,9 +452,19 @@ def persist_copy_errors_from_last_query(
 
         # If not doing a full audit, only persist rows that look like per-row rejects:
         # require either a row/record or explicit error and exclude pure summary rows (COUNT(*), totals)
-        status_filter = "" if full_audit else (
-            "AND ( (obj:\"row\" IS NOT NULL OR obj:\"record\" IS NOT NULL "
-        )
+        # Also exclude wrapper summary objects emitted by the Python wrapper (obj:"COPY_TO_TABLE_PROC")
+        if full_audit:
+            status_filter = ""
+        else:
+            status_filter = (
+                "AND ( (obj:\"row\" IS NOT NULL "
+                "OR obj:\"record\" IS NOT NULL "
+                "OR obj:\"first_error\" IS NOT NULL "
+                "OR obj:\"error\" IS NOT NULL "
+                "OR obj:\"message\" IS NOT NULL) "
+                "AND obj:\"COUNT(*)\" IS NULL "
+                "AND obj:\"COPY_TO_TABLE_PROC\" IS NULL )"
+            )
         exclude_last_qid = "AND obj:\"LAST_QUERY_ID()\" IS NULL"
 
         # quick count check: avoid inserting when only LAST_QUERY_ID() or zero rows present
