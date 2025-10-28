@@ -1,4 +1,4 @@
-import yaml
+git --no-pager diff apps/DE_PROJECT_1/app/common/helpers.pyimport yaml
 from deploy.orchestration.proc_registrar import ProcRegistrar
 from deploy.tag_registry import TAG_SETS
 import pytz

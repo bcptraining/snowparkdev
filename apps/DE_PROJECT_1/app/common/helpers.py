@@ -245,19 +245,13 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
 
     # Execute COPY and capture returned rows (errors) if any
     rows = session.sql(copy_sql).collect()
-
-    # Immediately capture the COPY query id before any other statement
+    # Immediately capture the COPY query id before any other session.sql() call
     qid = None
     try:
         qid = session.sql("SELECT LAST_QUERY_ID()").collect()[0][0]
     except Exception:
         qid = None
-
-    # use qid for RESULT_SCAN and logging from here on
-    try:
-        print(f"📋 COPY returned {len(rows)} result rows (qid={qid})")
-    except Exception:
-        pass
+    print(f"📋 COPY returned {len(rows)} result rows (qid={qid})")
 
     # Persist COPY result rows into the reject table in a deterministic way
     persisted_count = None
