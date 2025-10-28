@@ -245,12 +245,14 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
 
     # Execute COPY and capture returned rows (errors) if any
     rows = session.sql(copy_sql).collect()
-    # Immediately capture the COPY query id before any other session.sql() call
-    qid = None
+
+    # IMMEDIATELY capture the COPY query id in the same session
     try:
         qid = session.sql("SELECT LAST_QUERY_ID()").collect()[0][0]
     except Exception:
         qid = None
+
+    # use this qid for logging, RESULT_SCAN, and persistence
     print(f"📋 COPY returned {len(rows)} result rows (qid={qid})")
 
     # Persist COPY result rows into the reject table in a deterministic way
@@ -365,7 +367,7 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             print(f"persist_copy_errors helper failed: {e}")
             persisted_count = None
 
-    # Return rows, qid and persisted_count (persisted_count may be None)
+    # return rows, qid, persisted_count (ensure callers unpack qid)
     return rows, qid, persisted_count
 # ✅ Function to convert JSON schema to StructType
 
@@ -452,8 +454,6 @@ def persist_copy_errors_from_last_query(
         # require either a row/record or explicit error and exclude pure summary rows (COUNT(*), totals)
         status_filter = "" if full_audit else (
             "AND ( (obj:\"row\" IS NOT NULL OR obj:\"record\" IS NOT NULL "
-            "OR obj:\"first_error\" IS NOT NULL OR obj:\"error\" IS NOT NULL OR obj:\"message\" IS NOT NULL) "
-            "AND obj:\"COUNT(*)\" IS NULL )"
         )
         exclude_last_qid = "AND obj:\"LAST_QUERY_ID()\" IS NULL"
 
