@@ -280,11 +280,11 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                 )
                 # Print persisted count; removed stray RESULT_SCAN debug SQL that broke the module
                 print(f"persisted_count={persisted_count} for qid={qid}")
-             except Exception as e:
-                 # RESULT_SCAN may not find the query id (different session / expired results).
-                 # Fallback: insert the rows we already collected from session.sql(copy_sql).collect()
-                 print(
-                     f"persist_copy_errors helper failed: {e} — falling back to inserting collected rows")
+            except Exception as e:
+                # RESULT_SCAN may not find the query id (different session / expired results).
+                # Fallback: insert the rows we already collected from session.sql(copy_sql).collect()
+                print(
+                    f"persist_copy_errors helper failed: {e} — falling back to inserting collected rows")
                 try:
                     app_lit = _sql_literal(app_name)
                     schema_key_lit = _sql_literal(
@@ -295,11 +295,12 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                     fallback_cnt = 0
 
                     def _is_reject_like(obj):
+                        # consider per-row rejects only if the object is a dict and contains
+                        # at least one of the common per-row keys. Skip wrapper summary objects.
                         if isinstance(obj, dict):
-                            # fields that indicate a per-row reject object
-                            for k in ("row", "record", "first_error", "error", "message", "COUNT(*)"):
-                                if k in obj:
-                                    return True
+                            keys = set(obj.keys())
+                            if keys & {"row", "record", "first_error", "error", "message", "COUNT(*)"}:
+                                return True
                         return False
 
                     for r in rows:
@@ -328,7 +329,6 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                             row_obj = str(r)
 
                         # Only persist if it's obviously a per-row reject or full_audit is requested
-                        # use the per-call kwarg (fallback happens inside copy_to_table where full_audit is not defined)
                         if not kwargs.get("full_audit", False) and not _is_reject_like(row_obj):
                             print(
                                 f"Skipping non-reject fallback row (not per-row): {repr(row_obj)[:200]}")
@@ -344,7 +344,8 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                         err_lit = _sql_literal(err_msg)
                         insert_sql = f"""
                         INSERT INTO {reject_table_full_name}
-                          (app_name, schema_key, payload, error_message, copy_qid, target_table, first_seen_ts)
+                          (app_name, schema_key, payload, error_message,
+                           copy_qid, target_table, first_seen_ts)
                         VALUES (
                           {app_lit},
                           {schema_key_lit},
@@ -357,6 +358,7 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
                         """
                         session.sql(insert_sql).collect()
                         fallback_cnt += 1
+
                     persisted_count = fallback_cnt
                     print(
                         f"fallback persisted_count={persisted_count} inserted into {reject_table_full_name}")
@@ -380,9 +382,9 @@ def json_to_struct_type(schema_json: list) -> StructType:
     """
     fields = []
     for field in schema_json:
-        key = field["type"].lower()
-        field_type = TYPE_MAP.get(key)
-        if not field_type:
+        raw_type = str(field["type"])
+        field_type = TYPE_MAP.get(raw_type) or TYPE_MAP.get(raw_type.lower())
+        if field_type is None:
             raise ValueError(f"Unsupported type: {field['type']}")
         fields.append(StructField(field["name"], field_type))
     return StructType(fields)
@@ -394,10 +396,15 @@ def load_schema_from_json(json_path: str, schema_name: str) -> StructType:
     fields = all_schemas.get(schema_name)
     if not fields:
         raise ValueError(f"Schema '{schema_name}' not found in {json_path}")
-    return StructType([
-        StructField(field["name"], TYPE_MAP[field["type"]])
-        for field in fields
-    ])
+    struct_fields = []
+    for field in fields:
+        raw_type = str(field["type"])
+        t = TYPE_MAP.get(raw_type) or TYPE_MAP.get(raw_type.lower())
+        if t is None:
+            raise ValueError(
+                f"Unsupported type in schema '{schema_name}': {raw_type}")
+        struct_fields.append(StructField(field["name"], t))
+    return StructType(struct_fields)
 
 
 def load_named_config(config_name: str, config_dir: str | Path = "app/config") -> dict:
