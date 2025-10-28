@@ -72,8 +72,14 @@ def copy_to_table_proc(session, schema_key, *args, **kwargs):
             "app_name") or "DE_PROJECT_1")
 
         # call the core helper (which should return rows, qid, persisted_count)
+        # IMPORTANT: pass new_kwargs so schema_key/app_name are forwarded
         rows, qid, persisted_count = copy_to_table(
-            session, config_file, schema=schema_key, **kwargs)
+            session, config_file, schema=schema_key, **new_kwargs)
+
+        # Print summary for human consumption (Python stdout only)
+        print("✅ Copy completed.")
+        if qid:
+            print(f"Query ID: {qid}")
     except Exception as e:
         return f"❌ Copy operation failed: {e}"
 
