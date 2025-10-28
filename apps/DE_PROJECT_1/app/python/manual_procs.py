@@ -16,12 +16,11 @@ def test_manual_proc(session: Session, name: str) -> str:
     return f"Hello, {name}"
 
 
-def copy_to_table_proc(session: Session, schema_key: str, **kwargs):
+def copy_to_table_proc(session, schema_key, *args, **kwargs):
     """
-    tags: core
-    description: Copy staging data into target table using a schema key to select
-                 the schema from app/schemas/schemas.json. Config is loaded from
-                 app/config/copy_to_snowstg_udemy.json (packaged resource preferred).
+    Wrapper around copy_to_table that ensures we DO NOT return a SQL result
+    containing a human-readable summary (which pollutes RESULT_SCAN).
+    Instead print the summary and return the authoritative COPY qid.
     """
     # Load config (prefer package resource inside app.zip, fallback to file)
     cfg_name = Path(COPY_TO_TABLE_PROC_CONFIG_PATH).name
@@ -72,11 +71,21 @@ def copy_to_table_proc(session: Session, schema_key: str, **kwargs):
         new_kwargs.setdefault("app_name", new_kwargs.get(
             "app_name") or "DE_PROJECT_1")
 
-        # call the helper which may return (rows, qid) or (rows, qid, persisted_count)
-        result = copy_to_table(session, config_file,
-                               schema=schema, **new_kwargs)
+        # call the core helper (which should return rows, qid, persisted_count)
+        rows, qid, persisted_count = copy_to_table(
+            session, config_file, schema=schema_key, **kwargs)
     except Exception as e:
         return f"❌ Copy operation failed: {e}"
+
+    # Print summary for human consumption (Python stdout only)
+    print("✅ Copy completed.")
+    if qid:
+        print(f"Query ID: {qid}")
+    # short tabular summary (optional)
+    # print(...)  # keep prints, avoid returning them as SQL rows
+
+    # Return the qid (string) so callers / tests can use RESULT_SCAN(qid) in the same session
+    return qid
 
     # Robust unpacking: accept old (rows, qid) and new (rows, qid, persisted_count)
     rows = qid = persisted_count = None
