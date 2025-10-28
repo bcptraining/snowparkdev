@@ -138,9 +138,4 @@ def copy_to_table_proc(session, schema_key, *args, **kwargs):
     print(summary_text)
     return qid
 
-
-CALL DEMO_DB.PUBLIC.COPY_TO_TABLE_PROC('emp_stg_schema_udemy')
--- read the qid value from the CALL result(the client will show it)
--- then inspect the COPY results using that returned qid:
-SELECT COUNT(*) FROM TABLE(RESULT_SCAN('<returned_qid>'))
-SELECT TO_VARCHAR(obj) FROM(SELECT OBJECT_CONSTRUCT(*) AS obj FROM TABLE(RESULT_SCAN('<returned_qid>'))) t
+# Removed stray SQL/CALL/debug lines that caused SyntaxError in deployment
