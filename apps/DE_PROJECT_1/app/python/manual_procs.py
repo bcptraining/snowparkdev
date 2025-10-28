@@ -76,41 +76,13 @@ def copy_to_table_proc(session, schema_key, *args, **kwargs):
         rows, qid, persisted_count = copy_to_table(
             session, config_file, schema=schema_key, **new_kwargs)
 
-        # Print summary for human consumption (Python stdout only)
+        # Do not return the human-readable summary as a SQL result (avoids polluting RESULT_SCAN).
+        # Instead persist rejects using the authoritative qid and print the summary to stdout only.
         print("✅ Copy completed.")
         if qid:
             print(f"Query ID: {qid}")
     except Exception as e:
         return f"❌ Copy operation failed: {e}"
-
-    # Print summary for human consumption (Python stdout only)
-    print("✅ Copy completed.")
-    if qid:
-        print(f"Query ID: {qid}")
-    # short tabular summary (optional)
-    # print(...)  # keep prints, avoid returning them as SQL rows
-
-    # Return the qid (string) so callers / tests can use RESULT_SCAN(qid) in the same session
-    return qid
-
-    # Robust unpacking: accept old (rows, qid) and new (rows, qid, persisted_count)
-    rows = qid = persisted_count = None
-    if isinstance(result, (tuple, list)):
-        if len(result) == 3:
-            rows, qid, persisted_count = result
-        elif len(result) == 2:
-            rows, qid = result
-            persisted_count = None
-        else:
-            # unexpected shape, keep as single value
-            rows = result
-    else:
-        rows = result
-
-    # preserve previous behavior but include persisted_count in logs/result
-    if persisted_count is not None:
-        print(f"📥 persisted_count={persisted_count}")
-    # continue to formatting and final string return below
 
     # -----------------------
     # Helper to format results (kept in place)
@@ -164,10 +136,19 @@ def copy_to_table_proc(session, schema_key, *args, **kwargs):
         else:
             reject_table_full_name = reject_table
 
+        # Persist rejects using the authoritative qid captured from the COPY execution
         persist_copy_errors_from_last_query(
-            session, reject_table_full_name=reject_table_full_name, full_audit=full_audit_flag
+            session,
+            reject_table_full_name=reject_table_full_name,
+            full_audit=full_audit_flag,
+            query_id=qid,
+            app_name=new_kwargs.get("app_name"),
+            schema_key=new_kwargs.get("schema_key"),
         )
     else:
         # No reject table configured; skip persisting copy result rows.
         print("Info: No Reject_table configured in copy config; skipping persist of copy results.")
-    return f"✅ Copy completed.\n\nQuery ID: {qid}\n\n{summary_text}"
+    # print summary to stdout for humans, but return only the authoritative qid (avoid SQL summary objects)
+    print("\n✅ Copy Result Summary\n")
+    print(summary_text)
+    return qid
