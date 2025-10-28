@@ -1,4 +1,4 @@
-git --no-pager diff apps/DE_PROJECT_1/app/common/helpers.pyimport yaml
+import yaml
 from deploy.orchestration.proc_registrar import ProcRegistrar
 from deploy.tag_registry import TAG_SETS
 import pytz
@@ -65,6 +65,8 @@ def validate_tags(tags: list[str], proc_name: str | None = None) -> list[str]:
 # -------------------------
 # Tag helpers (NEW)
 # -------------------------
+
+
 def _normalize_tags(tags):
     """Normalize a list of tags to lower-case strings."""
     return [t.lower() for t in (tags or [])]
@@ -753,8 +755,8 @@ def main():
             print(f"⚠️ Could not rewrite snowflake.yml in temp project: {e}")
         return project_root
 
-
     # Step 0:  Validate CLI version before anything else
+
     def validate_cli_version(min_required="3.0.0") -> bool:
         import subprocess
         import re
@@ -763,16 +765,19 @@ def main():
             return tuple(map(int, v.split(".")))
 
         try:
-            result = subprocess.run(["snow", "--version"], capture_output=True, text=True)
+            result = subprocess.run(
+                ["snow", "--version"], capture_output=True, text=True)
             version_line = result.stdout.strip()
             match = re.search(r"(\d+\.\d+\.\d+)", version_line)
             if match:
                 current_version = match.group(1)
                 print(f"🧠 Snowflake CLI version detected: {current_version}")
                 if version_tuple(current_version) < version_tuple(min_required):
-                    print(f"❌ CLI version {current_version} is below required minimum {min_required}.")
+                    print(
+                        f"❌ CLI version {current_version} is below required minimum {min_required}.")
                     return False
-                print(f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
+                print(
+                    f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
                 return True
             else:
                 print("⚠️ Could not parse CLI version from output.")
@@ -780,7 +785,6 @@ def main():
         except Exception as e:
             print(f"❌ Error running snow --version: {e}")
             return False
-
 
     # Step 1: Parse CLI arguments and initialize context
     args = parse_cli_args()
@@ -800,7 +804,6 @@ def main():
         "valid": tag_check["valid"],
         "invalid": tag_check["invalid"]
     }
-
 
     # Commit info context needed to determine if code or config for manual proc has changed and so needs to be deployed
     # previous_commit = os.getenv("previous_commit") or subprocess.check_output([
@@ -844,9 +847,6 @@ def main():
                 ["git", "rev-parse", "HEAD"]).decode().strip()
         except Exception:
             raw_curr = ""
-
-
-
 
     # Use HEAD~1 as previous-fallback when available, otherwise HEAD
     prev_fallback = "HEAD~1" if _git_commit_exists("HEAD~1") else "HEAD"
@@ -901,7 +901,8 @@ def main():
             excluded_declarative.append(register_exclusion(
                 proc, "Tag not allowed in environment or not declared by app"))
             if verbosity == "verbose":
-                print(f"⏭️ Excluding auto-proc '{proc_name}' — tags {proc['tags']} not allowed (app tags={app_declared_tags}, env tags={tags})")
+                print(
+                    f"⏭️ Excluding auto-proc '{proc_name}' — tags {proc['tags']} not allowed (app tags={app_declared_tags}, env tags={tags})")
         if verbosity == "verbose":
             print(f"✅ Injected tags for {proc_name}: {proc['tags']}")
 
@@ -960,7 +961,8 @@ def main():
     build_source = app_path
     temp_build_root = None
     if excluded_declarative:
-        build_source = _create_filtered_project_copy(app_path, allowed_proc_names)
+        build_source = _create_filtered_project_copy(
+            app_path, allowed_proc_names)
         temp_build_root = build_source.parent
 
     try:
@@ -976,7 +978,8 @@ def main():
             "--schema", schema,
             "--allow-shared-libraries"
         ]
-        run_command(build_cmd, f"Building Snowpark project for app: {app_name}")
+        run_command(
+            build_cmd, f"Building Snowpark project for app: {app_name}")
         # Inject shared modules into the project actually being built
         inject_shared_modules(build_source)
     except Exception:
@@ -1039,26 +1042,28 @@ def main():
     # print("⚠️ Note: Declarative procedures were deployed live. Dry-run mode does not simulate Snowpark deploy.")
 
     if not dry_run:
-            try:
-                run_command(deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
-            except Exception as e:
-                print(f"❌ Snowpark deploy failed: {e}")
-                # cleanup temp copy if present
-                if temp_build_root:
-                    try:
-                        shutil.rmtree(temp_build_root)
-                    except Exception:
-                        pass
-                sys.exit(1)
+        try:
+            run_command(
+                deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
+        except Exception as e:
+            print(f"❌ Snowpark deploy failed: {e}")
+            # cleanup temp copy if present
+            if temp_build_root:
+                try:
+                    shutil.rmtree(temp_build_root)
+                except Exception:
+                    pass
+            sys.exit(1)
     else:
-            print("🧪 Dry-run: Skipping Snowpark deploy (deploy command suppressed).")
+        print("🧪 Dry-run: Skipping Snowpark deploy (deploy command suppressed).")
 
     # cleanup temp copy if present (non-fatal)
     if temp_build_root:
         try:
             shutil.rmtree(temp_build_root)
         except Exception:
-            vprint(f"⚠️ Failed to remove temporary build dir: {temp_build_root}", verbosity)
+            vprint(
+                f"⚠️ Failed to remove temporary build dir: {temp_build_root}", verbosity)
 
     # Step 10: Register manual procedures and apply tag filtering
     if args.include_manual_procs:
