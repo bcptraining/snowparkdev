@@ -94,7 +94,7 @@ def copy_to_table_proc(session, schema_key, *args, **kwargs):
     except Exception as e:
         return f"❌ Copy operation failed: {e}"
 
-    # Format & print summary (stdout only)
+    # Format & print summary (stdout only)yes
     def format_copy_results(copy_result_rows):
         table_data = []
         for row in (copy_result_rows or []):
