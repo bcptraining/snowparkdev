@@ -271,7 +271,7 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             try:
                 persisted_count = persist_copy_errors_from_last_query(
                     session,
-                    reject_table_full_name=reject_table_full_name,
+                    reject_table_full_name,
                     full_audit=False,
                     query_id=qid,
                     target_table=target_table,
@@ -441,16 +441,18 @@ def persist_copy_errors_from_last_query(session, reject_table_full_name, full_au
     - Returns number of rows inserted (0 when nothing to persist), or -1 on error.
     """
     try:
-        # choose RESULT_SCAN target deterministically
+        # Build a safe RESULT_SCAN reference:
+        # - quote/escape provided query_id so RESULT_SCAN receives a string literal
+        # - alias the derived table (Snowflake requires an alias for subselects)
         if query_id:
-            # prefer calling RESULT_SCAN with raw query_id (may have been passed in)
-            result_scan_source = f"TABLE(RESULT_SCAN({query_id}))"
+            qid = str(query_id)
+            qid_esc = qid.replace("'", "''")
+            result_scan_source = f"TABLE(RESULT_SCAN('{qid_esc}'))"
         else:
             result_scan_source = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
 
-        # Always alias the derived table (Snowflake requires it)
-        # e.g. FROM TABLE(RESULT_SCAN('<qid>')) t
-        result_scan_source += " t"
+        # alias the table-function result
+        result_scan_source = f"{result_scan_source} t"
 
         # uniform object constructor for extraction
         from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_scan_source})"
@@ -477,6 +479,13 @@ def persist_copy_errors_from_last_query(session, reject_table_full_name, full_au
         try:
             cnt = int(session.sql(count_sql).collect()[0][0])
         except Exception:
+            # If RESULT_SCAN referenced a non-existent/expired statement id you can get
+            # "Statement ... not found" / "Invalid result query ID". Treat as no rows to persist.
+            try:
+                print(
+                    f"persist_copy_errors_from_last_query: RESULT_SCAN failed for query_id={query_id}; treating as 0 rows")
+            except Exception:
+                pass
             cnt = 0
 
         if cnt == 0:
