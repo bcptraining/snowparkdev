@@ -430,15 +430,7 @@ def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
     return config, schema
 
 
-def persist_copy_errors_from_last_query(
-    session,
-    reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS",
-    full_audit=False,
-    query_id=None,
-    target_table: Optional[str] = None,
-    app_name: Optional[str] = None,
-    schema_key: Optional[str] = None,
-):
+def persist_copy_errors_from_last_query(session, reject_table_full_name, full_audit=False, query_id=None, target_table=None, app_name=None, schema_key=None):
     """
     Persist COPY/RESULT_SCAN rows into the reject table in a resilient way.
 
@@ -451,12 +443,17 @@ def persist_copy_errors_from_last_query(
     try:
         # choose RESULT_SCAN target deterministically
         if query_id:
-            result_table_expr = f"TABLE(RESULT_SCAN('{query_id}'))"
+            # prefer calling RESULT_SCAN with raw query_id (may have been passed in)
+            result_scan_source = f"TABLE(RESULT_SCAN({query_id}))"
         else:
-            result_table_expr = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
+            result_scan_source = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
+
+        # Always alias the derived table (Snowflake requires it)
+        # e.g. FROM TABLE(RESULT_SCAN('<qid>')) t
+        result_scan_source += " t"
 
         # uniform object constructor for extraction
-        from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_table_expr})"
+        from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_scan_source})"
 
         # If not doing a full audit, only persist rows that look like per-row rejects:
         # require either a row/record or explicit error and exclude pure summary rows (COUNT(*), totals)
