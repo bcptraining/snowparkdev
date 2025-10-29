@@ -269,10 +269,11 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
 
             # Use the helper which will call TABLE(RESULT_SCAN('<qid>'))
             try:
+                # Respect caller's full_audit flag (default False).
                 persisted_count = persist_copy_errors_from_last_query(
                     session,
                     reject_table_full_name,
-                    full_audit=False,
+                    full_audit=bool(kwargs.get("full_audit", False)),
                     query_id=qid,
                     target_table=target_table,
                     app_name=app_name,
