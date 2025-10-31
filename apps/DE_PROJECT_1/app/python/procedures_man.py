@@ -155,10 +155,18 @@ def register_manual_procs(
                     params[0].name
                 )
                 raise ValueError(msg)
-            if len(params[1:]) != expected_input_count:
+            # Count only concrete (non-var) parameters after `session`.
+            # Ignore VAR_POSITIONAL (*args) and VAR_KEYWORD (**kwargs) since
+            # they don't increase the fixed argument count expected by the caller.
+            user_params = [
+                p
+                for p in params[1:]
+                if p.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+            ]
+            if len(user_params) != expected_input_count:
                 raise ValueError(
                     "Expected {} user-supplied args, got {}".format(
-                        expected_input_count, len(params[1:])
+                        expected_input_count, len(user_params)
                     )
                 )
 
