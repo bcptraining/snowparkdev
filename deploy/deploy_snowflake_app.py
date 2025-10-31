@@ -23,7 +23,7 @@ from deploy.constants import VALID_TAGS
 from deploy.deploy_manager import DeployManager
 from deploy.utils.change_detection import get_changed_files_for_app
 from deploy.utils.tag_validation import validate_tags_for_env
-# These are needed to support pruning snowflake.yml declarative entities via application of tag filtering
+# These support pruning snowflake.yml declarative entities via tag filtering.
 import tempfile
 print(f"__name__ = {__name__}")
 print(f"cwd = {os.getcwd()}")
@@ -65,6 +65,8 @@ def validate_tags(tags: list[str], proc_name: str | None = None) -> list[str]:
 # -------------------------
 # Tag helpers (NEW)
 # -------------------------
+
+
 def _normalize_tags(tags):
     """Normalize a list of tags to lower-case strings."""
     return [t.lower() for t in (tags or [])]
@@ -145,7 +147,8 @@ def is_proc_allowed(proc_tags: list[str], app_tags: list[str], env_tags: list[st
     return False
 
 
-# These functions are not currently used but might be helpful for future enhancements to compare existing procedure definitions.
+# These functions are not currently used but might be helpful for future
+# enhancements to compare existing procedure definitions.
 # def get_current_def(session, proc_name):
 #     ddl_query = f"SELECT GET_DDL('procedure', '{proc_name}')"
 #     result = session.sql(ddl_query).collect()
@@ -158,14 +161,28 @@ def is_proc_allowed(proc_tags: list[str], app_tags: list[str], env_tags: list[st
 
 
 def get_snowflake_credentials():
+    required = [
+        "SNOWFLAKE_ACCOUNT",
+        "SNOWFLAKE_USER",
+        "SNOWFLAKE_PASSWORD",
+        "SNOWFLAKE_ROLE",
+        "SNOWFLAKE_WAREHOUSE",
+        "SNOWFLAKE_DATABASE",
+    ]
+    creds = {k: os.getenv(k) for k in required}
+    missing = [k for k, v in creds.items() if not v]
+    if missing:
+        raise EnvironmentError(
+            f"Missing required Snowflake env vars: {', '.join(missing)}"
+        )
     return {
-        "account": os.environ["SNOWFLAKE_ACCOUNT"],
-        "user": os.environ["SNOWFLAKE_USER"],
-        "password": os.environ["SNOWFLAKE_PASSWORD"],
-        "role": os.environ["SNOWFLAKE_ROLE"],
-        "warehouse": os.environ["SNOWFLAKE_WAREHOUSE"],
-        "database": os.environ["SNOWFLAKE_DATABASE"],
-        "schema": os.environ.get("SNOWFLAKE_SCHEMA", "public")
+        "account": creds["SNOWFLAKE_ACCOUNT"],
+        "user": creds["SNOWFLAKE_USER"],
+        "password": creds["SNOWFLAKE_PASSWORD"],
+        "role": creds["SNOWFLAKE_ROLE"],
+        "warehouse": creds["SNOWFLAKE_WAREHOUSE"],
+        "database": creds["SNOWFLAKE_DATABASE"],
+        "schema": os.getenv("SNOWFLAKE_SCHEMA", "public"),
     }
 
 
@@ -259,7 +276,8 @@ def parse_cli_args():
     if not args.tags:
         args.tags = [tag.strip().lower() for tag in TAG_SETS.get(args.env, [])]
         print(
-            f"🧠 No tags provided via CLI. Using normalized default tags from tag_registry.py for '{args.env}': {', '.join(args.tags)}")
+            f"🧠 No tags provided via CLI. Using normalized default tags from tag_registry.py for '{args.env}': "
+            f"{', '.join(args.tags)}")
 
     return args
 
@@ -432,27 +450,27 @@ def build_manual_proc_narration(manual_procs, changed_files, dry_run=True):
     lines = [
         "\n### 🧪 Manual Procedure Deployment Summary",
         "| Name | Status | Reason |",
-        "|------|--------|--------|"
+        "|------|--------|--------|",
     ]
 
     for proc in manual_procs:
         name = proc.get("name", "—")
-        handler = proc.get("handler", "—")
         # Optional: attach this during registration
         source_file = proc.get("source_file", "")
-        valid = proc.get("status") == "valid"
         excluded = proc.get("excluded", False)
         simulated = dry_run
 
         if excluded:
-            lines.append(
-                f"| {name} | ❌ Excluded | {proc.get('exclusion_reason', 'Validation failed')} |")
+            reason = proc.get("exclusion_reason", "Validation failed")
+            lines.append("| {n} | ❌ Excluded | {r} |".format(n=name, r=reason))
         elif source_file and source_file not in changed_files:
-            lines.append(f"| {name} | 🚫 Skipped | No relevant code changes |")
+            lines.append(
+                "| {n} | 🚫 Skipped | No relevant code changes |".format(n=name))
         elif simulated:
-            lines.append(f"| {name} | 🧪 Simulated | Dry-run only |")
+            lines.append("| {n} | 🧪 Simulated | Dry-run only |".format(n=name))
         else:
-            lines.append(f"| {name} | ✅ Deployed | Live deployment |")
+            lines.append(
+                "| {n} | ✅ Deployed | Live deployment |".format(n=name))
 
     return "\n".join(lines)
 
@@ -496,55 +514,55 @@ def main():
         proc["reason"] = reason
         return proc
 
-    def validate_cli_version(min_required="3.0.0"):
-        import subprocess
-        import re
+    # def validate_cli_version(min_required="3.0.0"):
+    #     import subprocess
+    #     import re
 
-        def version_tuple(v):
-            return tuple(map(int, v.split(".")))
+    #     def version_tuple(v):
+    #         return tuple(map(int, v.split(".")))
 
-        try:
-            result = subprocess.run(
-                ["snow", "--help"], capture_output=True, text=True)
-            first_line = result.stdout.splitlines()[0]
-            match = re.search(r"\[v(\d +\.\d +\.\d+)\]", first_line)
-            if match:
-                current_version = match.group(1)
-                print(f"🧠 Snowflake CLI version detected: {current_version}")
-                if version_tuple(current_version) < version_tuple(min_required):
-                    print(
-                        f"❌ CLI version {current_version} is below required minimum {min_required}.")
-                    return False
-                print(
-                    f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
-                return True
-            else:
-                print("⚠️ CLI version not found in help output. Trying pip fallback...")
+    #     try:
+    #         result = subprocess.run(
+    #             ["snow", "--help"], capture_output=True, text=True)
+    #         first_line = result.stdout.splitlines()[0]
+    #         match = re.search(r"\[v(\d +\.\d +\.\d+)\]", first_line)
+    #         if match:
+    #             current_version = match.group(1)
+    #             print(f"🧠 Snowflake CLI version detected: {current_version}")
+    #             if version_tuple(current_version) < version_tuple(min_required):
+    #                 print(
+    #                     f"❌ CLI version {current_version} is below required minimum {min_required}.")
+    #                 return False
+    #             print(
+    #                 f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
+    #             return True
+    #         else:
+    #             print("⚠️ CLI version not found in help output. Trying pip fallback...")
 
-        except Exception as e:
-            print(f"⚠️ Error running snow --help: {e}. Trying pip fallback...")
+    #     except Exception as e:
+    #         print(f"⚠️ Error running snow --help: {e}. Trying pip fallback...")
 
-        # Fallback to pip show
-        try:
-            result = subprocess.run(
-                ["pip", "show", "snowflake-cli-labs"], capture_output=True, text=True)
-            for line in result.stdout.splitlines():
-                if line.startswith("Version:"):
-                    current_version = line.split(":")[1].strip()
-                    print(f"🧠 Snowflake CLI version (pip): {current_version}")
-                    if version_tuple(current_version) < version_tuple(min_required):
-                        print(
-                            f"❌ CLI version {current_version} is below required minimum {min_required}.")
-                        return False
-                    print(
-                        f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
-                    return True
-            print("❌ Could not find CLI version via pip.")
-            return False
+    #     # Fallback to pip show
+    #     try:
+    #         result = subprocess.run(
+    #             ["pip", "show", "snowflake-cli-labs"], capture_output=True, text=True)
+    #         for line in result.stdout.splitlines():
+    #             if line.startswith("Version:"):
+    #                 current_version = line.split(":")[1].strip()
+    #                 print(f"🧠 Snowflake CLI version (pip): {current_version}")
+    #                 if version_tuple(current_version) < version_tuple(min_required):
+    #                     print(
+    #                         f"❌ CLI version {current_version} is below required minimum {min_required}.")
+    #                     return False
+    #                 print(
+    #                     f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
+    #                 return True
+    #         print("❌ Could not find CLI version via pip.")
+    #         return False
 
-        except Exception as e:
-            print(f"❌ Error checking CLI version via pip: {e}")
-            return False
+    #     except Exception as e:
+    #         print(f"❌ Error checking CLI version via pip: {e}")
+    #         return False
 
     def build_tag_coverage_table(included_procs, excluded_procs):
         from collections import Counter
@@ -600,8 +618,10 @@ def main():
         return "\n".join(lines)
 
     def load_sidecar_tags(app_path):
-        # This tags "sidecar" is just a json file which has the tags for procs that get declarative (auto) deployed from snowflake.yml.
-        # This approach is temporary as we learned that v2 does not support metadata such as tags (or description/other) in the snowflake.yml.
+        # This tags "sidecar" is just a json file which has the tags for procs that get declarative (auto)
+        # deployed from snowflake.yml.
+        # This approach is temporary as we learned that v2 does not support metadata such as tags (or
+        # description/other) in the snowflake.yml.
         tags_path = app_path / "tags.json"
         default_tags = {"procedures": {}, "functions": {}, "dags": {}}
 
@@ -753,8 +773,8 @@ def main():
             print(f"⚠️ Could not rewrite snowflake.yml in temp project: {e}")
         return project_root
 
-
     # Step 0:  Validate CLI version before anything else
+
     def validate_cli_version(min_required="3.0.0") -> bool:
         import subprocess
         import re
@@ -763,16 +783,19 @@ def main():
             return tuple(map(int, v.split(".")))
 
         try:
-            result = subprocess.run(["snow", "--version"], capture_output=True, text=True)
+            result = subprocess.run(
+                ["snow", "--version"], capture_output=True, text=True)
             version_line = result.stdout.strip()
             match = re.search(r"(\d+\.\d+\.\d+)", version_line)
             if match:
                 current_version = match.group(1)
                 print(f"🧠 Snowflake CLI version detected: {current_version}")
                 if version_tuple(current_version) < version_tuple(min_required):
-                    print(f"❌ CLI version {current_version} is below required minimum {min_required}.")
+                    print(
+                        f"❌ CLI version {current_version} is below required minimum {min_required}.")
                     return False
-                print(f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
+                print(
+                    f"✅ CLI version {current_version} meets minimum requirement {min_required}.")
                 return True
             else:
                 print("⚠️ Could not parse CLI version from output.")
@@ -780,7 +803,6 @@ def main():
         except Exception as e:
             print(f"❌ Error running snow --version: {e}")
             return False
-
 
     # Step 1: Parse CLI arguments and initialize context
     args = parse_cli_args()
@@ -800,7 +822,6 @@ def main():
         "valid": tag_check["valid"],
         "invalid": tag_check["invalid"]
     }
-
 
     # Commit info context needed to determine if code or config for manual proc has changed and so needs to be deployed
     # previous_commit = os.getenv("previous_commit") or subprocess.check_output([
@@ -844,9 +865,6 @@ def main():
                 ["git", "rev-parse", "HEAD"]).decode().strip()
         except Exception:
             raw_curr = ""
-
-
-
 
     # Use HEAD~1 as previous-fallback when available, otherwise HEAD
     prev_fallback = "HEAD~1" if _git_commit_exists("HEAD~1") else "HEAD"
@@ -901,7 +919,10 @@ def main():
             excluded_declarative.append(register_exclusion(
                 proc, "Tag not allowed in environment or not declared by app"))
             if verbosity == "verbose":
-                print(f"⏭️ Excluding auto-proc '{proc_name}' — tags {proc['tags']} not allowed (app tags={app_declared_tags}, env tags={tags})")
+                print(
+                    f"⏭️ Excluding auto-proc '{proc_name}' — tags {proc['tags']} not allowed "
+                    f"(app tags={app_declared_tags}, env tags={tags})"
+                )
         if verbosity == "verbose":
             print(f"✅ Injected tags for {proc_name}: {proc['tags']}")
 
@@ -917,7 +938,6 @@ def main():
 
     # validate_env_consistency(env_name)
     # Default to empty list; in real use, populate with actual changed files if available
-    changed_apps = []
     changed_files = get_changed_files_for_app(
         app_name, previous_commit, current_commit)
 
@@ -942,7 +962,10 @@ def main():
     print_env_summary(required_vars)
 
     # Step 6: Initialize Snowflake session and root object
-    account, user, password, role = creds["account"], creds["user"], creds["password"], creds["role"]
+    # Keep only the values we actually use to avoid unused-local warnings.
+    account = creds["account"]
+    user = creds["user"]
+    role = creds["role"]
     warehouse, database, schema = creds["warehouse"], creds["database"], creds["schema"]
 
     try:
@@ -960,7 +983,8 @@ def main():
     build_source = app_path
     temp_build_root = None
     if excluded_declarative:
-        build_source = _create_filtered_project_copy(app_path, allowed_proc_names)
+        build_source = _create_filtered_project_copy(
+            app_path, allowed_proc_names)
         temp_build_root = build_source.parent
 
     try:
@@ -976,7 +1000,8 @@ def main():
             "--schema", schema,
             "--allow-shared-libraries"
         ]
-        run_command(build_cmd, f"Building Snowpark project for app: {app_name}")
+        run_command(
+            build_cmd, f"Building Snowpark project for app: {app_name}")
         # Inject shared modules into the project actually being built
         inject_shared_modules(build_source)
     except Exception:
@@ -998,14 +1023,14 @@ def main():
     # print(f"📦 Created zip: {zip_file}") # redundant
 
     if not args.dry_run:
-        vprint(f"📂 Files on stage @dev_deployment before upload:", verbosity)
+        vprint("📂 Files on stage @dev_deployment before upload:", verbosity)
         session.file.put(str(zip_file), stage_target,
                          overwrite=True, source_compression="NONE")
         # files = session.sql(
         #     "LIST @dev_deployment/apps/DE_PROJECT_1/").collect()
         files = session.sql(f"LIST {stage_target}/").collect()
 
-        vprint(f"📂 Files on stage @dev_deployment  after upload:", verbosity)
+        vprint("📂 Files on stage @dev_deployment  after upload:", verbosity)
         for f in files:
             vprint(f"📦 {f['name']}", verbosity)
 
@@ -1039,26 +1064,28 @@ def main():
     # print("⚠️ Note: Declarative procedures were deployed live. Dry-run mode does not simulate Snowpark deploy.")
 
     if not dry_run:
-            try:
-                run_command(deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
-            except Exception as e:
-                print(f"❌ Snowpark deploy failed: {e}")
-                # cleanup temp copy if present
-                if temp_build_root:
-                    try:
-                        shutil.rmtree(temp_build_root)
-                    except Exception:
-                        pass
-                sys.exit(1)
+        try:
+            run_command(
+                deploy_cmd, f"Deploying Snowpark project for app: {app_name}")
+        except Exception as e:
+            print(f"❌ Snowpark deploy failed: {e}")
+            # cleanup temp copy if present
+            if temp_build_root:
+                try:
+                    shutil.rmtree(temp_build_root)
+                except Exception:
+                    pass
+            sys.exit(1)
     else:
-            print("🧪 Dry-run: Skipping Snowpark deploy (deploy command suppressed).")
+        print("🧪 Dry-run: Skipping Snowpark deploy (deploy command suppressed).")
 
     # cleanup temp copy if present (non-fatal)
     if temp_build_root:
         try:
             shutil.rmtree(temp_build_root)
         except Exception:
-            vprint(f"⚠️ Failed to remove temporary build dir: {temp_build_root}", verbosity)
+            vprint(
+                f"⚠️ Failed to remove temporary build dir: {temp_build_root}", verbosity)
 
     # Step 10: Register manual procedures and apply tag filtering
     if args.include_manual_procs:
@@ -1128,7 +1155,9 @@ def main():
 
         if verbosity == "verbose" and excluded_manual:
             print(
-                f"🚫 {len(excluded_manual)} manual procedures excluded due to validation or tag filtering for env '{env_name}'")
+                "🚫 {} manual procedures excluded due to validation or tag filtering "
+                "for env '{}'".format(len(excluded_manual), env_name)
+            )
 
         if verbosity == "verbose":
             print(build_manual_proc_narration(manual_registered +
@@ -1178,7 +1207,7 @@ def main():
                 f"⚠️ No DAGs defined for app '{app_name}'. Skipping DAG deployment.")
 
     else:
-        print(f"⏭️ DAG deployment skipped via CLI flag.")
+        print("⏭️ DAG deployment skipped via CLI flag.")
 
     print(
         f"\n✅ Deployment completed successfully for app '{app_name}' in environment '{env_name}'.")
@@ -1187,6 +1216,7 @@ def main():
 #  Step 12: Summary and Validation
 
     # Escape Markdown-sensitive characters for safe table rendering
+
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")
@@ -1208,21 +1238,24 @@ def main():
 
     # Emit human-readable summary to console
     if dry_run and verbosity in ["summary", "verbose"]:
-        print(
-            f"🧪 Dry-Run Summary\n"
-            f"  App: {app_name}\n"
-            f"  Environment: {env_name}\n"
-            f"  Stage: {stage_name}\n"
-            f"  Tags Used: {tag_summary}\n"
-            f"  Auto Procedures: Not simulated — {auto_count} procs were deployed live via Snowpark\n"
-            f"  Manual Procedures Simulated: {manual_simulated}\n"
-            f"  Total Procedures Simulated: {manual_simulated} (manual only)\n"
-            f"  DAGs: Skipped\n"
-            f"  Artifacts Uploaded: Simulated\n"
-            f"🕒 Dry-run finished at: {summary_time}\n"
-            f"⏱️ Total dry-run duration: {duration:.2f} seconds\n"
-            f"✅ Dry-run completed. Manual and custom procedures were simulated only. Declarative procedures were deployed live via Snowpark."
-        )
+        lines = [
+            "🧪 Dry-Run Summary",
+            f"  App: {app_name}",
+            f"  Environment: {env_name}",
+            f"  Stage: {stage_name}",
+            f"  Tags Used: {tag_summary}",
+            f"  Auto Procedures: Not simulated — {auto_count} procs were",
+            "  deployed live via Snowpark",
+            f"  Manual Procedures Simulated: {manual_simulated}",
+            f"  Total Procedures Simulated: {manual_simulated} (manual only)",
+            "  DAGs: Skipped",
+            "  Artifacts Uploaded: Simulated",
+            f"🕒 Dry-run finished at: {summary_time}",
+            f"⏱️ Total dry-run duration: {duration:.2f} seconds",
+            "✅ Dry-run completed. Manual and custom procedures were simulated only.",
+            "Declarative procedures were deployed live via Snowpark.",
+        ]
+        print("\n".join(lines))
     else:
         manual_count = len(manual_registered)
         print(
@@ -1316,7 +1349,9 @@ def main():
 
     # 🔹 Optional Markdown summary block for Slack, GitHub, etc.
 
-    markdown_summary = build_markdown_summary(
+    # Build markdown summary for potential future use. We don't need to keep
+    # the returned string in a local variable here.
+    build_markdown_summary(
         summary_artifact,
         tag_validation_structured,
         excluded_procs
