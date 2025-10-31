@@ -59,7 +59,7 @@ from tests.testing_utils.files_and_dirs import (
 )
 from tests_common import IS_WINDOWS
 
-pytest_plugins = [
+_pytest_plugins = [
     "tests_common",
     "tests.testing_utils",
     "tests.project.fixtures",
@@ -473,7 +473,8 @@ def project_directory(temporary_directory, test_projects_path):
         project_name, merge_project_definition: Optional[dict] = None
     ):
         test_data_file = test_projects_path / project_name
-        shutil.copytree(test_data_file, temporary_directory, dirs_exist_ok=True)
+        shutil.copytree(test_data_file, temporary_directory,
+                        dirs_exist_ok=True)
         if merge_project_definition:
             project_definition = yaml.load(
                 Path("snowflake.yml").read_text(), Loader=yaml.BaseLoader
