@@ -246,28 +246,14 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
     # Execute COPY and capture returned rows (errors) if any
     rows = session.sql(copy_sql).collect()
 
-    # Immediately capture the COPY query id (do this before any other SQL)
-    qid = None
+    # IMMEDIATELY capture the COPY query id in the same session
     try:
         qid = session.sql("SELECT LAST_QUERY_ID()").collect()[0][0]
     except Exception:
         qid = None
 
-    # DEBUG: show how many rows COPY returned and sample shape
-    try:
-        print(f"📋 COPY returned {len(rows)} result rows (qid={qid})")
-        if rows:
-            try:
-                sample = rows[0].asDict()
-            except Exception:
-                # fallback for row-like objects
-                try:
-                    sample = dict(rows[0])
-                except Exception:
-                    sample = str(rows[0])
-            print("📌 Sample returned row:", sample)
-    except Exception:
-        pass
+    # use this qid for logging, RESULT_SCAN, and persistence
+    print(f"📋 COPY returned {len(rows)} result rows (qid={qid})")
 
     # Persist COPY result rows into the reject table in a deterministic way
     persisted_count = None
@@ -282,22 +268,110 @@ def copy_to_table(session, config_file, schema=None, **kwargs):
             )
 
             # Use the helper which will call TABLE(RESULT_SCAN('<qid>'))
-            persisted_count = persist_copy_errors_from_last_query(
-                session,
-                reject_table_full_name=reject_table_full_name,
-                full_audit=False,
-                query_id=qid,
-                target_table=target_table,
-                app_name=app_name,
-                schema_key=schema_key,
-            )
-            print(f"persisted_count={persisted_count} for qid={qid}")
+            try:
+                # Respect caller's full_audit flag (default False).
+                persisted_count = persist_copy_errors_from_last_query(
+                    session,
+                    reject_table_full_name,
+                    full_audit=bool(kwargs.get("full_audit", False)),
+                    query_id=qid,
+                    target_table=target_table,
+                    app_name=app_name,
+                    schema_key=schema_key,
+                )
+                # Print persisted count; removed stray RESULT_SCAN debug SQL that broke the module
+                print(f"persisted_count={persisted_count} for qid={qid}")
+            except Exception as e:
+                # RESULT_SCAN may not find the query id (different session / expired results).
+                # Fallback: insert the rows we already collected from session.sql(copy_sql).collect()
+                print(
+                    f"persist_copy_errors helper failed: {e} — falling back to inserting collected rows")
+                try:
+                    app_lit = _sql_literal(app_name)
+                    schema_key_lit = _sql_literal(
+                        schema_key) if schema_key else "NULL"
+                    target_table_lit = _sql_literal(
+                        target_table) if target_table else "NULL"
+                    qid_lit = _sql_literal(qid) if qid else "NULL"
+                    fallback_cnt = 0
+
+                    def _is_reject_like(obj):
+                        # consider per-row rejects only if the object is a dict and contains
+                        # at least one of the common per-row keys. Skip wrapper summary objects.
+                        if isinstance(obj, dict):
+                            keys = set(obj.keys())
+                            if keys & {"row", "record", "first_error", "error", "message", "COUNT(*)"}:
+                                return True
+                        return False
+
+                    for r in rows:
+                        # normalize row object: try asDict / dict, else try JSON parse of single-col string
+                        try:
+                            if hasattr(r, "asDict"):
+                                row_obj = r.asDict()
+                            else:
+                                try:
+                                    row_obj = dict(r)
+                                except Exception:
+                                    # fall back to extracting single element if present
+                                    try:
+                                        seq = list(r)
+                                        val = seq[0] if len(seq) == 1 else seq
+                                    except Exception:
+                                        val = r
+                                    if isinstance(val, str):
+                                        try:
+                                            row_obj = json.loads(val)
+                                        except Exception:
+                                            row_obj = val
+                                    else:
+                                        row_obj = val
+                        except Exception:
+                            row_obj = str(r)
+
+                        # Only persist if it's obviously a per-row reject or full_audit is requested
+                        if not kwargs.get("full_audit", False) and not _is_reject_like(row_obj):
+                            print(
+                                f"Skipping non-reject fallback row (not per-row): {repr(row_obj)[:200]}")
+                            continue
+
+                        # prepare payload literal (if dict -> JSON, else string)
+                        payload_lit = _sql_literal(row_obj)
+                        # derive an error message if present in the row object
+                        err_msg = ""
+                        if isinstance(row_obj, dict):
+                            err_msg = row_obj.get("first_error") or row_obj.get(
+                                "error") or row_obj.get("message") or ""
+                        err_lit = _sql_literal(err_msg)
+                        insert_sql = f"""
+                        INSERT INTO {reject_table_full_name}
+                          (app_name, schema_key, payload, error_message,
+                           copy_qid, target_table, first_seen_ts)
+                        VALUES (
+                          {app_lit},
+                          {schema_key_lit},
+                          PARSE_JSON({payload_lit}),
+                          {err_lit},
+                          {qid_lit},
+                          {target_table_lit},
+                          CURRENT_TIMESTAMP()
+                        );
+                        """
+                        session.sql(insert_sql).collect()
+                        fallback_cnt += 1
+
+                    persisted_count = fallback_cnt
+                    print(
+                        f"fallback persisted_count={persisted_count} inserted into {reject_table_full_name}")
+                except Exception as e2:
+                    print(f"fallback insert failed: {e2}")
+                    persisted_count = -1
         except Exception as e:
             # fallback: if helper not available, leave the old per-row insert logic (or log)
             print(f"persist_copy_errors helper failed: {e}")
             persisted_count = None
 
-    # Return rows, qid and persisted_count (persisted_count may be None)
+    # return rows, qid, persisted_count (ensure callers unpack qid)
     return rows, qid, persisted_count
 # ✅ Function to convert JSON schema to StructType
 
@@ -309,9 +383,9 @@ def json_to_struct_type(schema_json: list) -> StructType:
     """
     fields = []
     for field in schema_json:
-        key = field["type"].lower()
-        field_type = TYPE_MAP.get(key)
-        if not field_type:
+        raw_type = str(field["type"])
+        field_type = TYPE_MAP.get(raw_type) or TYPE_MAP.get(raw_type.lower())
+        if field_type is None:
             raise ValueError(f"Unsupported type: {field['type']}")
         fields.append(StructField(field["name"], field_type))
     return StructType(fields)
@@ -323,10 +397,15 @@ def load_schema_from_json(json_path: str, schema_name: str) -> StructType:
     fields = all_schemas.get(schema_name)
     if not fields:
         raise ValueError(f"Schema '{schema_name}' not found in {json_path}")
-    return StructType([
-        StructField(field["name"], TYPE_MAP[field["type"]])
-        for field in fields
-    ])
+    struct_fields = []
+    for field in fields:
+        raw_type = str(field["type"])
+        t = TYPE_MAP.get(raw_type) or TYPE_MAP.get(raw_type.lower())
+        if t is None:
+            raise ValueError(
+                f"Unsupported type in schema '{schema_name}': {raw_type}")
+        struct_fields.append(StructField(field["name"], t))
+    return StructType(struct_fields)
 
 
 def load_named_config(config_name: str, config_dir: str | Path = "app/config") -> dict:
@@ -352,15 +431,7 @@ def prepare_copy_inputs(schema_file: str, schema_key: str, config_name: str):
     return config, schema
 
 
-def persist_copy_errors_from_last_query(
-    session,
-    reject_table_full_name="DEMO_DB.PUBLIC.EMPLOYEE_REJECTS",
-    full_audit=False,
-    query_id=None,
-    target_table: Optional[str] = None,
-    app_name: Optional[str] = None,
-    schema_key: Optional[str] = None,
-):
+def persist_copy_errors_from_last_query(session, reject_table_full_name, full_audit=False, query_id=None, target_table=None, app_name=None, schema_key=None):
     """
     Persist COPY/RESULT_SCAN rows into the reject table in a resilient way.
 
@@ -371,16 +442,37 @@ def persist_copy_errors_from_last_query(
     - Returns number of rows inserted (0 when nothing to persist), or -1 on error.
     """
     try:
-        # choose RESULT_SCAN target deterministically
+        # Build a safe RESULT_SCAN reference:
+        # - quote/escape provided query_id so RESULT_SCAN receives a string literal
+        # - alias the derived table (Snowflake requires an alias for subselects)
         if query_id:
-            result_table_expr = f"TABLE(RESULT_SCAN('{query_id}'))"
+            qid = str(query_id)
+            qid_esc = qid.replace("'", "''")
+            result_scan_source = f"TABLE(RESULT_SCAN('{qid_esc}'))"
         else:
-            result_table_expr = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
+            result_scan_source = "TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
+
+        # alias the table-function result
+        result_scan_source = f"{result_scan_source} t"
 
         # uniform object constructor for extraction
-        from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_table_expr})"
+        from_subselect = f"(SELECT OBJECT_CONSTRUCT(*) AS obj FROM {result_scan_source})"
 
-        status_filter = "" if full_audit else "AND COALESCE(obj:\"status\"::STRING,'') != 'LOADED'"
+        # If not doing a full audit, only persist rows that look like per-row rejects:
+        # require either a row/record or explicit error and exclude pure summary rows (COUNT(*), totals)
+        # Also exclude wrapper summary objects emitted by the Python wrapper (obj:"COPY_TO_TABLE_PROC")
+        if full_audit:
+            status_filter = ""
+        else:
+            status_filter = (
+                "AND ( (obj:\"row\" IS NOT NULL "
+                "OR obj:\"record\" IS NOT NULL "
+                "OR obj:\"first_error\" IS NOT NULL "
+                "OR obj:\"error\" IS NOT NULL "
+                "OR obj:\"message\" IS NOT NULL) "
+                "AND obj:\"COUNT(*)\" IS NULL "
+                "AND obj:\"COPY_TO_TABLE_PROC\" IS NULL )"
+            )
         exclude_last_qid = "AND obj:\"LAST_QUERY_ID()\" IS NULL"
 
         # quick count check: avoid inserting when only LAST_QUERY_ID() or zero rows present
@@ -388,6 +480,13 @@ def persist_copy_errors_from_last_query(
         try:
             cnt = int(session.sql(count_sql).collect()[0][0])
         except Exception:
+            # If RESULT_SCAN referenced a non-existent/expired statement id you can get
+            # "Statement ... not found" / "Invalid result query ID". Treat as no rows to persist.
+            try:
+                print(
+                    f"persist_copy_errors_from_last_query: RESULT_SCAN failed for query_id={query_id}; treating as 0 rows")
+            except Exception:
+                pass
             cnt = 0
 
         if cnt == 0:
@@ -399,12 +498,15 @@ def persist_copy_errors_from_last_query(
             return 0
 
         # prepare SQL literal for copy_qid, target_table, app_name and schema_key
+        # literal copy qid OR fall back to fields inside the RESULT_SCAN object
         copy_qid_lit = _sql_literal(query_id) if query_id else "NULL"
         target_table_lit = _sql_literal(
             target_table) if target_table else "NULL"
-        app_name_lit = _sql_literal(app_name) if app_name else "NULL"
+        # default app_name to a sensible literal if not supplied
+        app_name_lit = _sql_literal(app_name or "DE_PROJECT_1")
         schema_key_lit = _sql_literal(schema_key) if schema_key else "NULL"
 
+        # Insert only reject-like rows and populate fallbacks for file/row/parsed record keys
         insert_sql = f"""
         INSERT INTO {reject_table_full_name}
           (app_name, schema_key, payload, error_message, error_code, source_stage, source_file, source_row, raw_line, parsed_cols, copy_qid, target_table, first_seen_ts)
@@ -429,12 +531,21 @@ def persist_copy_errors_from_last_query(
               ELSE 'COPY_ERROR'
             END
           ) AS ERROR_CODE,
-          obj:"stage"::STRING AS SOURCE_STAGE,
-          COALESCE(obj:"file"::STRING, obj:"source_file"::STRING, '') AS SOURCE_FILE,
+          -- try multiple common keys for stage
+          COALESCE(obj:"stage"::STRING, obj:"stage_location"::STRING, obj:"stage_path"::STRING, '') AS SOURCE_STAGE,
+          -- try multiple common keys for filename/path
+          COALESCE(obj:"file"::STRING, obj:"source_file"::STRING, obj:"path"::STRING, '') AS SOURCE_FILE,
           COALESCE(obj:"first_error_line"::NUMBER, obj:"source_row"::NUMBER, obj:"line"::NUMBER, NULL) AS SOURCE_ROW,
-          obj:"row"::STRING AS RAW_LINE,
-          obj:"record"::VARIANT AS PARSED_COLS,
-          {copy_qid_lit} AS COPY_QID,
+          -- RAW_LINE: prefer obj.row (string) but fallback to textual variants of record/count
+          COALESCE(
+            TRY_CAST(obj:"row"::STRING AS STRING),
+            TRY_CAST(obj:"raw_line"::STRING AS STRING),
+            TRY_CAST(obj:"record"::STRING AS STRING),
+            TRY_CAST(obj:"COUNT(*)"::STRING AS STRING),
+            '') AS RAW_LINE,
+          -- PARSED_COLS: try several keys that may contain structured record info
+          COALESCE(obj:"record"::VARIANT, obj:"record_values"::VARIANT, obj:"parsed"::VARIANT, NULL) AS PARSED_COLS,
+          COALESCE({copy_qid_lit}, TRY_CAST(obj:\"LAST_QUERY_ID()\" AS STRING), TRY_CAST(obj:\"query_id\" AS STRING), NULL) AS COPY_QID,
           {target_table_lit} AS TARGET_TABLE,
           CURRENT_TIMESTAMP() AS FIRST_SEEN_TS
         FROM {from_subselect}
