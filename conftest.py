@@ -79,10 +79,11 @@ for i, spec in enumerate(_plugins):
             try:
                 spec_obj = importlib.util.spec_from_file_location(
                     name, str(path))
-                mod = importlib.util.module_from_spec(spec_obj)
-                sys.modules[name] = mod
-                spec_obj.loader.exec_module(mod)
-                _loaded_plugins.append(mod)
+                if spec_obj is not None and spec_obj.loader is not None:
+                    mod = importlib.util.module_from_spec(spec_obj)
+                    sys.modules[name] = mod
+                    spec_obj.loader.exec_module(mod)
+                    _loaded_plugins.append(mod)
             except Exception:
                 # best-effort; skip on failure
                 pass
