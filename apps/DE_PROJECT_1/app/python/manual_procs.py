@@ -6,9 +6,9 @@ from pathlib import Path
 
 
 def load_named_config(config_name: str) -> dict:
-    """Load configuration by name from config files following framework patterns"""
+    """Load configuration by name following framework patterns with schema fallback"""
     try:
-        # Try app-specific config first (following framework conventions)
+        # Try direct config file first (framework pattern)
         config_path = Path(__file__).parent.parent / \
             "config" / f"{config_name}.json"
         if config_path.exists():
@@ -22,9 +22,26 @@ def load_named_config(config_name: str) -> dict:
             with open(common_config_path, 'r') as f:
                 return json.load(f)
 
-        # No hardcoded fallback - force proper config file usage
+        # Check if this is a schema name and map to existing config
+        schema_path = Path(__file__).parent.parent / "schemas" / "schemas.json"
+        if schema_path.exists():
+            with open(schema_path, 'r') as f:
+                schemas = json.load(f)
+                if config_name in schemas:
+                    # Found schema, use the main config with this schema key
+                    main_config_path = Path(
+                        __file__).parent.parent / "config" / "copy_to_snowstg_udemy.json"
+                    if main_config_path.exists():
+                        with open(main_config_path, 'r') as f:
+                            config = json.load(f)
+                            # Add schema info to config
+                            config["schema_key"] = config_name
+                            config["schema_definition"] = schemas[config_name]
+                            return config
+
+        # Framework-style error with expected paths
         raise FileNotFoundError(
-            f"Configuration '{config_name}' not found. Expected at {config_path}")
+            f"Configuration '{config_name}' not found. Expected at {config_path} or as schema in {schema_path}")
 
     except Exception as e:
         raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
