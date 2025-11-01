@@ -22,28 +22,40 @@ def load_named_config(config_name: str) -> dict:
             with open(common_config_path, 'r') as f:
                 return json.load(f)
 
-        # Check if this is a schema name and map to existing config
-        schema_path = Path(__file__).parent.parent / "schemas" / "schemas.json"
-        if schema_path.exists():
-            with open(schema_path, 'r') as f:
-                schemas = json.load(f)
-                if config_name in schemas:
-                    # Found schema, use the main config with this schema key
-                    main_config_path = Path(
-                        __file__).parent.parent / "config" / "copy_to_snowstg_udemy.json"
-                    if main_config_path.exists():
-                        with open(main_config_path, 'r') as f:
-                            config = json.load(f)
-                            # Add schema info to config
+        # Map known schema names to existing config (framework pattern for backwards compatibility)
+        schema_to_config_mapping = {
+            "emp_stg_schema_udemy": "copy_to_snowstg_udemy"
+        }
+
+        if config_name in schema_to_config_mapping:
+            # Recursively load the mapped config
+            mapped_config_name = schema_to_config_mapping[config_name]
+            config = load_named_config(mapped_config_name)
+
+            # Try to enrich with schema definition if available
+            try:
+                schema_path = Path(__file__).parent.parent / \
+                    "schemas" / "schemas.json"
+                if schema_path.exists():
+                    with open(schema_path, 'r') as f:
+                        schemas = json.load(f)
+                        if config_name in schemas:
                             config["schema_key"] = config_name
                             config["schema_definition"] = schemas[config_name]
-                            return config
+            except Exception:
+                # Schema enrichment is optional - continue without it
+                pass
+
+            return config
 
         # Framework-style error with expected paths
         raise FileNotFoundError(
-            f"Configuration '{config_name}' not found. Expected at {config_path} or as schema in {schema_path}")
+            f"Configuration '{config_name}' not found. Expected at {config_path} or mapped in schema_to_config_mapping")
 
     except Exception as e:
+        if "Failed to load config" in str(e):
+            # Avoid recursive error wrapping
+            raise e
         raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
 
 
