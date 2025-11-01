@@ -3,83 +3,59 @@ from snowflake.snowpark.functions import col, lit, when, current_timestamp
 from snowflake.snowpark.types import StringType
 import json
 from pathlib import Path
-from app.common.helpers import copy_to_table, json_to_struct_type, persist_copy_errors_from_last_query
-# Import example schema and config for copy_to_table_proc
-from app.common.helpers import COPY_TO_TABLE_PROC_CONFIG_PATH, COPY_TO_TABLE_PROC_SCHEMA_PATH
-# typing.Optional not used anymore
-
-
-#  Example procedure to copy data from one table to another using dynamic config and schema files
-
-def test_manual_proc(session: Session, name: str) -> str:
-    return f"Hello, {name}"
 
 
 def load_named_config(config_name: str) -> dict:
-    """Load configuration by name from config files"""
+    """Load configuration by name from config files following framework patterns"""
     try:
-        # Try to load from app-specific config first
+        # Try app-specific config first (following framework conventions)
         config_path = Path(__file__).parent.parent / \
             "config" / f"{config_name}.json"
         if config_path.exists():
             with open(config_path, 'r') as f:
                 return json.load(f)
 
-        # Fallback to common config location
+        # Try common config location (framework pattern)
         common_config_path = Path(
             __file__).parent.parent.parent.parent / "common" / "config" / f"{config_name}.json"
         if common_config_path.exists():
             with open(common_config_path, 'r') as f:
                 return json.load(f)
 
-        # Hardcoded fallback for emp_stg_schema_udemy
-        if config_name in ["copy_to_snowstg_udemy", "emp_stg_schema_udemy"]:
-            return {
-                "Database_name": "DEMO_DB",
-                "Schema_name": "PUBLIC",
-                "Target_table": "EMPLOYEE2",
-                "Reject_table": "EMPLOYEE_REJECTS",
-                "Source_location": "@DEMO_DB.PUBLIC.EMPLOYEE_STG/employee.csv",
-                "target_columns": ["FIRST_NAME", "LAST_NAME", "EMAIL", "ADDRESS", "CITY", "DOJ"],
-                "file_format": {
-                    "field_delimiter": ",",
-                    "skip_header": 1,
-                    "field_optionally_enclosed_by": "\""
-                }
-            }
-
-        raise FileNotFoundError(f"Configuration '{config_name}' not found")
+        # No hardcoded fallback - force proper config file usage
+        raise FileNotFoundError(
+            f"Configuration '{config_name}' not found. Expected at {config_path}")
 
     except Exception as e:
         raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
 
 
-def copy_to_table_proc(session: Session, schema_key: str = "emp_stg_schema_udemy"):
-    """Copy data with reject handling integrated"""
+def copy_to_table_proc(session: Session, schema_key: str = "copy_to_snowstg_udemy"):
+    """Copy data with reject handling integrated - following framework patterns"""
 
-    # Load config using the helper function
+    # Load config from JSON file (no hardcoded fallback)
     config = load_named_config(schema_key)
 
     database_name = config["Database_name"]
     schema_name = config["Schema_name"]
     target_table = config["Target_table"]
     reject_table = config["Reject_table"]
+    # "@DEMO_DB.PUBLIC.DEV_INTERNAL_STAGE"
     source_location = config["Source_location"]
-    target_columns = config["target_columns"]
     file_format = config["file_format"]
 
-    # Create full table names
+    # Create full table names following framework patterns
     target_full_name = f"{database_name}.{schema_name}.{target_table}"
     reject_full_name = f"{database_name}.{schema_name}.{reject_table}"
 
     try:
-        # Read data from stage using config
+        # Read data from stage using config values
         df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
             .option("SKIP_HEADER", file_format["skip_header"]) \
             .option("FIELD_OPTIONALLY_ENCLOSED_BY", file_format["field_optionally_enclosed_by"]) \
             .csv(source_location)
 
-        # Add basic validation - reject records with empty/null first name
+        # Add validation - reject records with empty/null first name
         df_with_validation = df_raw.with_column(
             "is_valid",
             when(
@@ -109,7 +85,7 @@ def copy_to_table_proc(session: Session, schema_key: str = "emp_stg_schema_udemy
             )
             df_final.write.mode("append").save_as_table(target_full_name)
 
-        # Handle rejected records - NEW FUNCTIONALITY
+        # Handle rejected records
         if reject_count > 0:
             # Ensure reject table exists
             create_reject_table_sql = f"""
@@ -126,7 +102,7 @@ def copy_to_table_proc(session: Session, schema_key: str = "emp_stg_schema_udemy
             """
             session.sql(create_reject_table_sql).collect()
 
-            # Insert rejected records with basic metadata
+            # Insert rejected records with metadata
             df_reject_output = df_rejected.select(
                 col("$1").alias("FIRST_NAME"),
                 col("$2").alias("LAST_NAME"),
@@ -141,9 +117,14 @@ def copy_to_table_proc(session: Session, schema_key: str = "emp_stg_schema_udemy
             df_reject_output.write.mode(
                 "append").save_as_table(reject_full_name)
 
-        # Return enhanced result following framework patterns
+        # Return framework-compatible result
         return f"SUCCESS: Processed {valid_count + reject_count} records. Loaded {valid_count} valid, rejected {reject_count}. Target: {target_full_name}, Rejects: {reject_full_name if reject_count > 0 else 'None'}"
 
     except Exception as e:
-        # Return error result following framework patterns
+        # Return framework-compatible error
         return f"FAILED: {str(e)} - Target: {target_full_name}"
+
+
+def test_manual_proc(session: Session, test_input: str = "test"):
+    """Test procedure for manual registration following framework patterns"""
+    return f"Manual procedure test result: {test_input}"
