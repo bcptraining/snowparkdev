@@ -15,7 +15,7 @@ from pathlib import Path
 #   apps/DE_PROJECT_1/tests/test_procedures_man.py
 # Keep this module runtime-only.
 
-# Dynamically add the project root to PYTHONPATH before any repo-local imports...
+# Dynamically add the project root to PYTHONPATH before any repo-local imports....
 ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../"))
 if ROOT_DIR not in sys.path:
