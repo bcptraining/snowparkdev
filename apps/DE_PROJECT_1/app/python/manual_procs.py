@@ -1,8 +1,7 @@
-from snowflake.snowpark.types import StructType
 from snowflake.snowpark import Session
-from tabulate import tabulate
+from snowflake.snowpark.functions import col, lit, when, current_timestamp
+from snowflake.snowpark.types import StringType
 import json
-from importlib import resources
 from pathlib import Path
 from app.common.helpers import copy_to_table, json_to_struct_type, persist_copy_errors_from_last_query
 # Import example schema and config for copy_to_table_proc
@@ -16,126 +15,135 @@ def test_manual_proc(session: Session, name: str) -> str:
     return f"Hello, {name}"
 
 
-def copy_to_table_proc(session, schema_key, *args, **kwargs):
-    """
-    Wrapper around copy_to_table that prints a human-friendly summary (stdout only),
-    returns the authoritative COPY LAST_QUERY_ID (qid), and persists rejects (in the same session).
-    """
-    # Load config (prefer package resource inside app.zip, fallback to file)
-    cfg_name = Path(COPY_TO_TABLE_PROC_CONFIG_PATH).name
+def load_named_config(config_name: str) -> dict:
+    """Load configuration by name from config files"""
     try:
-        cfg_text = resources.files("app").joinpath(
-            "config", cfg_name).read_text()
-        config_file = json.loads(cfg_text)
-    except Exception:
-        try:
-            with open(COPY_TO_TABLE_PROC_CONFIG_PATH, "r") as f:
-                config_file = json.load(f)
-        except Exception as e:
-            return f"❌ Failed to load config: {e}"
+        # Try to load from app-specific config first
+        config_path = Path(__file__).parent.parent / \
+            "config" / f"{config_name}.json"
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                return json.load(f)
 
-    # Load schemas (prefer packaged resource)
-    schema_name = Path(COPY_TO_TABLE_PROC_SCHEMA_PATH).name
+        # Fallback to common config location
+        common_config_path = Path(
+            __file__).parent.parent.parent.parent / "common" / "config" / f"{config_name}.json"
+        if common_config_path.exists():
+            with open(common_config_path, 'r') as f:
+                return json.load(f)
+
+        # Hardcoded fallback for emp_stg_schema_udemy
+        if config_name in ["copy_to_snowstg_udemy", "emp_stg_schema_udemy"]:
+            return {
+                "Database_name": "DEMO_DB",
+                "Schema_name": "PUBLIC",
+                "Target_table": "EMPLOYEE2",
+                "Reject_table": "EMPLOYEE_REJECTS",
+                "Source_location": "@DEMO_DB.PUBLIC.EMPLOYEE_STG/employee.csv",
+                "target_columns": ["FIRST_NAME", "LAST_NAME", "EMAIL", "ADDRESS", "CITY", "DOJ"],
+                "file_format": {
+                    "field_delimiter": ",",
+                    "skip_header": 1,
+                    "field_optionally_enclosed_by": "\""
+                }
+            }
+
+        raise FileNotFoundError(f"Configuration '{config_name}' not found")
+
+    except Exception as e:
+        raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
+
+
+def copy_to_table_proc(session: Session, schema_key: str = "emp_stg_schema_udemy"):
+    """Copy data with reject handling integrated"""
+
+    # Load config using the helper function
+    config = load_named_config(schema_key)
+
+    database_name = config["Database_name"]
+    schema_name = config["Schema_name"]
+    target_table = config["Target_table"]
+    reject_table = config["Reject_table"]
+    source_location = config["Source_location"]
+    target_columns = config["target_columns"]
+    file_format = config["file_format"]
+
+    # Create full table names
+    target_full_name = f"{database_name}.{schema_name}.{target_table}"
+    reject_full_name = f"{database_name}.{schema_name}.{reject_table}"
+
     try:
-        schemas_text = resources.files("app").joinpath(
-            "schemas", schema_name).read_text()
-        schema_file = json.loads(schemas_text)
-    except Exception:
-        try:
-            with open(COPY_TO_TABLE_PROC_SCHEMA_PATH, "r") as f:
-                schema_file = json.load(f)
-        except Exception as e:
-            return f"❌ Failed to load schema file: {e}"
+        # Read data from stage using config
+        df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
+            .option("SKIP_HEADER", file_format["skip_header"]) \
+            .option("FIELD_OPTIONALLY_ENCLOSED_BY", file_format["field_optionally_enclosed_by"]) \
+            .csv(source_location)
 
-    # Extract raw schema by key
-    raw_schema = schema_file.get(schema_key)
-    if not raw_schema:
-        available_keys = list(schema_file.keys())
-        return (
-            f"❌ Schema key '{schema_key}' not found in schema file.\n"
-            f"📂 Available schema keys: {available_keys}"
+        # Add basic validation - reject records with empty/null first name
+        df_with_validation = df_raw.with_column(
+            "is_valid",
+            when(
+                (col("$1").is_null()) |
+                (col("$1") == "") |
+                (col("$1") == "NULL"),
+                False
+            ).otherwise(True)
         )
 
-    # Convert raw schema to StructType
-    try:
-        schema = json_to_struct_type(raw_schema)
-    except Exception as e:
-        return f"❌ Failed to convert schema for key '{schema_key}': {e}"
+        # Split into valid and rejected records
+        df_valid = df_with_validation.filter(col("is_valid") == True)
+        df_rejected = df_with_validation.filter(col("is_valid") == False)
 
-    # Resolve flags and reject table name once
-    full_audit_flag = bool(config_file.get("persist_all_copy_results", False))
-    reject_table_cfg = (
-        config_file.get("Reject_table")
-        or config_file.get("reject_table")
-        or config_file.get("RejectTable")
-    )
-    if reject_table_cfg:
-        if "." not in reject_table_cfg:
-            db = config_file.get(
-                "Database_name") or config_file.get("database")
-            schema_cfg = config_file.get(
-                "Schema_name") or config_file.get("schema")
-            reject_table_full_name = f"{db}.{schema_cfg}.{reject_table_cfg}" if db and schema_cfg else reject_table_cfg
-        else:
-            reject_table_full_name = reject_table_cfg
-    else:
-        reject_table_full_name = None
+        valid_count = df_valid.count()
+        reject_count = df_rejected.count()
 
-    # Prepare kwargs forwarded into copy_to_table
-    new_kwargs = dict(kwargs or {})
-    new_kwargs.setdefault("schema_key", schema_key)
-    new_kwargs.setdefault("app_name", new_kwargs.get(
-        "app_name") or "DE_PROJECT_1")
-
-    # Execute copy and persist rejects (if configured)
-    try:
-        rows, qid, persisted_count = copy_to_table(
-            session, config_file, schema=schema_key, **new_kwargs)
-    except Exception as e:
-        return f"❌ Copy operation failed: {e}"
-
-    # Format & print summary (stdout only)yes
-    def format_copy_results(copy_result_rows):
-        table_data = []
-        for row in (copy_result_rows or []):
-            file_name = getattr(row, "file", "") or ""
-            file_name = file_name.split("/")[-1] if file_name else ""
-            status = getattr(row, "status", "") or ""
-            loaded = getattr(row, "rows_loaded", "") or ""
-            parsed = getattr(row, "rows_parsed", "") or ""
-            errors = getattr(row, "errors_seen", 0) or 0
-            if errors:
-                error_msg = f"{getattr(row, 'first_error', '')} (line {getattr(row, 'first_error_line', '')}, column {getattr(row, 'first_error_column_name', '')})"
-            else:
-                error_msg = "—"
-            table_data.append([file_name, status, loaded,
-                              parsed, errors, error_msg])
-
-        headers = ["📄 File Name", "Status", "Rows Loaded",
-                   "Rows Parsed", "Errors Seen", "First Error"]
-        summary = tabulate(table_data, headers=headers, tablefmt="github")
-        return summary
-
-    summary_text = format_copy_results(rows)
-
-    # Persist rejects using helper (only if a reject table is configured)
-    if reject_table_full_name:
-        try:
-            persist_copy_errors_from_last_query(
-                session,
-                reject_table_full_name=reject_table_full_name,
-                full_audit=full_audit_flag,
-                query_id=qid,
-                app_name=new_kwargs.get("app_name"),
-                schema_key=new_kwargs.get("schema_key"),
+        # Process valid records
+        if valid_count > 0:
+            df_final = df_valid.select(
+                col("$1").alias("FIRST_NAME"),
+                col("$2").alias("LAST_NAME"),
+                col("$3").alias("EMAIL"),
+                col("$4").alias("ADDRESS"),
+                col("$5").alias("CITY"),
+                col("$6").alias("DOJ")
             )
-        except Exception as e:
-            # Log but do not mask the copy success
-            print(f"Warning: persist_copy_errors_from_last_query failed: {e}")
+            df_final.write.mode("append").save_as_table(target_full_name)
 
-    # Print human summary and return authoritative qid
-    print("\n✅ Copy Result Summary\n")
-    print(summary_text)
-    return qid
+        # Handle rejected records - NEW FUNCTIONALITY
+        if reject_count > 0:
+            # Ensure reject table exists
+            create_reject_table_sql = f"""
+            CREATE TABLE IF NOT EXISTS {reject_full_name} (
+                FIRST_NAME VARCHAR(100),
+                LAST_NAME VARCHAR(100),
+                EMAIL VARCHAR(200),
+                ADDRESS VARCHAR(500),
+                CITY VARCHAR(100),
+                DOJ VARCHAR(50),
+                REJECT_REASON VARCHAR(1000),
+                REJECT_TIMESTAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
+            )
+            """
+            session.sql(create_reject_table_sql).collect()
 
-# Removed stray SQL/CALL/debug lines that caused SyntaxError in deployment
+            # Insert rejected records with basic metadata
+            df_reject_output = df_rejected.select(
+                col("$1").alias("FIRST_NAME"),
+                col("$2").alias("LAST_NAME"),
+                col("$3").alias("EMAIL"),
+                col("$4").alias("ADDRESS"),
+                col("$5").alias("CITY"),
+                col("$6").alias("DOJ"),
+                lit("Missing or empty first name").alias("REJECT_REASON"),
+                current_timestamp().alias("REJECT_TIMESTAMP")
+            )
+
+            df_reject_output.write.mode(
+                "append").save_as_table(reject_full_name)
+
+        # Return enhanced result following framework patterns
+        return f"SUCCESS: Processed {valid_count + reject_count} records. Loaded {valid_count} valid, rejected {reject_count}. Target: {target_full_name}, Rejects: {reject_full_name if reject_count > 0 else 'None'}"
+
+    except Exception as e:
+        # Return error result following framework patterns
+        return f"FAILED: {str(e)} - Target: {target_full_name}"
