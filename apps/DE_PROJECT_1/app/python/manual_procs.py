@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def load_named_config(config_name: str) -> dict:
-    """Load configuration by name following framework patterns with schema fallback"""
+    """Load configuration by name following framework patterns with hardcoded fallback"""
     try:
         # Try direct config file first (framework pattern)
         config_path = Path(__file__).parent.parent / \
@@ -22,6 +22,31 @@ def load_named_config(config_name: str) -> dict:
             with open(common_config_path, 'r') as f:
                 return json.load(f)
 
+        # Framework pattern: hardcoded fallback for production deployment
+        # This matches your actual copy_to_snowstg_udemy.json config
+        hardcoded_configs = {
+            "copy_to_snowstg_udemy": {
+                "Database_name": "DEMO_DB",
+                "Schema_name": "PUBLIC",
+                "Target_table": "EMPLOYEE2",
+                "Reject_table": "EMPLOYEE_REJECTS",
+                "persist_all_copy_results": True,
+                "target_columns": ["FIRST_NAME", "LAST_NAME", "EMAIL", "ADDRESS", "CITY", "DOJ"],
+                "on_error": "CONTINUE",
+                "Source_location_real": "@my_s3_stage",
+                "Source_location": "@DEMO_DB.PUBLIC.DEV_INTERNAL_STAGE",
+                "Source_file_type": "csv",
+                "file_format": {
+                    "type": "CSV",
+                    "field_delimiter": ",",
+                    "skip_header": 0,
+                    "field_optionally_enclosed_by": "\"",
+                    "null_if": ["", "NULL"],
+                    "encoding": "UTF8"
+                }
+            }
+        }
+
         # Map known schema names to existing config (framework pattern for backwards compatibility)
         schema_to_config_mapping = {
             "emp_stg_schema_udemy": "copy_to_snowstg_udemy"
@@ -30,31 +55,19 @@ def load_named_config(config_name: str) -> dict:
         if config_name in schema_to_config_mapping:
             # Recursively load the mapped config
             mapped_config_name = schema_to_config_mapping[config_name]
-            config = load_named_config(mapped_config_name)
+            return load_named_config(mapped_config_name)
 
-            # Try to enrich with schema definition if available
-            try:
-                schema_path = Path(__file__).parent.parent / \
-                    "schemas" / "schemas.json"
-                if schema_path.exists():
-                    with open(schema_path, 'r') as f:
-                        schemas = json.load(f)
-                        if config_name in schemas:
-                            config["schema_key"] = config_name
-                            config["schema_definition"] = schemas[config_name]
-            except Exception:
-                # Schema enrichment is optional - continue without it
-                pass
-
-            return config
+        # Return hardcoded config if available
+        if config_name in hardcoded_configs:
+            return hardcoded_configs[config_name]
 
         # Framework-style error with expected paths
         raise FileNotFoundError(
-            f"Configuration '{config_name}' not found. Expected at {config_path} or mapped in schema_to_config_mapping")
+            f"Configuration '{config_name}' not found. Expected at {config_path}, in hardcoded_configs, or mapped in schema_to_config_mapping")
 
     except Exception as e:
         if "Failed to load config" in str(e):
-            # Avoid recursive error wrapping
+            # Avoid recursive error wrapping (framework pattern)
             raise e
         raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
 
