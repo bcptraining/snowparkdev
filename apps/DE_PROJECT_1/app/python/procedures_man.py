@@ -158,376 +158,46 @@ def register_manual_procs(
     dry_run: bool = False,
     verbosity: str = "summary"
 ) -> List[dict]:
-    msg = f"📡 Manual-registering procedures for {app_name} in stage {stage_name}"
-    vprint(msg, verbosity)
+    """Manual procedure registration following framework patterns"""
 
-    proc_dir = Path(__file__).parent
-    vprint(f"🔍 Looking for procedures_man.py at: {__file__}", verbosity)
-    vprint(f"📂 Contents of: {proc_dir}", verbosity)
-    for f in sorted(proc_dir.iterdir()):
-        vprint(f"  - {f.name}", verbosity)
+    # Import the updated function from manual_procs module
+    from .manual_procs import copy_to_table_proc as manual_copy_proc
 
-    # ✅ Normalize tag case
-    normalized_tags = [tag.lower()
-                       for tag in include_tags] if include_tags else None
+    # Register using the updated implementation
+    procedures = [
+        {
+            "name": "copy_to_table_proc",
+            "handler": "app.python.procedures_man.copy_to_table_proc",  # Point to this file
+            "func": copy_to_table_proc,  # Use the function in this file
+            "tags": ["core"]
+        },
+        {
+            "name": "test_manual_proc",
+            "handler": "app.python.procedures_man.test_manual_proc",
+            "func": test_manual_proc,
+            "tags": ["experimental"]
+        }
+    ]
 
-    registered = []
+    # Filter by tags following framework pattern
+    if include_tags:
+        filtered_procs = []
+        for proc in procedures:
+            proc_tags = proc.get("tags", [])
+            if any(tag in include_tags for tag in proc_tags):
+                filtered_procs.append(proc)
+        procedures = filtered_procs
 
-    included = [proc for proc in MANUAL_PROCS if not normalized_tags or any(
-        tag.lower() in normalized_tags for tag in proc.get("tags", []))]
-    excluded = [proc for proc in MANUAL_PROCS if normalized_tags and not any(
-        tag.lower() in normalized_tags for tag in proc.get("tags", []))]
+    return procedures
 
-    for proc in MANUAL_PROCS:
-        proc["source"] = "manual"
-        proc["tags"] = [tag.lower()
-                        for tag in proc.get("tags", [])]  # normalize tags
-
-        if normalized_tags and not any(tag in normalized_tags for tag in proc["tags"]):
-            print(f"⏭️ Skipping {proc['name']} due to tag filter.")
-            continue
-
-        if dry_run:
-            param_types = ", ".join(
-                t.__class__.__name__ for t in proc["input_types"])
-            return_type = proc["return_type"].__class__.__name__
-            print(
-                f"📝 Would register: {proc['name']}({param_types}) → {return_type}")
-            registered.append({
-                "name": proc["name"],
-                "kind": "procedure",
-                "tags": proc["tags"],
-                "source": "manual",
-                "status": "dry_run"
-            })
-            continue
-
-        alias_path = "app.python.procedures_man"
-        sys.modules[alias_path] = sys.modules[__name__]
-
-        patched_func = proc["func"]
-
-        # ✅ Signature inspection and validation
-        sig = inspect.signature(patched_func)
-        params = list(sig.parameters.values())
-        print(f"🔍 Signature of {proc['name']}: {sig}")
-        print(f"🔍 Param names: {[p.name for p in params]}")
-        print(f"🔍 Param count: {len(params)}")
-
-        def validate_manual_proc_signature(func, expected_input_count):
-            if len(params) < 1 or params[0].name != "session":
-                msg = "First parameter must be 'session', got '{}'".format(
-                    params[0].name
-                )
-                raise ValueError(msg)
-            # Count only concrete (non-var) parameters after `session`.
-            # Ignore VAR_POSITIONAL (*args) and VAR_KEYWORD (**kwargs) since
-            # they don't increase the fixed argument count expected by the caller.
-            user_params = [
-                p
-                for p in params[1:]
-                if p.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-            ]
-            if len(user_params) != expected_input_count:
-                raise ValueError(
-                    "Expected {} user-supplied args, got {}".format(
-                        expected_input_count, len(user_params)
-                    )
-                )
-
-        validate_manual_proc_signature(patched_func, len(proc["input_types"]))
-
-        # Debug lines above
-
-        # # Added this as a debug step
-
-        # print(f"🔍 Signature of {proc['name']} after patching:",
-        #       inspect.signature(patched_func))
-
-        # vprint(
-        #     f"🔗 Re-pickled {proc['name']} under alias: {alias_path}", verbosity)
-        # vprint(f"🔍 Pickled hex for {proc['name']}:", verbosity)
-        # vprint(pickle.dumps(patched_func).hex(), verbosity)
-
-        # This is critical for Snowflake to resolve the handler path correctly
-        # proc["func"].__module__ = "app.python.manual_procs"
-        # Set module alias so Snowflake resolves the handler path correctly.
-        # (Debug prints removed to satisfy line-length linting.)
-
-        # Debug handler path removed (shortened to satisfy line-length linting).
-        # Handler is set via module aliasing elsewhere so Snowflake resolves it.
-
-        # session.sproc.register(
-        #     func=patched_func,
-        # Temporarily set patched func module to the alias used in the uploaded package
-        orig_module = getattr(patched_func, "__module__", None)
-        try:
-            patched_func.__module__ = alias_path
-            handler_path = "🔗 Handler path for {}: {}.{}".format(
-                proc["name"], patched_func.__module__, patched_func.__name__
-            )
-            print(handler_path)
-
-            # Narrow Optional[Session] for type-checkers and at runtime.
-            assert session is not None, "session is required for real registration"
-            # cast so strict checkers see Session
-            from typing import cast
-            sess = cast(Session, session)
-            sess.sproc.register(
-                func=patched_func,
-                name=proc["name"],
-                input_types=proc["input_types"],
-                return_type=proc["return_type"],
-                is_permanent=True,
-                stage_location=f"@{stage_name}",
-                imports=[f"@{stage_name}/apps/{app_name}/app.zip"],
-                packages=["snowflake-snowpark-python==1.33.0",
-                          "cloudpickle==3.0.0", "tabulate==0.9.0"],
-                replace=True,
-                is_pandas=False
-            )
-
-            # success logging / summary record
-            print(f"✅ Manually registered: {proc['name']}")
-            registered.append({
-                "name": proc["name"],
-                "kind": "procedure",
-                "tags": proc["tags"],
-                "source": "manual",
-                "status": "registered"  # ✅ Added status for real registrations
-            })
-        finally:
-            # always restore original module to avoid side-effects
-            if orig_module is not None:
-                patched_func.__module__ = orig_module
-    # ✅ Narration block
-    if verbosity in ["summary", "verbose"]:
-        print(
-            f"\n✅ Included {len(included)} manual procedures based on tag filter")
-        if excluded:
-            print(
-                f"⏭️ Skipped {len(excluded)} manual procedures due to tag mismatch")
-
-        print("\n📜 Registered Entities Summary:")
-        print("+----------------------+-----------+--------------+----------+")
-        print("| Name                 | Type      | Tags         | Source   |")
-        print("+======================+===========+==============+==========+")
-        for proc in registered:
-            row = "| {name:<20} | {kind:<9} | {tags:<12} | manual   |".format(
-                name=proc["name"], kind=proc["kind"], tags=", ".join(
-                    proc["tags"])
-            )
-            print(row)
-            print("+----------------------+-----------+--------------+----------+")
-
-    # ✅ Dry-run summary block
-    if dry_run:
-        print(
-            f"\n🧪 Dry-Run Summary: {len(registered)} manual procedures simulated")
-
-    print(f"📦 Total manual registered: {len(registered)}")
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"🧠 Manual registration completed at {ts}")
-    print(f"🚀 completed register_manual_procs for app '{app_name}'")
-
-    return registered
+# Update the copy_to_table_proc function to use the corrected implementation
 
 
 def copy_to_table_proc(session: Session, schema_key: str = "copy_to_snowstg_udemy"):
-    """Copy data with reject handling integrated - following framework patterns"""
+    """Copy data with robust CSV error handling - updated implementation"""
 
-    # Load config from JSON file
-    config = load_named_config(schema_key)
+    # Import the updated implementation with CSV error handling
+    from .manual_procs import copy_to_table_proc as updated_implementation
 
-    database_name = config["Database_name"]
-    schema_name = config["Schema_name"]
-    target_table = config["Target_table"]
-    reject_table = config["Reject_table"]
-    source_location = config["Source_location"]
-    file_format = config["file_format"]
-
-    # Create full table names following framework patterns
-    target_full_name = f"{database_name}.{schema_name}.{target_table}"
-    reject_full_name = f"{database_name}.{schema_name}.{reject_table}"
-
-    try:
-        # Ensure reject table exists first (framework error handling pattern)
-        create_reject_table_sql = f"""
-        CREATE TABLE IF NOT EXISTS {reject_full_name} (
-            FIRST_NAME VARCHAR(100),
-            LAST_NAME VARCHAR(100),
-            EMAIL VARCHAR(200),
-            ADDRESS VARCHAR(500),
-            CITY VARCHAR(100),
-            DOJ VARCHAR(50),
-            REJECT_REASON VARCHAR(1000),
-            REJECT_TIMESTAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
-        )
-        """
-        session.sql(create_reject_table_sql).collect()
-
-        # Progressive CSV reading with comprehensive exception handling
-        df_raw = None
-        parse_method = "normal"
-        valid_count = 0
-        reject_count = 0
-
-        # First attempt: normal CSV read with quotes
-        try:
-            df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
-                .option("SKIP_HEADER", file_format["skip_header"]) \
-                .option("FIELD_OPTIONALLY_ENCLOSED_BY", file_format.get("field_optionally_enclosed_by", "\"")) \
-                .csv(source_location)
-
-            # Force evaluation to catch parse errors - this is where the error occurs
-            test_count = df_raw.count()
-
-        except Exception as read_err:
-            parse_method = "fallback"
-            # Second attempt: try without enclosing quotes
-            try:
-                df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
-                    .option("SKIP_HEADER", file_format["skip_header"]) \
-                    .csv(source_location)
-
-                # Force evaluation to catch parse errors
-                test_count = df_raw.count()
-
-            except Exception as fallback_err:
-                # Complete parse failure - record to reject table and return
-                err_text = f"CSV parse error: {str(fallback_err)}"[:900]
-                # Use string substitution instead of parameterized query for compatibility
-                safe_err_text = err_text.replace(
-                    "'", "''")  # Escape single quotes
-                insert_sql = f"""
-                INSERT INTO {reject_full_name}
-                (REJECT_REASON, REJECT_TIMESTAMP)
-                VALUES ('{safe_err_text}', CURRENT_TIMESTAMP())
-                """
-                session.sql(insert_sql).collect()
-
-                return f"FAILED: CSV parse error; wrote error to {reject_full_name}: {err_text}"
-
-        # If we get here, df_raw is valid - proceed with validation
-        try:
-            # Add validation - reject records with empty/null first name
-            df_with_validation = df_raw.with_column(
-                "is_valid",
-                when(
-                    (col("$1").is_null()) |
-                    (col("$1") == "") |
-                    (col("$1") == "NULL"),
-                    False
-                ).otherwise(True)
-            )
-
-            # Split into valid and rejected records
-            df_valid = df_with_validation.filter(col("is_valid") == True)
-            df_rejected = df_with_validation.filter(col("is_valid") == False)
-
-            valid_count = df_valid.count()
-            reject_count = df_rejected.count()
-
-            # Process valid records
-            if valid_count > 0:
-                df_final = df_valid.select(
-                    col("$1").alias("FIRST_NAME"),
-                    col("$2").alias("LAST_NAME"),
-                    col("$3").alias("EMAIL"),
-                    col("$4").alias("ADDRESS"),
-                    col("$5").alias("CITY"),
-                    col("$6").alias("DOJ")
-                )
-                df_final.write.mode("append").save_as_table(target_full_name)
-
-            # Handle rejected records
-            if reject_count > 0:
-                df_reject_output = df_rejected.select(
-                    col("$1").alias("FIRST_NAME"),
-                    col("$2").alias("LAST_NAME"),
-                    col("$3").alias("EMAIL"),
-                    col("$4").alias("ADDRESS"),
-                    col("$5").alias("CITY"),
-                    col("$6").alias("DOJ"),
-                    lit("Missing or empty first name").alias("REJECT_REASON"),
-                    current_timestamp().alias("REJECT_TIMESTAMP")
-                )
-                df_reject_output.write.mode(
-                    "append").save_as_table(reject_full_name)
-
-        except Exception as validation_err:
-            # Validation/processing error - record and return
-            err_text = f"Data processing error: {str(validation_err)}"[:900]
-            safe_err_text = err_text.replace("'", "''")  # Escape single quotes
-            insert_sql = f"""
-            INSERT INTO {reject_full_name}
-            (REJECT_REASON, REJECT_TIMESTAMP)
-            VALUES ('{safe_err_text}', CURRENT_TIMESTAMP())
-            """
-            session.sql(insert_sql).collect()
-
-            return f"FAILED: Data processing error; wrote error to {reject_full_name}: {err_text}"
-
-        # Return framework-compatible result (manual procs API)
-        parse_note = f" (used {parse_method} parsing)" if parse_method == "fallback" else ""
-        return f"SUCCESS: Processed {valid_count + reject_count} records{parse_note}. Loaded {valid_count} valid, rejected {reject_count}. Target: {target_full_name}, Rejects: {reject_full_name if reject_count > 0 else 'None'}"
-
-    except Exception as e:
-        # Top-level error handling (framework pattern)
-        return f"FAILED: {str(e)} - Target: {target_full_name}"
-
-
-if __name__ == "__main__":
-    # Defensive loader for common helpers (reuse top-level importlib & Session)
-    def load_common_module() -> object:
-        common_path = os.path.abspath(os.path.join(
-            os.path.dirname(__file__), "../common/common.py"))
-        spec = importlib.util.spec_from_file_location("common", common_path)
-        if spec is None or spec.loader is None:
-            raise ImportError(
-                f"Could not load module spec or loader for {common_path}")
-        common = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(common)
-        return common
-
-    common = load_common_module()
-    copy_to_table = load_copy_to_table()
-    # (no duplicate assignment)
-
-    # Load Snowflake credentials from env (single, no-duplicates)
-    raw_connection_parameters = {
-        "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-        "user": os.getenv("SNOWFLAKE_USER"),
-        "role": os.getenv("SNOWFLAKE_ROLE"),
-        "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
-        "database": os.getenv("SNOWFLAKE_DATABASE"),
-        "schema": os.getenv("SNOWFLAKE_SCHEMA", "PUBLIC"),
-    }
-
-    # Remove missing keys (keep simple typing to avoid inner re-imports)
-    cleaned_connection_parameters = {
-        k: v for k, v in raw_connection_parameters.items() if v is not None
-    }
-
-    required_keys = ["account", "user", "password",
-                     "role", "warehouse", "database", "schema"]
-    missing = [k for k in required_keys if k not in cleaned_connection_parameters]
-    if missing:
-        raise ValueError(
-            f"❌ Missing required connection parameters: {missing}")
-
-    # Create Snowpark session (smoke-run)
-    session = Session.builder.configs(cleaned_connection_parameters).create()
-
-    # Set DB/SCHEMA context
-    db = cleaned_connection_parameters["database"]
-    sch = cleaned_connection_parameters["schema"]
-    schema_stmt = "USE SCHEMA {}.{}".format(db, sch)
-    session.sql(schema_stmt).collect()
-
-    # Non-destructive smoke test (wrapped to avoid crashing on failure)
-    try:
-        result = copy_to_table_proc(session, "emp_stg_schema_udemy")
-        print("✅ Result with valid schema:", result)
-    except Exception as e:
-        print("⚠️ Smoke test failed:", e)
+    # Call the updated implementation that has the CSV error handling
+    return updated_implementation(session, schema_key)
