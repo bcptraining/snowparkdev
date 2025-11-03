@@ -60,41 +60,64 @@ def load_copy_to_table():
 
 
 def load_named_config(config_name: str) -> dict:
-    """Load configuration by name from config files"""
+    """Load configuration by name following framework patterns with hardcoded fallback"""
     try:
-        # Try to load from app-specific config first
+        # Try app-specific config first (framework pattern)
         config_path = Path(__file__).parent.parent / \
             "config" / f"{config_name}.json"
         if config_path.exists():
             with open(config_path, 'r') as f:
                 return json.load(f)
 
-        # Fallback to common config location
+        # Try common config location (framework pattern)
         common_config_path = Path(
             __file__).parent.parent.parent.parent / "common" / "config" / f"{config_name}.json"
         if common_config_path.exists():
             with open(common_config_path, 'r') as f:
                 return json.load(f)
 
-        # Hardcoded fallback for emp_stg_schema_udemy
-        if config_name == "copy_to_snowstg_udemy" or config_name == "emp_stg_schema_udemy":
-            return {
+        # Framework pattern: hardcoded fallback matching your actual config
+        hardcoded_configs = {
+            "copy_to_snowstg_udemy": {
                 "Database_name": "DEMO_DB",
                 "Schema_name": "PUBLIC",
                 "Target_table": "EMPLOYEE2",
                 "Reject_table": "EMPLOYEE_REJECTS",
-                "Source_location": "@DEMO_DB.PUBLIC.EMPLOYEE_STG/employee.csv",
+                "persist_all_copy_results": True,
                 "target_columns": ["FIRST_NAME", "LAST_NAME", "EMAIL", "ADDRESS", "CITY", "DOJ"],
+                "on_error": "CONTINUE",
+                "Source_location_real": "@my_s3_stage",
+                "Source_location": "@DEMO_DB.PUBLIC.DEV_INTERNAL_STAGE",  # ← Fixed stage name
+                "Source_file_type": "csv",
                 "file_format": {
+                    "type": "CSV",
                     "field_delimiter": ",",
-                    "skip_header": 1,
-                    "field_optionally_enclosed_by": "\""
+                    "skip_header": 0,
+                    "field_optionally_enclosed_by": "\"",
+                    "null_if": ["", "NULL"],
+                    "encoding": "UTF8"
                 }
             }
+        }
+
+        # Map known schema names to existing config (framework pattern)
+        schema_to_config_mapping = {
+            "emp_stg_schema_udemy": "copy_to_snowstg_udemy"
+        }
+
+        if config_name in schema_to_config_mapping:
+            mapped_config_name = schema_to_config_mapping[config_name]
+            return load_named_config(mapped_config_name)
+
+        # Return hardcoded config if available
+        if config_name in hardcoded_configs:
+            return hardcoded_configs[config_name]
 
         raise FileNotFoundError(f"Configuration '{config_name}' not found")
 
     except Exception as e:
+        if "Failed to load config" in str(e):
+            raise e
         raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
 
 
@@ -308,6 +331,150 @@ def register_manual_procs(
     print(f"🚀 completed register_manual_procs for app '{app_name}'")
 
     return registered
+
+
+def copy_to_table_proc(session: Session, schema_key: str = "copy_to_snowstg_udemy"):
+    """Copy data with reject handling integrated - following framework patterns"""
+
+    # Load config from JSON file
+    config = load_named_config(schema_key)
+
+    database_name = config["Database_name"]
+    schema_name = config["Schema_name"]
+    target_table = config["Target_table"]
+    reject_table = config["Reject_table"]
+    source_location = config["Source_location"]
+    file_format = config["file_format"]
+
+    # Create full table names following framework patterns
+    target_full_name = f"{database_name}.{schema_name}.{target_table}"
+    reject_full_name = f"{database_name}.{schema_name}.{reject_table}"
+
+    try:
+        # Ensure reject table exists first (framework error handling pattern)
+        create_reject_table_sql = f"""
+        CREATE TABLE IF NOT EXISTS {reject_full_name} (
+            FIRST_NAME VARCHAR(100),
+            LAST_NAME VARCHAR(100),
+            EMAIL VARCHAR(200),
+            ADDRESS VARCHAR(500),
+            CITY VARCHAR(100),
+            DOJ VARCHAR(50),
+            REJECT_REASON VARCHAR(1000),
+            REJECT_TIMESTAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
+        )
+        """
+        session.sql(create_reject_table_sql).collect()
+
+        # Progressive CSV reading with comprehensive exception handling
+        df_raw = None
+        parse_method = "normal"
+        valid_count = 0
+        reject_count = 0
+
+        # First attempt: normal CSV read with quotes
+        try:
+            df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
+                .option("SKIP_HEADER", file_format["skip_header"]) \
+                .option("FIELD_OPTIONALLY_ENCLOSED_BY", file_format.get("field_optionally_enclosed_by", "\"")) \
+                .csv(source_location)
+
+            # Force evaluation to catch parse errors - this is where the error occurs
+            test_count = df_raw.count()
+
+        except Exception as read_err:
+            parse_method = "fallback"
+            # Second attempt: try without enclosing quotes
+            try:
+                df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
+                    .option("SKIP_HEADER", file_format["skip_header"]) \
+                    .csv(source_location)
+
+                # Force evaluation to catch parse errors
+                test_count = df_raw.count()
+
+            except Exception as fallback_err:
+                # Complete parse failure - record to reject table and return
+                err_text = f"CSV parse error: {str(fallback_err)}"[:900]
+                # Use string substitution instead of parameterized query for compatibility
+                safe_err_text = err_text.replace(
+                    "'", "''")  # Escape single quotes
+                insert_sql = f"""
+                INSERT INTO {reject_full_name}
+                (REJECT_REASON, REJECT_TIMESTAMP)
+                VALUES ('{safe_err_text}', CURRENT_TIMESTAMP())
+                """
+                session.sql(insert_sql).collect()
+
+                return f"FAILED: CSV parse error; wrote error to {reject_full_name}: {err_text}"
+
+        # If we get here, df_raw is valid - proceed with validation
+        try:
+            # Add validation - reject records with empty/null first name
+            df_with_validation = df_raw.with_column(
+                "is_valid",
+                when(
+                    (col("$1").is_null()) |
+                    (col("$1") == "") |
+                    (col("$1") == "NULL"),
+                    False
+                ).otherwise(True)
+            )
+
+            # Split into valid and rejected records
+            df_valid = df_with_validation.filter(col("is_valid") == True)
+            df_rejected = df_with_validation.filter(col("is_valid") == False)
+
+            valid_count = df_valid.count()
+            reject_count = df_rejected.count()
+
+            # Process valid records
+            if valid_count > 0:
+                df_final = df_valid.select(
+                    col("$1").alias("FIRST_NAME"),
+                    col("$2").alias("LAST_NAME"),
+                    col("$3").alias("EMAIL"),
+                    col("$4").alias("ADDRESS"),
+                    col("$5").alias("CITY"),
+                    col("$6").alias("DOJ")
+                )
+                df_final.write.mode("append").save_as_table(target_full_name)
+
+            # Handle rejected records
+            if reject_count > 0:
+                df_reject_output = df_rejected.select(
+                    col("$1").alias("FIRST_NAME"),
+                    col("$2").alias("LAST_NAME"),
+                    col("$3").alias("EMAIL"),
+                    col("$4").alias("ADDRESS"),
+                    col("$5").alias("CITY"),
+                    col("$6").alias("DOJ"),
+                    lit("Missing or empty first name").alias("REJECT_REASON"),
+                    current_timestamp().alias("REJECT_TIMESTAMP")
+                )
+                df_reject_output.write.mode(
+                    "append").save_as_table(reject_full_name)
+
+        except Exception as validation_err:
+            # Validation/processing error - record and return
+            err_text = f"Data processing error: {str(validation_err)}"[:900]
+            safe_err_text = err_text.replace("'", "''")  # Escape single quotes
+            insert_sql = f"""
+            INSERT INTO {reject_full_name}
+            (REJECT_REASON, REJECT_TIMESTAMP)
+            VALUES ('{safe_err_text}', CURRENT_TIMESTAMP())
+            """
+            session.sql(insert_sql).collect()
+
+            return f"FAILED: Data processing error; wrote error to {reject_full_name}: {err_text}"
+
+        # Return framework-compatible result (manual procs API)
+        parse_note = f" (used {parse_method} parsing)" if parse_method == "fallback" else ""
+        return f"SUCCESS: Processed {valid_count + reject_count} records{parse_note}. Loaded {valid_count} valid, rejected {reject_count}. Target: {target_full_name}, Rejects: {reject_full_name if reject_count > 0 else 'None'}"
+
+    except Exception as e:
+        # Top-level error handling (framework pattern)
+        return f"FAILED: {str(e)} - Target: {target_full_name}"
 
 
 if __name__ == "__main__":
