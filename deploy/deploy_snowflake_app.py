@@ -582,7 +582,6 @@ def _create_filtered_project_copy(app_path: Path, allowed_proc_names: list[str])
 
 
 def main():
-
     # Define helper fiunctions for main() which are not intended for re-use elsewere
 
     def build_procedure_table(procs):
@@ -931,7 +930,12 @@ def main():
     print(f"📋 Environment '{env_name}' tags: {env_tags}")
 
     # Step 4: Detect whether deployment should proceed
-    changed_files = get_changed_files_for_app(app_name)
+    # Fix the function call to include required commit arguments
+    previous_commit = os.getenv("PREVIOUS_COMMIT", "HEAD~1")
+    current_commit = os.getenv("CURRENT_COMMIT", "HEAD")
+
+    changed_files = get_changed_files_for_app(
+        app_name, previous_commit, current_commit)
     should_deploy = should_deploy_based_on_changes(
         app_name, changed_files, verbosity)
 
@@ -1216,6 +1220,7 @@ def main():
 #  Step 12: Summary and Validation
 
     # Escape Markdown-sensitive characters for safe table rendering
+
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")
@@ -1543,7 +1548,12 @@ if __name__ == "__main__":
         print(f"📋 Environment '{env_name}' tags: {env_tags}")
 
         # Step 4: Detect whether deployment should proceed
-        changed_files = get_changed_files_for_app(app_name)
+        # Fix the function call to include required commit arguments
+        previous_commit = os.getenv("PREVIOUS_COMMIT", "HEAD~1")
+        current_commit = os.getenv("CURRENT_COMMIT", "HEAD")
+
+        changed_files = get_changed_files_for_app(
+            app_name, previous_commit, current_commit)
         should_deploy = should_deploy_based_on_changes(
             app_name, changed_files, verbosity)
 
