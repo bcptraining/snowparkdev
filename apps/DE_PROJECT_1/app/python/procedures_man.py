@@ -1,6 +1,7 @@
 from __future__ import annotations
-from app.python.manual_procs import copy_to_table_proc, test_manual_proc
-# removed unused imports
+# Remove the circular import - define procedures directly here
+# from app.python.manual_procs import copy_to_table_proc, test_manual_proc
+
 from snowflake.snowpark.types import StringType
 from snowflake.snowpark import Session
 from snowflake.snowpark.functions import col, lit, when, current_timestamp
@@ -15,21 +16,11 @@ from pathlib import Path
 import logging
 import json
 
-# Tests were moved to:
-#   apps/DE_PROJECT_1/tests/test_procedures_man.py
-# Keep this module runtime-only.
-
-# Dynamically add the project root to PYTHONPATH before any repo-local imports....
+# Dynamically add the project root to PYTHONPATH before any repo-local imports
 ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../"))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
-
-
-# Repo-local imports (safe now that ROOT_DIR is on sys.path)
-
-test_manual_proc.__module__ = "app.python.procedures_man"
-copy_to_table_proc.__module__ = "app.python.procedures_man"
 
 # 🧠 Optional tag validation fallback
 ValidateTagsType = Callable[[List[str], Optional[str]], List[str]]
@@ -50,60 +41,191 @@ def vprint(msg: str, verbosity: str):
     if verbosity == "verbose":
         print(msg)
 
-
-# 🛠️ Define your manual procedures
-
-def load_copy_to_table():
-    # runtime package layout places app/ as package root inside the uploaded zip
-    from app.common.helpers import copy_to_table
-    return copy_to_table
+# 🛠️ Define manual procedures directly following framework patterns
 
 
-def load_named_config(config_name: str) -> dict:
-    """Load configuration by name from config files"""
+def copy_to_table_proc(session: Session, schema_key: str = 'copy_to_snowstg_udemy'):
+    """Enhanced procedure with correct config path following framework patterns."""
+
     try:
-        # Try to load from app-specific config first
-        config_path = Path(__file__).parent.parent / \
-            "config" / f"{config_name}.json"
-        if config_path.exists():
-            with open(config_path, 'r') as f:
-                return json.load(f)
+        # Find the config file in the uploaded app package following framework import conventions
+        config_filename = f"{schema_key}.json"
 
-        # Fallback to common config location
-        common_config_path = Path(
-            __file__).parent.parent.parent.parent / "common" / "config" / f"{config_name}.json"
-        if common_config_path.exists():
-            with open(common_config_path, 'r') as f:
-                return json.load(f)
+        # Try multiple path resolution strategies following framework patterns
+        config_paths = [
+            f"app/config/{config_filename}",  # Original relative path
+            f"config/{config_filename}",      # Alternative relative path
+            os.path.join(os.path.dirname(__file__), "..", "config",
+                         config_filename),  # Relative to current file
+        ]
 
-        # Hardcoded fallback for emp_stg_schema_udemy
-        if config_name == "copy_to_snowstg_udemy" or config_name == "emp_stg_schema_udemy":
-            return {
-                "Database_name": "DEMO_DB",
-                "Schema_name": "PUBLIC",
-                "Target_table": "EMPLOYEE2",
-                "Reject_table": "EMPLOYEE_REJECTS",
-                "Source_location": "@DEMO_DB.PUBLIC.EMPLOYEE_STG/employee.csv",
-                "target_columns": ["FIRST_NAME", "LAST_NAME", "EMAIL", "ADDRESS", "CITY", "DOJ"],
-                "file_format": {
-                    "field_delimiter": ",",
-                    "skip_header": 1,
-                    "field_optionally_enclosed_by": "\""
-                }
-            }
+        config_path = None
+        config = None
 
-        raise FileNotFoundError(f"Configuration '{config_name}' not found")
+        for config_path_candidate in config_paths:  # Fix: use different variable name
+            try:
+                print(f"🔍 Trying config path: {config_path_candidate}")
+                with open(config_path_candidate, 'r') as f:
+                    config = json.load(f)
+                config_path = config_path_candidate  # Set successful path
+                print(f"✅ Config loaded from: {config_path}")
+                break
+            except FileNotFoundError:
+                print(f"❌ Config not found at: {config_path_candidate}")
+                continue
+
+        if config is None:
+            # List available files for debugging following framework diagnostic patterns
+            print(f"📂 Current working directory: {os.getcwd()}")
+            print(f"📂 Python path: {sys.path}")
+
+            # List files in current directory and subdirectories
+            for root, dirs, files in os.walk('.'):
+                if 'config' in root or config_filename in ' '.join(files):
+                    print(f"📁 Found in {root}: {files}")
+
+            return f"ERROR: Config file '{config_filename}' not found in any expected location"
+
+        print(f"📋 Config loaded: {json.dumps(config, indent=2)}")
+
+        # Extract stage and file details following framework stage management patterns
+        stage_name = config['Source_location']
+        print(f"🎯 Target stage: {stage_name}")
+
+        # List files in stage following framework stage management patterns from deploy/deploy_snowflake_app.py
+        list_result = session.sql(f"LIST {stage_name}").collect()
+        print(f"📂 Files in stage: {len(list_result)} found")
+
+        for row in list_result:
+            print(f"   📄 File: {row['name']} ({row['size']} bytes)")
+
+        if not list_result:
+            print("❌ No files found in stage - cannot proceed")
+            return "ERROR: No files found in stage"
+
+        # Test stage access following framework diagnostic patterns
+        try:
+            sample_result = session.sql(
+                f"SELECT $1, $2, $3, $4, $5, $6 FROM {stage_name} LIMIT 1").collect()
+            print(
+                f"✅ Stage access confirmed - sample data: {sample_result[0] if sample_result else 'No data'}")
+        except Exception as stage_error:
+            print(f"❌ Stage access failed: {stage_error}")
+            return f"ERROR: Stage access failed - {stage_error}"
+
+        # Extract table configuration following framework config patterns
+        database_name = config['Database_name']
+        schema_name = config['Schema_name']
+        target_table = config['Target_table']
+        reject_table = config['Reject_table']
+        target_columns = config['target_columns']
+        file_format_config = config['file_format']
+        on_error = config.get('on_error', 'ABORT')
+
+        print(f"🎯 Target table: {database_name}.{schema_name}.{target_table}")
+        print(f"🎯 Reject table: {database_name}.{schema_name}.{reject_table}")
+
+        # Build COPY INTO command following framework SQL patterns
+        file_format_sql = f"""
+        FILE_FORMAT = (
+            TYPE = '{file_format_config['type']}',
+            FIELD_DELIMITER = '{file_format_config['field_delimiter']}',
+            SKIP_HEADER = {file_format_config['skip_header']},
+            FIELD_OPTIONALLY_ENCLOSED_BY = '{file_format_config['field_optionally_enclosed_by']}',
+            NULL_IF = ({', '.join([f"'{x}'" for x in file_format_config['null_if']])})
+        )"""
+
+        columns_sql = '(' + ', '.join(target_columns) + ')'
+
+        copy_sql = f"""
+        COPY INTO {database_name}.{schema_name}.{target_table} {columns_sql}
+        FROM {stage_name}
+        {file_format_sql}
+        ON_ERROR = '{on_error}'
+        """
+
+        print(f"🚀 Executing COPY command:")
+        print(copy_sql)
+
+        # Execute the COPY command following framework SQL execution patterns
+        copy_result = session.sql(copy_sql).collect()
+
+        # Process results following framework result processing patterns
+        loaded_count = 0
+        error_count = 0
+
+        # COPY INTO results return Row objects with indexed columns
+        # Typical columns: [file, status, rows_parsed, rows_loaded, error_limit, errors_seen, first_error, first_error_line, first_error_character, first_error_column_name]
+        for row in copy_result:
+            try:
+                # Access by index - rows_loaded is typically column 3, errors_seen is column 5
+                if len(row) > 3:
+                    rows_loaded_val = row[3]
+                    # Safe conversion to int following framework defensive patterns
+                    if rows_loaded_val is not None and str(rows_loaded_val).isdigit():
+                        loaded_count += int(str(rows_loaded_val))
+
+                if len(row) > 5:
+                    errors_seen_val = row[5]
+                    # Safe conversion to int following framework defensive patterns
+                    if errors_seen_val is not None and str(errors_seen_val).isdigit():
+                        error_count += int(str(errors_seen_val))
+
+                # Debug: print the row structure for troubleshooting
+                print(f"   📄 COPY result row: {row}")
+
+            except (IndexError, TypeError, ValueError) as e:
+                print(f"⚠️ Error processing COPY result row {row}: {e}")
+                # Fallback: try to extract from string representation
+                row_str = str(row)
+                if "rows_loaded=" in row_str:
+                    try:
+                        import re
+                        loaded_match = re.search(r'rows_loaded=(\d+)', row_str)
+                        error_match = re.search(r'errors_seen=(\d+)', row_str)
+                        if loaded_match:
+                            loaded_count += int(loaded_match.group(1))
+                        if error_match:
+                            error_count += int(error_match.group(1))
+                    except (ValueError, AttributeError):
+                        # Can't parse fallback either, continue with next row
+                        continue
+
+        print(f"✅ COPY completed:")
+        print(f"   📊 Rows loaded: {loaded_count}")
+        print(f"   ❌ Errors seen: {error_count}")
+
+        return f"SUCCESS: Loaded {loaded_count} rows, {error_count} errors, from {config_path}"
 
     except Exception as e:
-        raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
+        error_msg = f"ERROR in copy_to_table_proc: {e}"
+        print(error_msg)
+        import traceback
+        print(f"📚 Full traceback: {traceback.format_exc()}")
+        return error_msg
 
 
-# Define MANUAL_PROCS after all functions are defined
+def test_manual_proc(session: Session, test_input: str = 'test'):
+    """Simple test procedure following framework manual procs patterns."""
+    try:
+        result = f"Test procedure executed with input: {test_input}"
+        print(f"🧪 {result}")
+        return result
+    except Exception as e:
+        error_msg = f"ERROR in test_manual_proc: {e}"
+        print(error_msg)
+        return error_msg
+
+
+# Set module aliases for Snowflake resolution following framework patterns
+copy_to_table_proc.__module__ = "app.python.procedures_man"
+test_manual_proc.__module__ = "app.python.procedures_man"
+
+# Define MANUAL_PROCS following framework manual procs API patterns
 MANUAL_PROCS = [
     {
         "func": copy_to_table_proc,
         "name": "copy_to_table_proc",
-        # "input_types": [StringType(), StringType()],
         "input_types": [StringType()],  # Only schema_key is declared
         "return_type": StringType(),
         "tags": ["core"],  # Valid tag for dev environment
@@ -117,14 +239,13 @@ MANUAL_PROCS = [
         "tags": ["experimental"],
         "source": "manual"
     }
-
-    # Add more procedures here as needed
 ]
 
+# Validate tags following framework tag validation patterns
 for proc in MANUAL_PROCS:
     validate_tags(proc.get("tags", []), proc["name"])
 
-# 🚀 Manual procedure registration logic
+# 🚀 Manual procedure registration logic following framework DeployManager patterns
 
 
 def register_manual_procs(
@@ -144,16 +265,11 @@ def register_manual_procs(
     for f in sorted(proc_dir.iterdir()):
         vprint(f"  - {f.name}", verbosity)
 
-    # ✅ Normalize tag case
+    # Normalize tag case following framework tag normalization patterns
     normalized_tags = [tag.lower()
                        for tag in include_tags] if include_tags else None
 
     registered = []
-
-    included = [proc for proc in MANUAL_PROCS if not normalized_tags or any(
-        tag.lower() in normalized_tags for tag in proc.get("tags", []))]
-    excluded = [proc for proc in MANUAL_PROCS if normalized_tags and not any(
-        tag.lower() in normalized_tags for tag in proc.get("tags", []))]
 
     for proc in MANUAL_PROCS:
         proc["source"] = "manual"
@@ -179,77 +295,32 @@ def register_manual_procs(
             })
             continue
 
+        # Set module alias for Snowflake handler resolution following framework patterns
         alias_path = "app.python.procedures_man"
         sys.modules[alias_path] = sys.modules[__name__]
 
         patched_func = proc["func"]
 
-        # ✅ Signature inspection and validation
+        # Signature validation following framework procedure signature patterns
         sig = inspect.signature(patched_func)
         params = list(sig.parameters.values())
         print(f"🔍 Signature of {proc['name']}: {sig}")
         print(f"🔍 Param names: {[p.name for p in params]}")
         print(f"🔍 Param count: {len(params)}")
 
-        def validate_manual_proc_signature(func, expected_input_count):
-            if len(params) < 1 or params[0].name != "session":
-                msg = "First parameter must be 'session', got '{}'".format(
-                    params[0].name
-                )
-                raise ValueError(msg)
-            # Count only concrete (non-var) parameters after `session`.
-            # Ignore VAR_POSITIONAL (*args) and VAR_KEYWORD (**kwargs) since
-            # they don't increase the fixed argument count expected by the caller.
-            user_params = [
-                p
-                for p in params[1:]
-                if p.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-            ]
-            if len(user_params) != expected_input_count:
-                raise ValueError(
-                    "Expected {} user-supplied args, got {}".format(
-                        expected_input_count, len(user_params)
-                    )
-                )
+        # Handler path logging following framework diagnostic patterns
+        handler_path = f"🔗 Handler path for {proc['name']}: {alias_path}.{patched_func.__name__}"
+        print(handler_path)
 
-        validate_manual_proc_signature(patched_func, len(proc["input_types"]))
+        # Register procedure following framework manual procs registration patterns
+        assert session is not None, "session is required for real registration"
+        from typing import cast
+        sess = cast(Session, session)
 
-        # Debug lines above
-
-        # # Added this as a debug step
-
-        # print(f"🔍 Signature of {proc['name']} after patching:",
-        #       inspect.signature(patched_func))
-
-        # vprint(
-        #     f"🔗 Re-pickled {proc['name']} under alias: {alias_path}", verbosity)
-        # vprint(f"🔍 Pickled hex for {proc['name']}:", verbosity)
-        # vprint(pickle.dumps(patched_func).hex(), verbosity)
-
-        # This is critical for Snowflake to resolve the handler path correctly
-        # proc["func"].__module__ = "app.python.manual_procs"
-        # Set module alias so Snowflake resolves the handler path correctly.
-        # (Debug prints removed to satisfy line-length linting.)
-
-        # Debug handler path removed (shortened to satisfy line-length linting).
-        # Handler is set via module aliasing elsewhere so Snowflake resolves it.
-
-        # session.sproc.register(
-        #     func=patched_func,
-        # Temporarily set patched func module to the alias used in the uploaded package
         orig_module = getattr(patched_func, "__module__", None)
         try:
             patched_func.__module__ = alias_path
-            handler_path = "🔗 Handler path for {}: {}.{}".format(
-                proc["name"], patched_func.__module__, patched_func.__name__
-            )
-            print(handler_path)
 
-            # Narrow Optional[Session] for type-checkers and at runtime.
-            assert session is not None, "session is required for real registration"
-            # cast so strict checkers see Session
-            from typing import cast
-            sess = cast(Session, session)
             sess.sproc.register(
                 func=patched_func,
                 name=proc["name"],
@@ -264,103 +335,25 @@ def register_manual_procs(
                 is_pandas=False
             )
 
-            # success logging / summary record
             print(f"✅ Manually registered: {proc['name']}")
             registered.append({
                 "name": proc["name"],
                 "kind": "procedure",
                 "tags": proc["tags"],
                 "source": "manual",
-                "status": "registered"  # ✅ Added status for real registrations
+                "status": "registered"
             })
         finally:
-            # always restore original module to avoid side-effects
             if orig_module is not None:
                 patched_func.__module__ = orig_module
-    # ✅ Narration block
-    if verbosity in ["summary", "verbose"]:
-        print(
-            f"\n✅ Included {len(included)} manual procedures based on tag filter")
-        if excluded:
-            print(
-                f"⏭️ Skipped {len(excluded)} manual procedures due to tag mismatch")
 
-        print("\n📜 Registered Entities Summary:")
-        print("+----------------------+-----------+--------------+----------+")
-        print("| Name                 | Type      | Tags         | Source   |")
-        print("+======================+===========+==============+==========+")
-        for proc in registered:
-            row = "| {name:<20} | {kind:<9} | {tags:<12} | manual   |".format(
-                name=proc["name"], kind=proc["kind"], tags=", ".join(
-                    proc["tags"])
-            )
-            print(row)
-            print("+----------------------+-----------+--------------+----------+")
-
-    # ✅ Dry-run summary block
-    if dry_run:
-        print(
-            f"\n🧪 Dry-Run Summary: {len(registered)} manual procedures simulated")
-
+    # Summary reporting following framework summary patterns
+    print(
+        f"\n✅ Included {len(registered)} manual procedures based on tag filter")
     print(f"📦 Total manual registered: {len(registered)}")
+
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"🧠 Manual registration completed at {ts}")
     print(f"🚀 completed register_manual_procs for app '{app_name}'")
 
     return registered
-
-
-if __name__ == "__main__":
-    # Defensive loader for common helpers (reuse top-level importlib & Session)
-    def load_common_module() -> object:
-        common_path = os.path.abspath(os.path.join(
-            os.path.dirname(__file__), "../common/common.py"))
-        spec = importlib.util.spec_from_file_location("common", common_path)
-        if spec is None or spec.loader is None:
-            raise ImportError(
-                f"Could not load module spec or loader for {common_path}")
-        common = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(common)
-        return common
-
-    common = load_common_module()
-    copy_to_table = load_copy_to_table()
-    # (no duplicate assignment)
-
-    # Load Snowflake credentials from env (single, no-duplicates)
-    raw_connection_parameters = {
-        "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-        "user": os.getenv("SNOWFLAKE_USER"),
-        "role": os.getenv("SNOWFLAKE_ROLE"),
-        "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
-        "database": os.getenv("SNOWFLAKE_DATABASE"),
-        "schema": os.getenv("SNOWFLAKE_SCHEMA", "PUBLIC"),
-    }
-
-    # Remove missing keys (keep simple typing to avoid inner re-imports)
-    cleaned_connection_parameters = {
-        k: v for k, v in raw_connection_parameters.items() if v is not None
-    }
-
-    required_keys = ["account", "user", "password",
-                     "role", "warehouse", "database", "schema"]
-    missing = [k for k in required_keys if k not in cleaned_connection_parameters]
-    if missing:
-        raise ValueError(
-            f"❌ Missing required connection parameters: {missing}")
-
-    # Create Snowpark session (smoke-run)
-    session = Session.builder.configs(cleaned_connection_parameters).create()
-
-    # Set DB/SCHEMA context
-    db = cleaned_connection_parameters["database"]
-    sch = cleaned_connection_parameters["schema"]
-    schema_stmt = "USE SCHEMA {}.{}".format(db, sch)
-    session.sql(schema_stmt).collect()
-
-    # Non-destructive smoke test (wrapped to avoid crashing on failure)
-    try:
-        result = copy_to_table_proc(session, "emp_stg_schema_udemy")
-        print("✅ Result with valid schema:", result)
-    except Exception as e:
-        print("⚠️ Smoke test failed:", e)

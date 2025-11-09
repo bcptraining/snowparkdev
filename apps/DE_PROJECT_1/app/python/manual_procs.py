@@ -65,10 +65,11 @@ def load_named_config(config_name: str) -> dict:
         raise FileNotFoundError(
             f"Configuration '{config_name}' not found. Expected at {config_path}, in hardcoded_configs, or mapped in schema_to_config_mapping")
 
-    except Exception as e:
-        if "Failed to load config" in str(e):
-            # Avoid recursive error wrapping (framework pattern)
-            raise e
+    except FileNotFoundError:
+        # Re-raise FileNotFoundError as-is (framework pattern)
+        raise
+    except (json.JSONDecodeError, IOError) as e:
+        # Handle specific file/JSON errors (framework pattern)
         raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
 
 
@@ -92,37 +93,38 @@ def copy_to_table_proc(session: Session, schema_key: str = "copy_to_snowstg_udem
 
     try:
         # Read data from stage using config values
-        df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
-            .option("SKIP_HEADER", file_format["skip_header"]) \
-            .option("FIELD_OPTIONALLY_ENCLOSED_BY", file_format.get("field_optionally_enclosed_by", "\"")) \
-            .csv(source_location)
-    except Exception as read_err:
-        # first fallback: try reading without an enclosing character (tolerant)
         try:
             df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
                 .option("SKIP_HEADER", file_format["skip_header"]) \
-                .option("FIELD_OPTIONALLY_ENCLOSED_BY", "") \
+                .option("FIELD_OPTIONALLY_ENCLOSED_BY", file_format.get("field_optionally_enclosed_by", "\"")) \
                 .csv(source_location)
-        except Exception as fallback_err:
-            # final fallback: record failure to reject table and bail gracefully
-            create_reject_table_sql = f"""
-            CREATE TABLE IF NOT EXISTS {reject_full_name} (
-                FIRST_NAME VARCHAR(100),
-                LAST_NAME VARCHAR(100),
-                EMAIL VARCHAR(200),
-                ADDRESS VARCHAR(500),
-                CITY VARCHAR(100),
-                DOJ VARCHAR(50),
-                REJECT_REASON VARCHAR(1000),
-                REJECT_TIMESTAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
-            )
-            """
-            session.sql(create_reject_table_sql).collect()
-            err_text = str(fallback_err).replace("'", "''")
-            # Insert a single reject row capturing the file-level error
-            session.sql(
-                f"INSERT INTO {reject_full_name} (REJECT_REASON) SELECT '{err_text}'").collect()
-            return f"FAILED: CSV parse error; wrote error to {reject_full_name}: {err_text}"
+        except Exception as read_err:
+            # First fallback: try reading without an enclosing character (tolerant)
+            try:
+                df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
+                    .option("SKIP_HEADER", file_format["skip_header"]) \
+                    .option("FIELD_OPTIONALLY_ENCLOSED_BY", "") \
+                    .csv(source_location)
+            except Exception as fallback_err:
+                # Final fallback: record failure to reject table and bail gracefully
+                create_reject_table_sql = f"""
+                CREATE TABLE IF NOT EXISTS {reject_full_name} (
+                    FIRST_NAME VARCHAR(100),
+                    LAST_NAME VARCHAR(100),
+                    EMAIL VARCHAR(200),
+                    ADDRESS VARCHAR(500),
+                    CITY VARCHAR(100),
+                    DOJ VARCHAR(50),
+                    REJECT_REASON VARCHAR(1000),
+                    REJECT_TIMESTAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
+                )
+                """
+                session.sql(create_reject_table_sql).collect()
+                err_text = str(fallback_err).replace("'", "''")
+                # Insert a single reject row capturing the file-level error
+                session.sql(
+                    f"INSERT INTO {reject_full_name} (REJECT_REASON) SELECT '{err_text}'").collect()
+                return f"FAILED: CSV parse error; wrote error to {reject_full_name}: {err_text}"
 
         # Add validation - reject records with empty/null first name
         df_with_validation = df_raw.with_column(
@@ -190,7 +192,7 @@ def copy_to_table_proc(session: Session, schema_key: str = "copy_to_snowstg_udem
         return f"SUCCESS: Processed {valid_count + reject_count} records. Loaded {valid_count} valid, rejected {reject_count}. Target: {target_full_name}, Rejects: {reject_full_name if reject_count > 0 else 'None'}"
 
     except Exception as e:
-        # Return framework-compatible error
+        # Return framework-compatible error following framework error handling patterns
         return f"FAILED: {str(e)} - Target: {target_full_name}"
 
 
