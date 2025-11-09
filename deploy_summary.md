@@ -1,19 +1,21 @@
 # ✅ Deployment Summary — DE_PROJECT_1
 - Environment: `dev`
-- Changed Files: `apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json`
+- Changed Files: `apps/DE_PROJECT_1/app/python/manual_procs.py`
 - Stage: `dev_deployment`
 - Tags: `core, experimental, diagnostic`
 - Auto Procedures: `2`
-- Manual Procedures: `0`
+- Manual Procedures: `2`
 - DAGs: `0`
-- Duration: `6.83 seconds`
-- Timestamp: `2025-10-21 15:29 PDT`
+- Duration: `106.95 seconds`
+- Timestamp: `2025-11-08 14:51 PST`
 
 ### Registered Procedures
 | Name | Source | Handler | Returns | Status |
 |------|--------|---------|---------|--------|
 | hello_procedure | auto | app.python.procedures_auto.hello_procedure | string | valid |
 | test_procedure | auto | app.python.procedures_auto.test_procedure | string | valid |
+| copy_to_table_proc | manual | app.python.manual_procs.copy_to_table_proc | string | registered |
+| test_manual_proc | manual | app.python.manual_procs.test_manual_proc | string | registered |
 ### 🚫 Excluded Procedures
 | Name | Tags | Reason |
 |------|------|--------|
@@ -23,9 +25,9 @@
 ### 🏷️ Tag Coverage
 | Tag | Included | Excluded |
 |------|----------|----------|
-| core | 1 | 0 |
+| core | 2 | 0 |
 | example | 0 | 2 |
-| experimental | 1 | 0 |
+| experimental | 2 | 0 |
 ### 🏷️ Auto Procedure Tags
 | Procedure Name | Tags |
 |----------------|------|

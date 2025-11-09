@@ -403,6 +403,42 @@ def load_snowflake_yml(app_path: Path):
 
 # print("Testing completed.")
 
+def get_environment_specific_config(env):
+    """Get environment-specific Snowflake configuration variables
+
+    Following framework patterns for environment validation and tag filtering,
+    this maps environment-specific variables to standard ones expected by
+    DeployManager and session creation.
+
+    Args:
+        env (str): Environment name ('dev', 'qa', 'prod')
+
+    Returns:
+        dict: Mapping of standard variable names to environment-specific values
+    """
+    config = {}
+
+    # Environment-specific variable mapping (dev only for now)
+    env_suffix = f"_{env.upper()}" if env == "dev" else ""
+
+    env_vars = {
+        'SNOWFLAKE_ACCOUNT': f'SNOWFLAKE_ACCOUNT{env_suffix}',
+        'SNOWFLAKE_USER': f'SNOWFLAKE_USER{env_suffix}',
+        'SNOWFLAKE_PASSWORD': f'SNOWFLAKE_PASSWORD{env_suffix}',
+        'SNOWFLAKE_ROLE': f'SNOWFLAKE_ROLE{env_suffix}',
+        'SNOWFLAKE_DATABASE': f'SNOWFLAKE_DATABASE{env_suffix}',
+        'SNOWFLAKE_WAREHOUSE': f'SNOWFLAKE_WAREHOUSE{env_suffix}',
+        'SNOWFLAKE_SCHEMA': f'SNOWFLAKE_SCHEMA{env_suffix}'
+    }
+
+    for standard_var, env_var in env_vars.items():
+        env_value = os.getenv(env_var)
+        if env_value:
+            config[standard_var] = env_value
+            print(f"🔀 Using {env_var}={env_value} for {standard_var}")
+
+    return config
+
 
 def build_markdown_summary(summary_artifact, tag_validation_structured, excluded_procs):
     lines = [
@@ -806,6 +842,13 @@ def main():
 
     # Step 1: Parse CLI arguments and initialize context
     args = parse_cli_args()
+
+    # Apply environment-specific configuration
+    env_config = get_environment_specific_config(args.env)
+    for var, value in env_config.items():
+        if value:
+            os.environ[var] = value
+
     inject_app_path(args.app)
     app_name = args.app
     env_name = args.env
@@ -1216,7 +1259,6 @@ def main():
 #  Step 12: Summary and Validation
 
     # Escape Markdown-sensitive characters for safe table rendering
-
 
     def escape_md(value):
         return str(value).replace("|", "\\|").replace("`", "\\`")

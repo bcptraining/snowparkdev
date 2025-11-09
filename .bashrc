@@ -13,6 +13,9 @@ alias snowflake='snow'
 # Add local bin to PATH
 export PATH=~/bin:$PATH
 
+# DE_PROJECT_1 Test Data alias
+alias DE_PROJECT_1_generate_test_data='cd /workspaces/snowparkdev/apps/DE_PROJECT_1 && python app/python/create_test_data.py'
+
 # Deploy alias
 deployapp() {
   cd /workspaces/snowparkdev || return
@@ -42,4 +45,3 @@ parse_git_branch() {
 }
 
 export PS1="\u@\h:\w [\$(parse_git_branch)]\$ "
-

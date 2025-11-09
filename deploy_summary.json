@@ -2,7 +2,7 @@
   "app": "DE_PROJECT_1",
   "env": "dev",
   "changed_files": [
-    "apps/DE_PROJECT_1/app/config/copy_to_snowstg_udemy.json"
+    "apps/DE_PROJECT_1/app/python/manual_procs.py"
   ],
   "stage": "dev_deployment",
   "tags": [
@@ -21,7 +21,7 @@
   },
   "tag_coverage": {
     "core": {
-      "included": 1,
+      "included": 2,
       "excluded": 0
     },
     "example": {
@@ -29,7 +29,7 @@
       "excluded": 2
     },
     "experimental": {
-      "included": 1,
+      "included": 2,
       "excluded": 0
     }
   },
@@ -60,12 +60,12 @@
   "summary_title": "\u2705 Deployment Summary",
   "status": "deployed",
   "verbosity": "verbose",
-  "duration_seconds": 6.83,
-  "timestamp": "2025-10-21 15:29 PDT",
+  "duration_seconds": 106.95,
+  "timestamp": "2025-11-08 14:51 PST",
   "auto_count": 2,
-  "manual_count": 0,
+  "manual_count": 2,
   "manual_simulated": null,
-  "total_procedures": 2,
+  "total_procedures": 4,
   "total_dags": 0,
   "dags": [],
   "auto_proc_tags": {
@@ -91,6 +91,20 @@
       "handler": "app.python.procedures_auto.test_procedure",
       "returns": "string",
       "status": "valid"
+    },
+    {
+      "name": "copy_to_table_proc",
+      "source": "manual",
+      "handler": "app.python.manual_procs.copy_to_table_proc",
+      "returns": "string",
+      "status": "registered"
+    },
+    {
+      "name": "test_manual_proc",
+      "source": "manual",
+      "handler": "app.python.manual_procs.test_manual_proc",
+      "returns": "string",
+      "status": "registered"
     }
   ],
   "excluded_procs": [
