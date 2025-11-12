@@ -1,13 +1,13 @@
 # ✅ Deployment Summary — DE_PROJECT_1
 - Environment: `dev`
-- Changed Files: `apps/DE_PROJECT_1/app/python/manual_procs.py, apps/DE_PROJECT_1/app/python/procedures_man.py`
+- Changed Files: `apps/DE_PROJECT_1/app/python/manual_procs.py`
 - Stage: `dev_deployment`
 - Tags: `core, experimental, diagnostic`
 - Auto Procedures: `2`
 - Manual Procedures: `2`
 - DAGs: `0`
-- Duration: `18.40 seconds`
-- Timestamp: `2025-11-11 16:48 PST`
+- Duration: `16.27 seconds`
+- Timestamp: `2025-11-03 14:44 PST`
 
 ### Registered Procedures
 | Name | Source | Handler | Returns | Status |

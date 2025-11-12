@@ -2,8 +2,7 @@
   "app": "DE_PROJECT_1",
   "env": "dev",
   "changed_files": [
-    "apps/DE_PROJECT_1/app/python/manual_procs.py",
-    "apps/DE_PROJECT_1/app/python/procedures_man.py"
+    "apps/DE_PROJECT_1/app/python/manual_procs.py"
   ],
   "stage": "dev_deployment",
   "tags": [
@@ -61,8 +60,8 @@
   "summary_title": "\u2705 Deployment Summary",
   "status": "deployed",
   "verbosity": "verbose",
-  "duration_seconds": 18.4,
-  "timestamp": "2025-11-11 16:48 PST",
+  "duration_seconds": 16.27,
+  "timestamp": "2025-11-03 14:44 PST",
   "auto_count": 2,
   "manual_count": 2,
   "manual_simulated": null,
