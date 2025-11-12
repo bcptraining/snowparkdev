@@ -1,0 +1,17 @@
+{
+  "emp_stg_schema_udemy": [
+    { "name": "FIRST_NAME", "type": "string" },
+    { "name": "LAST_NAME", "type": "string" },
+    { "name": "EMAIL", "type": "string" },
+    { "name": "ADDRESS", "type": "string" },
+    { "name": "CITY", "type": "string" },
+    { "name": "DOJ", "type": "date" }
+  ],
+  "dept_schema": [
+    { "name": "DEPT_ID", "type": "string" },
+    { "name": "DEPT_NAME", "type": "string" },
+    { "name": "MANAGER", "type": "string" }
+  ]
+}
+
+

@@ -1,0 +1,23 @@
+{
+    "Database_name":"DEMO_DB",
+    "Schema_name":"PUBLIC",
+    "Target_table":"INT_EMP_DETAILS_AVRO",
+    "Reject_table":"EMPLOYEE_AVRO_REJECTS",      
+    "target_columns":["REGISTRATION_DTTM",
+    "ID",
+    "FIRST_NAME",
+    "LAST_NAME",
+    "EMAIL",
+    "GENDER",
+    "IP_ADDRESS",
+    "CC",
+    "COUNTRY",
+    "BIRTHDATE",
+    "SALARY",
+    "TITLE",
+    "COMMENTS"],
+    "on_error":"CONTINUE",
+    "Source_location":"@my_s3_stage/Avro_folder/userdata1.avro",
+    "Source_file_type":"avro"
+    
+}

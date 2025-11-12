@@ -1,0 +1,31 @@
+# ~/.bashrc
+echo "📣 .bashrc sourced on shell startup"
+
+# Optional: custom aliases or PATH tweaks
+alias ll='ls -la'
+alias snowflake='snow'
+export PATH=~/bin:$PATH
+
+# Define deployapp shortcut
+deployapp() {
+  cd /workspaces/snowparkdev || return
+  PYTHONPATH=. /opt/conda/envs/py311_env/bin/python -m deploy.deploy_snowflake_app --include-manual-procs "$@"
+}
+
+# 🛡️ Guard Conda activation for interactive shells only
+if [[ $- == *i* ]]; then
+  if command -v conda &> /dev/null && conda info --envs | grep -q 'snowparkdev'; then
+    echo "🐍 Activating Conda environment 'snowparkdev'..."
+    conda activate snowparkdev
+    echo "📦 Python: $(python --version)"
+    echo "📁 Working directory: $(pwd)"
+  else
+    echo "⚠️ Conda or environment 'snowparkdev' not found"
+  fi
+else
+  echo "ℹ️ Non-interactive shell — skipping Conda activation"
+fi
+
+
+
+

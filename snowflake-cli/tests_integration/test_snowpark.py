@@ -30,6 +30,7 @@ from tests_integration.testing_utils.snowpark_utils import (
 from typing import List
 from zipfile import ZipFile
 
+# stage_name = f"{env_name}_deployment"
 
 STAGE_NAME = "dev_deployment"
 RETURN_TYPE = "VARCHAR"
@@ -731,7 +732,8 @@ def test_snowpark_with_single_dependency_having_no_other_deps(
         assert result.exit_code == 0
 
         assert (
-            "dummy_pkg_for_tests/shrubbery.py" in ZipFile("dependencies.zip").namelist()
+            "dummy_pkg_for_tests/shrubbery.py" in ZipFile(
+                "dependencies.zip").namelist()
         )
 
         _snowpark_test_steps.snowpark_deploy_should_finish_successfully_and_return(
@@ -1240,7 +1242,8 @@ def test_build_skip_version_check(
 ):
     # test case: package is available in Anaconda, but not in required version
     with project_directory("snowpark") as tmp_dir:
-        alter_requirements_txt(tmp_dir / "requirements.txt", ["matplotlib>=1000"])
+        alter_requirements_txt(
+            tmp_dir / "requirements.txt", ["matplotlib>=1000"])
         result = runner.invoke_with_connection(["snowpark", "build"])
         assert result.exit_code == 1, result.output
         assert "Error" in result.output
@@ -1272,7 +1275,8 @@ def test_build_with_anaconda_dependencies(
     flags, runner, project_directory, alter_requirements_txt, test_database
 ):
     with project_directory("snowpark") as tmp_dir:
-        alter_requirements_txt(tmp_dir / "requirements.txt", ["july", "snowflake.core"])
+        alter_requirements_txt(
+            tmp_dir / "requirements.txt", ["july", "snowflake.core"])
         result = runner.invoke_with_connection(["snowpark", "build", *flags])
         assert result.exit_code == 0, result.output
         assert "Build done." in result.output
@@ -1426,7 +1430,8 @@ def test_snowpark_aliases(
             ["describe", "function", "hello_function(string)"],
             ["describe", "procedure", "test()"],
         ]:
-            expected_result = runner.invoke_with_connection_json(["object", *command])
+            expected_result = runner.invoke_with_connection_json(
+                ["object", *command])
             assert expected_result.exit_code == 0, expected_result.output
             result = runner.invoke_with_connection_json(["snowpark", *command])
             assert result.exit_code == 0, result
@@ -1702,7 +1707,8 @@ def test_if_excluding_version_of_anaconda_package_moves_it_to_other_requirements
     Package 'about-time' is used in tests for two reasons: it is available in Anaconda and it is relatively small (13kb for a wheel).
     """
     with project_directory("snowpark_v2") as tmp_dir:
-        alter_requirements_txt(tmp_dir / "requirements.txt", ["about-time!=3.1.1"])
+        alter_requirements_txt(
+            tmp_dir / "requirements.txt", ["about-time!=3.1.1"])
         result = runner.invoke_with_connection_json(["snowpark", "build"])
         assert result.exit_code == 0, result.output
         assert Path(tmp_dir / "dependencies.zip").is_file()

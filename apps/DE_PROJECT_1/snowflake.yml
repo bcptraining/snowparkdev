@@ -1,0 +1,89 @@
+definition_version: '2'
+
+mixins:
+  snowpark_dag: {}  # No artifacts or stage — DAGs don’t support them
+  snowpark_shared:
+    artifacts:
+      - dest: "apps/DE_PROJECT_1/mixins"
+        src: app/
+    stage: dev_deployment
+
+entities:
+
+  hello_function:
+    type: function
+    identifier:
+      name: hello_function
+    handler: app.python.functions.hello_function
+    signature:
+      - name: name
+        type: string
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+      # tags:
+      #   - core
+      # description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting.
+
+  hello_procedure:
+    type: procedure
+    identifier:
+      name: hello_procedure
+    handler: app.python.procedures_auto.hello_procedure
+    signature:
+      - name: name
+        type: string
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+      # tags:
+      #   - core
+      # description: This is a Snowflake user-defined function (UDF) that takes a single string input (name) and returns a personalized greeting. Used for lightweight personalization in SQL queries.
+
+
+
+
+  hello_procedure2:
+    type: procedure
+    identifier:
+      name: hello_procedure2
+    handler: app.python.procedures_auto.hello_procedure2
+    signature:
+      - name: name
+        type: string
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+      # tags:
+      #   - experimental
+
+  test_procedure:
+    type: procedure
+    identifier:
+      name: test_procedure
+    handler: app.python.procedures_auto.test_procedure
+    signature: []
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+      # tags:
+      #   - experimental
+
+
+  test_procedure_two:
+    type: procedure
+    identifier:
+      name: test_procedure_two
+    handler: app.python.procedures_auto.test_procedure_two
+    signature: []
+    returns: string
+    meta:
+      use_mixins:
+        - snowpark_shared
+      # tags:
+      #   - experimental
+

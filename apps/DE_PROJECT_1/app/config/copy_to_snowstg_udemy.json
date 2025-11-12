@@ -1,0 +1,20 @@
+{
+  "Database_name": "DEMO_DB",
+  "Schema_name": "PUBLIC",
+  "Target_table": "EMPLOYEE",
+  "Target_table_schema": "emp_stg_schema_udemy",
+  "Reject_table": "SNOWPARK_DE_REJECTS",
+  "persist_all_copy_results": true,
+  "on_error": "CONTINUE",
+  "Source_location_real_data": "@my_s3_stage",
+  "Source_location": "@DEMO_DB.PUBLIC.DEV_INTERNAL_STAGE",
+  "Source_file_type": "csv",
+  "file_format": {
+    "type": "CSV",
+    "field_delimiter": ",",
+    "skip_header": 0,
+    "field_optionally_enclosed_by": "\"",
+    "null_if": ["", "NULL"],
+    "encoding": "UTF8"
+  }
+}

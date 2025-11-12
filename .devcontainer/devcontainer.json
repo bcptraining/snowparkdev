@@ -2,19 +2,12 @@
   "name": "Snowpark Dev",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "features": {
-    "ghcr.io/devcontainers/features/conda:1": {}
-  },
-  "postCreateCommand": "conda config --set channel_priority flexible && conda env create -f environment.yml && echo '✅ Environment ready!'",
-  "remoteUser": "root",
-  "overrideCommand": true,
-  "customizations": {
-    "vscode": {
-      "settings": {
-        "python.defaultInterpreterPath": "/opt/conda/envs/py311_env/bin/python"
-      },
-      "extensions": [
-        "ms-python.python"
-      ]
+    "ghcr.io/devcontainers/features/conda:1": {
+      "installMiniconda": true,
+      "pythonVersion": "3.11"
     }
-  }
+  },
+  "postCreateCommand": ".devcontainer/setup.sh",
+
+  "remoteUser": "vscode"
 }

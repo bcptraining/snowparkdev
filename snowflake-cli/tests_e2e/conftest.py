@@ -29,7 +29,7 @@ from tests_common import IS_WINDOWS
 
 TEST_DIR = Path(__file__).parent
 
-pytest_plugins = [
+_pytest_plugins = [
     "tests_common",
 ]
 
@@ -117,7 +117,8 @@ def _create_venv(tmp_dir: Path) -> None:
 
 def _build_snowcli(venv_path: Path, test_root_path: Path) -> None:
     subprocess_check_output(
-        [_python_path(venv_path), "-m", "pip", "install", "--upgrade", "build"],
+        [_python_path(venv_path), "-m", "pip",
+         "install", "--upgrade", "build"],
     )
     subprocess_check_output(
         [_python_path(venv_path), "-m", "build", test_root_path / ".."]
@@ -161,7 +162,8 @@ def project_directory(temporary_directory, test_root_path):
     @contextmanager
     def _temporary_project_directory(project_name):
         test_data_file = test_root_path / "test_data" / project_name
-        shutil.copytree(test_data_file, temporary_directory, dirs_exist_ok=True)
+        shutil.copytree(test_data_file, temporary_directory,
+                        dirs_exist_ok=True)
         yield Path(temporary_directory)
 
     return _temporary_project_directory
