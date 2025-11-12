@@ -1,0 +1,13 @@
+{"Database_name":"DEMO_DB",
+ "Schema_name":"PUBLIC",
+ "Target_table":"CUSTOMER_TEST_STG",
+ "Reject_table":"CUSTOMER_TEST_STG_REJECTS",
+ "target_columns":[],
+ "on_error":"CONTINUE",
+ "Source_location":"@VDW_DEV_INGEST.TF_DEFAULT.DATA/customer_test/",
+ "Source_file_type":"csv",
+ "format_type_options": {
+          "SKIP_HEADER": 1,
+          "FIELD_OPTIONALLY_ENCLOSED_BY": "\""
+      }
+ }

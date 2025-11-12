@@ -1,4 +1,33 @@
 {
   "python.defaultInterpreterPath": "/opt/conda/envs/py311_env/bin/python",
-  "python.terminal.activateEnvironment": true
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.formatting.provider": "black",
+  "python.analysis.autoImportCompletions": true,
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "yaml.format.enable": true,
+  "editor.formatOnPaste": true,
+  //
+  "python.analysis.extraPaths": [
+    "apps/DE_PROJECT_1"
+  ],
+
+  // turn off audio cues (not applicable in codespaces)
+  // "audioCues.terminalCommandDone": "off",
+  // "audioCues.shellExit": "off",
+  // "audioCues.errors": "off",
+  // The yml configs help with auto-completion and validation for GitHub Actions and Docker Compose files
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml",
+    "https://json.schemastore.org/docker-compose.json": "docker-compose*.yml"
+  },
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

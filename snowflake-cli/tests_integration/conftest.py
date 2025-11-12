@@ -46,7 +46,7 @@ from tests.testing_utils.files_and_dirs import merge_left
 from tests_common import IS_WINDOWS
 
 
-pytest_plugins = [
+_pytest_plugins = [
     "tests.project.fixtures",
     "tests_common",
     "tests_common.deflake",

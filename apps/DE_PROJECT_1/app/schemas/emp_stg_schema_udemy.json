@@ -1,0 +1,8 @@
+[
+  { "name": "FIRST_NAME", "type": "string" },
+  { "name": "LAST_NAME", "type": "string" },
+  { "name": "EMAIL", "type": "string" },
+  { "name": "ADDRESS", "type": "string" },
+  { "name": "CITY", "type": "string" },
+  { "name": "DOJ", "type": "date" }
+]

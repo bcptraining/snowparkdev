@@ -1,11 +1,14 @@
-name: py311_env
+name: snowparkdev
 channels:
   - defaults
   - conda-forge
 dependencies:
   - python=3.11
+  - python-dotenv
+  - pandas
   - snowflake-snowpark-python=1.9.0
   - pip
   - pip:
     - snowflake-cli
+    - tabulate
 

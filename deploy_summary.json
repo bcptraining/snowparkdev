@@ -1,0 +1,126 @@
+{
+  "app": "DE_PROJECT_1",
+  "env": "dev",
+  "changed_files": [
+    "apps/DE_PROJECT_1/app/python/manual_procs.py"
+  ],
+  "stage": "dev_deployment",
+  "tags": [
+    "core",
+    "experimental",
+    "diagnostic"
+  ],
+  "tag_validation": "\ud83d\udd0d Tag validation for `dev`:\n\u2705 Valid tags: core, experimental, diagnostic",
+  "tags_validated": {
+    "valid": [
+      "core",
+      "experimental",
+      "diagnostic"
+    ],
+    "invalid": []
+  },
+  "tag_coverage": {
+    "core": {
+      "included": 2,
+      "excluded": 0
+    },
+    "example": {
+      "included": 0,
+      "excluded": 2
+    },
+    "experimental": {
+      "included": 2,
+      "excluded": 0
+    }
+  },
+  "sidecar_tags": {
+    "_comment": "Temporary workaround until Snowflake Native App v2 supports metadata tags in snowflake.yml",
+    "procedures": {
+      "hello_procedure": [
+        "core"
+      ],
+      "hello_procedure2": [
+        "example"
+      ],
+      "test_procedure": [
+        "experimental"
+      ],
+      "test_procedure_two": [
+        "example"
+      ]
+    },
+    "functions": {
+      "hello_function": [
+        "core"
+      ]
+    },
+    "dags": {}
+  },
+  "dry_run": false,
+  "summary_title": "\u2705 Deployment Summary",
+  "status": "deployed",
+  "verbosity": "verbose",
+  "duration_seconds": 16.27,
+  "timestamp": "2025-11-03 14:44 PST",
+  "auto_count": 2,
+  "manual_count": 2,
+  "manual_simulated": null,
+  "total_procedures": 4,
+  "total_dags": 0,
+  "dags": [],
+  "auto_proc_tags": {
+    "hello_procedure": [
+      "core"
+    ],
+    "test_procedure": [
+      "experimental"
+    ]
+  },
+  "dag_tags": {},
+  "procedures": [
+    {
+      "name": "hello_procedure",
+      "source": "auto",
+      "handler": "app.python.procedures_auto.hello_procedure",
+      "returns": "string",
+      "status": "valid"
+    },
+    {
+      "name": "test_procedure",
+      "source": "auto",
+      "handler": "app.python.procedures_auto.test_procedure",
+      "returns": "string",
+      "status": "valid"
+    },
+    {
+      "name": "copy_to_table_proc",
+      "source": "manual",
+      "handler": "app.python.manual_procs.copy_to_table_proc",
+      "returns": "string",
+      "status": "registered"
+    },
+    {
+      "name": "test_manual_proc",
+      "source": "manual",
+      "handler": "app.python.manual_procs.test_manual_proc",
+      "returns": "string",
+      "status": "registered"
+    }
+  ],
+  "excluded_procs": [
+    {
+      "name": "hello_procedure2",
+      "tags": [
+        "example"
+      ],
+      "reason": "Tag not allowed in environment or not declared by app"
+    },
+    {
+      "name": "test_procedure_two",
+      "tags": [
+        "example"
+      ],
+      "reason": "Tag not allowed in environment or not declared by app"
+    }
+  ]
+}
