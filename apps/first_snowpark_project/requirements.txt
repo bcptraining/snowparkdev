@@ -1,5 +1,0 @@
-snowflake-core
-snowflake-snowpark-python
-python-dotenv
-pandas
-pyarrow<19.0.0

@@ -1,3 +1,4 @@
+from snowflake.snowpark import Session
 import yaml
 from deploy.orchestration.proc_registrar import ProcRegistrar
 from deploy.tag_registry import TAG_SETS
@@ -337,7 +338,8 @@ def zip_source_code(source_dir: Path, zip_name: str = "app.zip", verbosity: str 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file_path in app_dir.rglob("*"):
             if file_path.is_file() and should_include(file_path):
-                zipf.write(file_path, file_path.relative_to(source_dir))
+                zipf.write(file_path, file_path.relative_to(app_dir.parent))
+                # zipf.write(file_path, file_path.relative_to(source_dir)) <-- previous version before the config file was needed.
 
     print(f"✅ Created zip at {zip_path}")
     if verbosity == "verbose":
@@ -1083,6 +1085,60 @@ def main():
 
     print(f"📦 Uploaded app.zip to {stage_target}")
     vprint(f"📦 Stage target: {stage_target}", verbosity)
+
+# Step 8.5: Stage config files to @<env>_deployment/configs
+
+    # def stage_all_configs(session, config_dir, stage_name, verbosity):
+    #     from pathlib import Path
+    #     config_path = Path(config_dir)
+    #     for config_file in config_path.glob("*.json"):
+    #         session.file.put(
+    #             str(config_file),
+    #             f"{stage_name}/configs/{config_file.name}",
+    #             overwrite=True,
+    #             auto_compress=False
+    #         )
+    #         vprint(
+    #             f"✅ Staged config: {config_file.name} → {stage_name}/configs", verbosity)
+
+    # if not args.dry_run:
+    #     config_dir = Path(build_source) / "app" / "config"
+    #     stage_all_configs(session, config_dir, f"@{stage_name}", verbosity)
+    # else:
+    #     vprint("🧪 Dry-run: Skipping config staging", verbosity)
+
+    def stage_artifacts(session: Session, artifact_dir: Path, artifact_type: str, stage_name: str, verbosity: str = "normal"):
+        """
+        Stages all .json files from a given directory to a Snowflake stage under a subfolder.
+
+        Args:
+            session (Session): Active Snowpark session.
+            artifact_dir (Path): Local directory containing .json files.
+            artifact_type (str): Subfolder name on stage (e.g., 'configs', 'schemas').
+            stage_name (str): Full stage name (e.g., '@dev_deployment').
+            verbosity (str): 'normal' or 'verbose' for logging.
+        """
+        if not artifact_dir.exists():
+            print(f"⚠️ Artifact directory not found: {artifact_dir}")
+            return
+
+        for file in artifact_dir.glob("*.json"):
+            remote_path = f"{stage_name}/{artifact_type}/{file.name}"
+            session.file.put(str(file), remote_path,
+                             overwrite=True, auto_compress=False)
+            if verbosity == "verbose":
+                print(f"✅ Staged {artifact_type}: {file.name} → {remote_path}")
+
+    config_dir = Path(build_source) / "app" / "config"
+    schema_dir = Path(build_source) / "app" / "schemas"
+
+    if not args.dry_run:
+        stage_artifacts(session, config_dir, "configs",
+                        f"@{stage_name}", verbosity)
+        stage_artifacts(session, schema_dir, "schemas",
+                        f"@{stage_name}", verbosity)
+    else:
+        vprint("🧪 Dry-run: Skipping artifact staging", verbosity)
 
     # Step 9: Deploy Snowpark App
     deploy_cmd = [

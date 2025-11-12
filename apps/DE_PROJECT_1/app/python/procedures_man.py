@@ -1,251 +1,564 @@
-from __future__ import annotations
-# Remove the circular import - define procedures directly here
-# from app.python.manual_procs import copy_to_table_proc, test_manual_proc
-
-from snowflake.snowpark.types import StringType
+from typing import List, Dict
+from requests import session
 from snowflake.snowpark import Session
 from snowflake.snowpark.functions import col, lit, when, current_timestamp
-from snowflake.snowpark.types import StructType, StructField, StringType, TimestampType
-import importlib.util
-from datetime import datetime
-from typing import List, Optional, Callable
-import inspect
-import os
+from snowflake.snowpark.types import StringType
+from typing import List, Optional
+import json
+from snowflake.snowpark.functions import struct, to_variant
 import sys
 from pathlib import Path
-import logging
+from datetime import datetime
+import os
+import traceback
+
+
+# def load_named_config(config_name: str) -> dict:
+#     """Load configuration by name following framework patterns. Fail if not found."""
+#     try:
+#         config_path = Path(__file__).parent.parent / \
+#             "config" / f"{config_name}.json"
+#         if config_path.exists():
+#             with open(config_path, 'r') as f:
+#                 return json.load(f)
+#         raise FileNotFoundError(
+#             f"Configuration '{config_name}' not found at {config_path}")
+#     except FileNotFoundError:
+#         raise
+#     except (json.JSONDecodeError, IOError) as e:
+#         raise RuntimeError(f"Failed to load config '{config_name}': {str(e)}")
+
+
+# def load_named_config(session, config_key: str) -> dict:
+#     stage_path = f"@dev_deployment/configs/{config_key}.json"
+#     local_dir = "/tmp"
+
+#     session.file.get(stage_path, local_dir)
+
+#     # Find the actual file path inside /tmp
+#     for fname in os.listdir(local_dir):
+#         if fname.startswith(config_key) and fname.endswith(".json"):
+#             full_path = os.path.join(local_dir, fname)
+#             with open(full_path, "r") as f:
+#                 return json.load(f)
+
+#     raise FileNotFoundError(
+#         f"Config file {config_key}.json not found in {local_dir}")
+
+
+# def load_named_schema(session: Session, schema_key: str) -> dict:
+#     """
+#     Loads a schema definition from a staged JSON file in @<env>_deployment/schemas/.
+
+#     Args:
+#         session (Session): Active Snowpark session.
+#         schema_key (str): Name of the schema file (without .json).
+
+#     Returns:
+#         dict: Parsed schema definition.
+
+#     Raises:
+#         FileNotFoundError: If the schema file is not found after staging.
+#         json.JSONDecodeError: If the file is not valid JSON.
+#     """
+#     stage_path = f"@dev_deployment/schemas/{schema_key}.json"
+#     local_dir = "/tmp"
+
+#     session.file.get(stage_path, local_dir)
+
+#     # Locate the actual file inside /tmp
+#     for fname in os.listdir(local_dir):
+#         if fname.startswith(schema_key) and fname.endswith(".json"):
+#             full_path = os.path.join(local_dir, fname)
+#             with open(full_path, "r") as f:
+#                 return json.load(f)
+
+#     raise FileNotFoundError(
+#         f"Schema file '{schema_key}.json' not found in {local_dir}")
+import os
 import json
+from snowflake.snowpark import Session
 
-# Dynamically add the project root to PYTHONPATH before any repo-local imports
-ROOT_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../../"))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
-
-# 🧠 Optional tag validation fallback
-ValidateTagsType = Callable[[List[str], Optional[str]], List[str]]
-try:
-    from deploy.deploy_snowflake_app import validate_tags
-except ImportError:
-    def fallback_validate_tags(
-        tags: List[str],
-        proc_name: Optional[str] = None,
-    ) -> List[str]:
-        return tags
-    validate_tags: ValidateTagsType = fallback_validate_tags
-
-# 🔊 Local verbosity helper
+import app
 
 
-def vprint(msg: str, verbosity: str):
-    if verbosity == "verbose":
-        print(msg)
+def load_staged_json(session: Session, artifact_type: str, key: str, stage_prefix: str = "@dev_deployment", local_dir: str = "/tmp") -> dict:
+    """
+    Loads a staged JSON file (config or schema) from Snowflake stage into a dict.
 
-# 🛠️ Define manual procedures directly following framework patterns
+    Args:
+        session (Session): Active Snowpark session.
+        artifact_type (str): 'configs' or 'schemas'.
+        key (str): Filename prefix (without .json).
+        stage_prefix (str): Stage name prefix (e.g., '@dev_deployment').
+        local_dir (str): Local directory to download into (default: '/tmp').
+
+    Returns:
+        dict: Parsed JSON content.
+
+    Raises:
+        FileNotFoundError: If file is not found after staging.
+        json.JSONDecodeError: If file is not valid JSON.
+    """
+    stage_path = f"{stage_prefix}/{artifact_type}/{key}.json"
+    try:
+        session.file.get(stage_path, local_dir)
+    except Exception as e:
+        raise FileNotFoundError(
+            f"❌ Failed to get {artifact_type[:-1]} '{key}.json' from stage: {e}")
+
+    for fname in os.listdir(local_dir):
+        if fname.startswith(key) and fname.endswith(".json"):
+            full_path = os.path.join(local_dir, fname)
+            with open(full_path, "r") as f:
+                return json.load(f)
+
+    raise FileNotFoundError(
+        f"❌ {artifact_type[:-1].capitalize()} file '{key}.json' not found in {local_dir}")
 
 
-def copy_to_table_proc(session: Session, schema_key: str = 'copy_to_snowstg_udemy'):
-    """Enhanced procedure with correct config path following framework patterns."""
+def load_named_config(session: Session, config_key: str) -> dict:
+    return load_staged_json(session, "configs", config_key)
+
+
+def ensure_reject_table_exists(session):
+    """Ensure the generic reject table exists. Create it if missing."""
+
+    create_sql = """
+    CREATE TABLE IF NOT EXISTS SNOWPARK_DE_REJECTS (
+        CONFIG_KEY STRING,
+        SOURCE_ROW VARIANT,
+        SOURCE_FILE STRING,
+        SOURCE_LINE NUMBER,
+        REJECTED_AT TIMESTAMP,
+        REJECT_REASON STRING
+    )
+    """.strip()
+
+    session.sql(create_sql).collect()
+
+
+def load_named_schema(session: Session, schema_key: str) -> dict:
+    return load_staged_json(session, "schemas", schema_key)
+
+
+def copy_to_table_proc(session: Session, config_key: str = "copy_to_snowstg_udemy"):
+    """Copy data with reject handling integrated — using temp error capture for training"""
+
+    # Load configuration from staged JSON
+    config = load_staged_json(session, "configs", config_key)
+
+    database_name = config["Database_name"]
+    schema_name = config["Schema_name"]
+    target_table = config["Target_table"]
+    target_table_schema = config["Target_table_schema"]
+    source_location = config["Source_location"]
+    file_format = config["file_format"]
+
+    # Load schema definition
+    schema_def = load_staged_json(session, "schemas", target_table_schema)
+
+    for col in schema_def:
+        print(f"{col['name']} ({col['type']})")
+
+    # Build COPY INTO SQL
+    escaped_nulls = [val.replace("'", "''") for val in file_format["null_if"]]
+    null_if_clause = ", ".join([f"'{v}'" for v in escaped_nulls])
+    file_format_clause = f"""
+        TYPE = '{file_format['type']}'
+        FIELD_DELIMITER = '{file_format['field_delimiter']}'
+        SKIP_HEADER = {file_format['skip_header']}
+        FIELD_OPTIONALLY_ENCLOSED_BY = '{file_format['field_optionally_enclosed_by']}'
+        NULL_IF = ({null_if_clause})
+        ENCODING = '{file_format['encoding']}'
+    """.strip()
+
+    target_full_name = f"{database_name}.{schema_name}.{target_table}"
+    copy_sql = f"""
+    COPY INTO {target_full_name}
+    FROM {source_location}
+    FILE_FORMAT = ({file_format_clause})
+    ON_ERROR = {config['on_error']}
+    FORCE = TRUE;
+    """.strip()
+
+    # Step 1: Run COPY INTO and surface errors
+
+    # <-- This confirmed that the SQL is generated correctly but there must be an undocumented limitation on COPY INTO working in snowpark
+    return f"Generated COPY INTO SQL:\n{copy_sql}"
 
     try:
-        # Find the config file in the uploaded app package following framework import conventions
-        config_filename = f"{schema_key}.json"
-
-        # Try multiple path resolution strategies following framework patterns
-        config_paths = [
-            f"app/config/{config_filename}",  # Original relative path
-            f"config/{config_filename}",      # Alternative relative path
-            os.path.join(os.path.dirname(__file__), "..", "config",
-                         config_filename),  # Relative to current file
-        ]
-
-        config_path = None
-        config = None
-
-        for config_path_candidate in config_paths:  # Fix: use different variable name
-            try:
-                print(f"🔍 Trying config path: {config_path_candidate}")
-                with open(config_path_candidate, 'r') as f:
-                    config = json.load(f)
-                config_path = config_path_candidate  # Set successful path
-                print(f"✅ Config loaded from: {config_path}")
-                break
-            except FileNotFoundError:
-                print(f"❌ Config not found at: {config_path_candidate}")
-                continue
-
-        if config is None:
-            # List available files for debugging following framework diagnostic patterns
-            print(f"📂 Current working directory: {os.getcwd()}")
-            print(f"📂 Python path: {sys.path}")
-
-            # List files in current directory and subdirectories
-            for root, dirs, files in os.walk('.'):
-                if 'config' in root or config_filename in ' '.join(files):
-                    print(f"📁 Found in {root}: {files}")
-
-            return f"ERROR: Config file '{config_filename}' not found in any expected location"
-
-        print(f"📋 Config loaded: {json.dumps(config, indent=2)}")
-
-        # Extract stage and file details following framework stage management patterns
-        stage_name = config['Source_location']
-        print(f"🎯 Target stage: {stage_name}")
-
-        # List files in stage following framework stage management patterns from deploy/deploy_snowflake_app.py
-        list_result = session.sql(f"LIST {stage_name}").collect()
-        print(f"📂 Files in stage: {len(list_result)} found")
-
-        for row in list_result:
-            print(f"   📄 File: {row['name']} ({row['size']} bytes)")
-
-        if not list_result:
-            print("❌ No files found in stage - cannot proceed")
-            return "ERROR: No files found in stage"
-
-        # Test stage access following framework diagnostic patterns
-        try:
-            sample_result = session.sql(
-                f"SELECT $1, $2, $3, $4, $5, $6 FROM {stage_name} LIMIT 1").collect()
-            print(
-                f"✅ Stage access confirmed - sample data: {sample_result[0] if sample_result else 'No data'}")
-        except Exception as stage_error:
-            print(f"❌ Stage access failed: {stage_error}")
-            return f"ERROR: Stage access failed - {stage_error}"
-
-        # Extract table configuration following framework config patterns
-        database_name = config['Database_name']
-        schema_name = config['Schema_name']
-        target_table = config['Target_table']
-        reject_table = config['Reject_table']
-        target_columns = config['target_columns']
-        file_format_config = config['file_format']
-        on_error = config.get('on_error', 'ABORT')
-
-        print(f"🎯 Target table: {database_name}.{schema_name}.{target_table}")
-        print(f"🎯 Reject table: {database_name}.{schema_name}.{reject_table}")
-
-        # Build COPY INTO command following framework SQL patterns
-        file_format_sql = f"""
-        FILE_FORMAT = (
-            TYPE = '{file_format_config['type']}',
-            FIELD_DELIMITER = '{file_format_config['field_delimiter']}',
-            SKIP_HEADER = {file_format_config['skip_header']},
-            FIELD_OPTIONALLY_ENCLOSED_BY = '{file_format_config['field_optionally_enclosed_by']}',
-            NULL_IF = ({', '.join([f"'{x}'" for x in file_format_config['null_if']])})
-        )"""
-
-        columns_sql = '(' + ', '.join(target_columns) + ')'
-
-        copy_sql = f"""
-        COPY INTO {database_name}.{schema_name}.{target_table} {columns_sql}
-        FROM {stage_name}
-        {file_format_sql}
-        ON_ERROR = '{on_error}'
-        """
-
-        print(f"🚀 Executing COPY command:")
+        # Optional: log SQL for debugging (only visible in local/dev environments)
+        print("DEBUG: Generated COPY INTO SQL:")
         print(copy_sql)
 
-        # Execute the COPY command following framework SQL execution patterns
-        copy_result = session.sql(copy_sql).collect()
-
-        # Process results following framework result processing patterns
-        loaded_count = 0
-        error_count = 0
-
-        # COPY INTO results return Row objects with indexed columns
-        # Typical columns: [file, status, rows_parsed, rows_loaded, error_limit, errors_seen, first_error, first_error_line, first_error_character, first_error_column_name]
-        for row in copy_result:
-            try:
-                # Access by index - rows_loaded is typically column 3, errors_seen is column 5
-                if len(row) > 3:
-                    rows_loaded_val = row[3]
-                    # Safe conversion to int following framework defensive patterns
-                    if rows_loaded_val is not None and str(rows_loaded_val).isdigit():
-                        loaded_count += int(str(rows_loaded_val))
-
-                if len(row) > 5:
-                    errors_seen_val = row[5]
-                    # Safe conversion to int following framework defensive patterns
-                    if errors_seen_val is not None and str(errors_seen_val).isdigit():
-                        error_count += int(str(errors_seen_val))
-
-                # Debug: print the row structure for troubleshooting
-                print(f"   📄 COPY result row: {row}")
-
-            except (IndexError, TypeError, ValueError) as e:
-                print(f"⚠️ Error processing COPY result row {row}: {e}")
-                # Fallback: try to extract from string representation
-                row_str = str(row)
-                if "rows_loaded=" in row_str:
-                    try:
-                        import re
-                        loaded_match = re.search(r'rows_loaded=(\d+)', row_str)
-                        error_match = re.search(r'errors_seen=(\d+)', row_str)
-                        if loaded_match:
-                            loaded_count += int(loaded_match.group(1))
-                        if error_match:
-                            error_count += int(error_match.group(1))
-                    except (ValueError, AttributeError):
-                        # Can't parse fallback either, continue with next row
-                        continue
-
-        print(f"✅ COPY completed:")
-        print(f"   📊 Rows loaded: {loaded_count}")
-        print(f"   ❌ Errors seen: {error_count}")
-
-        return f"SUCCESS: Loaded {loaded_count} rows, {error_count} errors, from {config_path}"
+        # Execute COPY INTO — .show() forces Snowflake to stream results and raise errors
+        session.sql(copy_sql).show()
 
     except Exception as e:
-        error_msg = f"ERROR in copy_to_table_proc: {e}"
-        print(error_msg)
-        import traceback
-        print(f"📚 Full traceback: {traceback.format_exc()}")
-        return error_msg
+        # Return full traceback so Snowsight can display it
+        return f"""❌ COPY INTO failed.
 
+    SQL:
+    {copy_sql}
 
-def test_manual_proc(session: Session, test_input: str = 'test'):
-    """Simple test procedure following framework manual procs patterns."""
+    Traceback:
+    {traceback.format_exc()}
+    """
+
+   # Step 2: Try scanning the result
     try:
-        result = f"Test procedure executed with input: {test_input}"
-        print(f"🧪 {result}")
-        return result
+        error_rows = session.sql("""
+            SELECT *
+            FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
+            WHERE error_count > 0
+        """).collect()
     except Exception as e:
-        error_msg = f"ERROR in test_manual_proc: {e}"
-        print(error_msg)
-        return error_msg
+        return f"❌ COPY INTO failed and no result was returned.\nCannot scan for errors.\nError: {str(e)}"
+
+    if not error_rows:
+        return f"✅ Target loaded: {target_full_name} — no rejects"
+
+    # Step 3: Create temp table to inspect errors
+    try:
+        session.sql("""
+            CREATE OR REPLACE TEMP TABLE COPY_ERRORS_TEMP AS
+            SELECT *
+            FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
+            WHERE error_count > 0
+        """).collect()
+        return "⚠️ COPY completed with errors. Inspect COPY_ERRORS_TEMP for details."
+    except Exception as e:
+        return f"⚠️ COPY completed, but failed to create COPY_ERRORS_TEMP.\nError: {str(e)}"
+
+    # return f"⚠️ Target loaded with {len(error_rows)} rejects.\nInspect COPY_ERRORS_TEMP for details."
+
+    # except Exception as e:
+    #     return f"❌ COPY INTO failed.\n\nSQL:\n{copy_sql}\n\nError:\n{str(e)}"
+
+    # return f"DEBUG SQL:\n{copy_sql}\n\nFile format:\n{file_format}"
+
+    # Reject Handling
+    # ----------------------------------------
+    # Step 1: Extract failed row numbers from COPY INTO result
+    # error_rows = session.sql("""
+    #     SELECT first_error_line, first_error_column_name, first_error_column_value
+    #     FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
+    #     WHERE error_count > 0
+    # """).collect()
+
+    # row_nums = [str(row["FIRST_ERROR_LINE"]) for row in error_rows]
+
+    # if not row_nums:
+    #     return f"Target loaded: {target_full_name} — no rejects"
+
+    # # Step 2: Build SELECT clause for rejects
+    # reject_select_cols = []
+    # for idx, col in enumerate(schema_def, start=1):
+    #     reject_select_cols.append(f"t.${idx} AS {col['name']}")
+    # reject_select_cols += [
+    #     "METADATA$FILENAME AS SOURCE_FILE",
+    #     "METADATA$FILE_ROW_NUMBER AS SOURCE_ROW",
+    #     "CURRENT_TIMESTAMP() AS REJECTED_AT",
+    #     "'column mismatch' AS REJECT_REASON"
+    # ]
+    # reject_select_clause = ",\n       ".join(reject_select_cols)
+
+    # # Step 3: Insert failed rows into reject table
+    # reject_sql = f"""
+    # INSERT INTO {reject_full_name}
+    # SELECT {reject_select_clause}
+    # FROM {source_location} (FILE_FORMAT => '{file_format['name']}' ) t
+    # WHERE METADATA$FILE_ROW_NUMBER IN ({",".join(row_nums)})
+    # """.strip()
+
+    # print("DEBUG: Generated REJECT SQL:")
+    # print(reject_sql)
+
+    # session.sql(reject_sql).collect()
+    # return f"Target loaded: {target_full_name} — {len(row_nums)} rejects written to {reject_full_name}"
+
+    # try:
+    #     # Debug: Check what we're actually reading
+    #     print(f"DEBUG: Source location: {source_location}")
+    #     print(
+    #         f"DEBUG: Config target_columns: {config.get('target_columns', [])}")
+    #     print(f"DEBUG: Target table from config: {target_table}")
+    #     print(f"DEBUG: Full target table name: {target_full_name}")
+
+    #     # Comprehensive table validation with detailed debugging
+    #     try:
+    #         # First, verify the exact table we're targeting
+    #         current_database = session.sql(
+    #             "SELECT CURRENT_DATABASE()").collect()[0][0]
+    #         current_schema = session.sql(
+    #             "SELECT CURRENT_SCHEMA()").collect()[0][0]
+    #         print(
+    #             f"DEBUG: Current database: {current_database}, Current schema: {current_schema}")
+
+    #         # Check if target table exists exactly as specified
+    #         table_check_sql = f"SHOW TABLES LIKE '{target_table}' IN DATABASE {database_name}"
+    #         table_results = session.sql(table_check_sql).collect()
+    #         print(
+    #             f"DEBUG: Tables matching '{target_table}': {[row.asDict() for row in table_results]}")
+
+    #         if not table_results:
+    #             return f"FAILED: No table found matching '{target_table}' in database {database_name}"
+
+    #         # Get the exact schema of our target table
+    #         table_desc = session.sql(
+    #             f"DESC TABLE {target_full_name}").collect()
+    #         table_columns = [row['name'] for row in table_desc]
+    #         table_types = [row['type'] for row in table_desc]
+    #         config_columns = config.get("target_columns", [])
+
+    #         print(
+    #             f"DEBUG: Target table {target_full_name} has {len(table_columns)} columns:")
+    #         for i, (col_name, col_type) in enumerate(zip(table_columns, table_types)):
+    #             print(f"  {i+1}. {col_name} ({col_type})")
+
+    #         print(
+    #             f"DEBUG: Config expects {len(config_columns)} columns: {config_columns}")
+
+    #     except Exception as schema_err:
+    #         return f"FAILED: Could not validate table {target_full_name}: {schema_err}"
+
+    #     # Read data from stage with enhanced debugging
+    #     try:
+    #         df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
+    #             .option("SKIP_HEADER", file_format["skip_header"]) \
+    #             .option("FIELD_OPTIONALLY_ENCLOSED_BY", file_format.get("field_optionally_enclosed_by", "\"")) \
+    #             .csv(source_location)
+
+    #         # Debug: Check actual data structure
+    #         print(
+    #             f"DEBUG: CSV DataFrame has {len(df_raw.columns)} columns: {df_raw.columns}")
+    #         print(f"DEBUG: DataFrame schema: {df_raw.schema}")
+
+    #         # Show sample data to verify column content
+    #         try:
+    #             sample_data = df_raw.limit(3).collect()
+    #             print(f"DEBUG: Sample data (first 3 rows):")
+    #             for i, row in enumerate(sample_data):
+    #                 print(f"  Row {i+1}: {row.asDict()}")
+    #         except Exception as sample_err:
+    #             print(f"DEBUG: Could not collect sample data: {sample_err}")
+
+    #     except Exception as read_err:
+    #         # Fallback: try reading without enclosing character
+    #         try:
+    #             df_raw = session.read.option("FIELD_DELIMITER", file_format["field_delimiter"]) \
+    #                 .option("SKIP_HEADER", file_format["skip_header"]) \
+    #                 .option("FIELD_OPTIONALLY_ENCLOSED_BY", "") \
+    #                 .csv(source_location)
+    #         except Exception as fallback_err:
+    #             # Create reject table and record error (MUST MATCH ACTUAL SCHEMA)
+    #             create_reject_table_sql = f"""
+    #             CREATE TABLE IF NOT EXISTS {reject_full_name} (
+    #                 SOURCE_ROW VARIANT,
+    #                 SOURCE_LOCATION VARCHAR(255),
+    #                 FILE_PATH VARCHAR(1000),
+    #                 FILE_NAME VARCHAR(255),
+    #                 LINE_NUMBER NUMBER(38,0),
+    #                 ERROR_MESSAGE VARCHAR(1000),
+    #                 REJECTED_AT TIMESTAMP_NTZ(9) DEFAULT CURRENT_TIMESTAMP()
+    #             )
+    #             """
+    #             session.sql(create_reject_table_sql).collect()
+    #             # Pepare values for error insert
+    #             err_text = str(fallback_err).replace("'", "''")
+    #             source_location = source_location_full_name,
+    #             file_path = source_location_full_name,
+    #             file_name = source_location_full_name,
+    #             line_number = None
+
+    #             # err_text = str(fallback_err).replace("'", "''")
+    #             # session.sql(
+    #             #     f"""INSERT INTO {reject_full_name}
+    #             #     (FIRST_NAME, LAST_NAME, EMAIL, ADDRESS, CITY, DOJ, ERROR_MESSAGE, FILE_NAME, LINE_NUMBER, REJECTED_AT)
+    #             #     SELECT NULL, NULL, NULL, NULL, NULL, NULL, '{err_text}', NULL, NULL, CURRENT_TIMESTAMP()
+    #             #     """).collect()
+    #             # return f"FAILED: CSV parse error; wrote error to {reject_full_name}: {err_text}"
+
+    #             session.sql(f"""
+    #                 INSERT INTO {reject_full_name}
+    #                 (SOURCE_ROW, SOURCE_LOCATION, FILE_PATH, FILE_NAME, LINE_NUMBER, ERROR_MESSAGE, REJECTED_AT)
+    #                 SELECT NULL,
+    #                     '{source_location}',
+    #                     '{file_path}',
+    #                     '{file_name}',
+    #                     {line_number if line_number else 'NULL'},
+    #                     '{err_text}',
+    #                     CURRENT_TIMESTAMP()
+    #             """).collect()
+    #             return f"FAILED: CSV parse error; wrote error to {reject_full_name}: {err_text}"
+
+    #     # Add validation - reject records with empty/null first name
+    #     # Enhanced validation - reject empty/null first names AND invalid dates
+    #     df_with_validation = df_raw.with_column("is_valid",
+    #                                             when(
+    #                                                 # Existing validation: empty/null first name
+    #                                                 (col("$1").is_null()) | (col("$1") == "") | (col("$1") == "NULL") |
+    #                                                 # Enhanced date validation: Snowflake-compatible patterns
+    #                                                 (col("$6").is_null()) | (col("$6") == "") |
+    #                                                 # Match invalid date patterns - case sensitive variations
+    #                                                 (col("$6").rlike("^(invalid|Invalid|INVALID|null|Null|NULL).*$")) |
+    #                                                 (col("$6").rlike("^(n/a|N/A|none|None|NONE|na|Na|NA)$")) |
+    #                                                 (col("$6").rlike("^(0000-00-00|invalid-date|Invalid-Date)$")) |
+    #                                                 # Match whitespace-only strings
+    #                                                 (col("$6").rlike("^\\s*$")) |
+    #                                                 # Catch dates that don't match standard patterns (more permissive)
+    #                                                 ((col("$6").isNotNull()) & (col("$6") != "") &
+    #                                                  ~col("$6").rlike("^\\d{4}-\\d{2}-\\d{2}$") &
+    #                                                     ~col("$6").rlike("^\\d{1,2}/\\d{1,2}/\\d{4}$") &
+    #                                                     ~col("$6").rlike("^\\d{1,2}-\\d{1,2}-\\d{4}$")),
+    #                                                 False
+    #                                             ).otherwise(True))
+
+    #     # Split into valid and rejected records
+    #     df_valid = df_with_validation.filter(col("is_valid") == True)
+    #     df_rejected = df_with_validation.filter(col("is_valid") == False)
+
+    #     valid_count = df_valid.count()
+    #     reject_count = df_rejected.count()
+
+    #     # Process valid records with DYNAMIC column mapping based on actual table schema
+    #     if valid_count > 0:
+    #         # Re-verify table schema right before insert
+    #         table_desc = session.sql(
+    #             f"DESC TABLE {target_full_name}").collect()
+    #         table_columns = [row['name'] for row in table_desc]
+
+    #         print(
+    #             f"DEBUG: About to insert into table with {len(table_columns)} columns: {table_columns}")
+    #         print(f"DEBUG: Using target table: {target_full_name}")
+
+    #         # Ensure we're working with exactly 6 columns as expected
+    #         if len(table_columns) != 6:
+    #             return f"FAILED: Table schema changed! Expected 6 columns but found {len(table_columns)}: {table_columns}"
+
+    #         # Create explicit column mapping
+    #         df_final = df_valid.select(
+    #             col("$1").alias("FIRST_NAME"),
+    #             col("$2").alias("LAST_NAME"),
+    #             col("$3").alias("EMAIL"),
+    #             col("$4").alias("ADDRESS"),
+    #             col("$5").alias("CITY"),
+    #             col("$6").alias("DOJ")
+    #         )
+
+    #         print(f"DEBUG: Final DataFrame columns: {df_final.columns}")
+    #         print(f"DEBUG: Final DataFrame count: {df_final.count()}")
+
+    #         # Try to show the schema of what we're about to insert
+    #         print(f"DEBUG: Final DataFrame schema: {df_final.schema}")
+
+    #         # Double-check target table one more time before insert
+    #         verify_table = session.sql(
+    #             f"SELECT COUNT(*) as row_count FROM {target_full_name}").collect()
+    #         print(
+    #             f"DEBUG: Target table {target_full_name} currently has {verify_table[0]['ROW_COUNT']} rows")
+
+    #         # Perform the actual insert with error catching and explicit column specification
+    #         try:
+    #             # Method 1: Use explicit INSERT INTO with SELECT to avoid column mismatch
+    #             temp_view_name = f"temp_valid_data_{int(datetime.now().timestamp())}"
+    #             df_final.create_or_replace_temp_view(temp_view_name)
+
+    #             # Use explicit INSERT with column specification to avoid any hidden columns
+    #             insert_sql = f"""
+    #             INSERT INTO {target_full_name}
+    #             (FIRST_NAME, LAST_NAME, EMAIL, ADDRESS, CITY, DOJ)
+    #             SELECT FIRST_NAME, LAST_NAME, EMAIL, ADDRESS, CITY, DOJ
+    #             FROM {temp_view_name}
+    #             """
+
+    #             print(f"DEBUG: Executing INSERT SQL: {insert_sql}")
+    #             result = session.sql(insert_sql).collect()
+    #             print(f"DEBUG: Insert result: {result}")
+
+    #             # Drop the temporary view
+    #             session.sql(f"DROP VIEW IF EXISTS {temp_view_name}").collect()
+
+    #             print(
+    #                 f"DEBUG: Successfully inserted {valid_count} records into {target_full_name}")
+
+    #         except Exception as insert_err:
+    #             # Fallback: Try the original save_as_table method with explicit schema enforcement
+    #             try:
+    #                 print(f"DEBUG: INSERT SQL failed, trying save_as_table fallback")
+    #                 print(f"DEBUG: Insert error was: {str(insert_err)}")
+
+    #                 # Force DataFrame to have exactly the expected schema
+    #                 df_schema_enforced = df_valid.select(
+    #                     col("$1").cast(StringType()).alias("FIRST_NAME"),
+    #                     col("$2").cast(StringType()).alias("LAST_NAME"),
+    #                     col("$3").cast(StringType()).alias("EMAIL"),
+    #                     col("$4").cast(StringType()).alias("ADDRESS"),
+    #                     col("$5").cast(StringType()).alias("CITY"),
+    #                     col("$6").alias("DOJ")  # Keep as-is for DATE parsing
+    #                 )
+
+    #                 print(
+    #                     f"DEBUG: Schema-enforced DataFrame columns: {df_schema_enforced.columns}")
+    #                 print(
+    #                     f"DEBUG: Schema-enforced DataFrame schema: {df_schema_enforced.schema}")
+
+    #                 df_schema_enforced.write.mode(
+    #                     "append").save_as_table(target_full_name)
+    #                 print(f"DEBUG: Fallback method succeeded")
+
+    #             except Exception as fallback_err:
+    #                 return f"FAILED: Both INSERT and save_as_table failed. INSERT error: {str(insert_err)}. save_as_table error: {str(fallback_err)}. DataFrame had {len(df_final.columns)} columns: {df_final.columns}"
+
+    #     # Handle rejected records
+    #     if reject_count > 0:
+    #         # No need to create table again if already exists
+    #         df_reject_output = df_rejected.with_column(
+    #             "ERROR_MESSAGE",
+    #             when((col("$1").is_null()) | (col("$1") == "") | (col("$1") == "NULL"),
+    #                  lit("Missing or empty first name"))
+    #             .when(col("$6").rlike("^(invalid|Invalid|INVALID).*$"),
+    #                   lit("Contains 'invalid' in DOJ field"))
+    #             .when((col("$6").is_null()) | (col("$6") == ""),
+    #                   lit("Missing or empty date in DOJ field"))
+    #             .when(col("$6").rlike("^\\s*$"),
+    #                   lit("DOJ field contains only whitespace"))
+    #             .when(~col("$6").rlike("^\\d{4}-\\d{2}-\\d{2}$") &
+    #                   ~col("$6").rlike("^\\d{1,2}/\\d{1,2}/\\d{4}$") &
+    #                   ~col("$6").rlike("^\\d{1,2}-\\d{1,2}-\\d{4}$"),
+    #                   lit("DOJ date format not recognized (expected YYYY-MM-DD, MM/DD/YYYY, or MM-DD-YYYY)"))
+    #             .otherwise(lit("Data validation failed"))
+    #         ).with_column(
+    #             "FILE_NAME", lit(None)
+    #         ).with_column(
+    #             "LINE_NUMBER", lit(None)
+    #         ).with_column(
+    #             "REJECTED_AT", current_timestamp()
+    #         ).select(
+    #             col("$1").alias("FIRST_NAME"),
+    #             col("$2").alias("LAST_NAME"),
+    #             col("$3").alias("EMAIL"),
+    #             col("$4").alias("ADDRESS"),
+    #             col("$5").alias("CITY"),
+    #             col("$6").alias("DOJ"),
+    #             col("ERROR_MESSAGE"),
+    #             col("FILE_NAME"),
+    #             col("LINE_NUMBER"),
+    #             col("REJECTED_AT")
+    #         )
+    #         df_reject_output.write.mode(
+    #             "append").save_as_table(reject_full_name)
+
+    # return f"SUCCESS: Processed {valid_count + reject_count} records. Loaded {valid_count} valid, rejected {reject_count}. Target: {target_full_name}, Rejects: {reject_full_name if reject_count > 0 else 'None'}"
+
+    # except Exception as e:
+    # return f"Target loaded: {target_full_name}"
 
 
-# Set module aliases for Snowflake resolution following framework patterns
-copy_to_table_proc.__module__ = "app.python.procedures_man"
-test_manual_proc.__module__ = "app.python.procedures_man"
-
-# Define MANUAL_PROCS following framework manual procs API patterns
-MANUAL_PROCS = [
-    {
-        "func": copy_to_table_proc,
-        "name": "copy_to_table_proc",
-        "input_types": [StringType()],  # Only schema_key is declared
-        "return_type": StringType(),
-        "tags": ["core"],  # Valid tag for dev environment
-        "source": "manual"
-    },
-    {
-        "func": test_manual_proc,
-        "name": "test_manual_proc",
-        "input_types": [StringType()],
-        "return_type": StringType(),
-        "tags": ["experimental"],
-        "source": "manual"
-    }
-]
-
-# Validate tags following framework tag validation patterns
-for proc in MANUAL_PROCS:
-    validate_tags(proc.get("tags", []), proc["name"])
-
-# 🚀 Manual procedure registration logic following framework DeployManager patterns
+def test_manual_proc(session: Session, test_input: str = "test"):
+    """Test procedure for manual registration"""
+    return f"Manual procedure test result: {test_input}"
 
 
 def register_manual_procs(
@@ -256,26 +569,39 @@ def register_manual_procs(
     dry_run: bool = False,
     verbosity: str = "summary"
 ) -> List[dict]:
-    msg = f"📡 Manual-registering procedures for {app_name} in stage {stage_name}"
-    vprint(msg, verbosity)
+    """Register manual procedures following framework manual procs API patterns"""
 
-    proc_dir = Path(__file__).parent
-    vprint(f"🔍 Looking for procedures_man.py at: {__file__}", verbosity)
-    vprint(f"📂 Contents of: {proc_dir}", verbosity)
-    for f in sorted(proc_dir.iterdir()):
-        vprint(f"  - {f.name}", verbosity)
+    print(
+        f"📡 Manual-registering procedures for {app_name} in stage {stage_name}")
 
-    # Normalize tag case following framework tag normalization patterns
+    # Define manual procedures following framework MANUAL_PROCS pattern
+    manual_procedures = [
+        {
+            "func": copy_to_table_proc,
+            "name": "copy_to_table_proc",
+            "input_types": [StringType()],
+            "return_type": StringType(),
+            "tags": ["core"],
+            "source": "manual"
+        },
+        {
+            "func": test_manual_proc,
+            "name": "test_manual_proc",
+            "input_types": [StringType()],
+            "return_type": StringType(),
+            "tags": ["experimental"],
+            "source": "manual"
+        }
+    ]
+
     normalized_tags = [tag.lower()
                        for tag in include_tags] if include_tags else None
-
     registered = []
 
-    for proc in MANUAL_PROCS:
-        proc["source"] = "manual"
-        proc["tags"] = [tag.lower()
-                        for tag in proc.get("tags", [])]  # normalize tags
+    for proc in manual_procedures:
+        proc["tags"] = [tag.lower() for tag in proc.get("tags", [])]
 
+        # Tag filtering following framework validation patterns
         if normalized_tags and not any(tag in normalized_tags for tag in proc["tags"]):
             print(f"⏭️ Skipping {proc['name']} due to tag filter.")
             continue
@@ -287,73 +613,64 @@ def register_manual_procs(
             print(
                 f"📝 Would register: {proc['name']}({param_types}) → {return_type}")
             registered.append({
-                "name": proc["name"],
-                "kind": "procedure",
-                "tags": proc["tags"],
-                "source": "manual",
-                "status": "dry_run"
+                "name": proc["name"], "kind": "procedure", "tags": proc["tags"],
+                "source": "manual", "status": "dry_run"
             })
             continue
 
-        # Set module alias for Snowflake handler resolution following framework patterns
+        # Handle privilege issues - try to drop existing procedure first
+        if session:
+            try:
+                drop_sql = f"DROP PROCEDURE IF EXISTS {proc['name']}(VARCHAR)"
+                session.sql(drop_sql).collect()
+                print(f"🗑️ Dropped existing procedure: {proc['name']}")
+            except Exception as drop_error:
+                print(
+                    f"⚠️ Could not drop existing procedure {proc['name']}: {drop_error}")
+
+        # Set module alias for Snowflake handler resolution
         alias_path = "app.python.procedures_man"
         sys.modules[alias_path] = sys.modules[__name__]
 
-        patched_func = proc["func"]
+        # Register procedure following framework patterns
+        if session:
+            orig_module = getattr(proc["func"], "__module__", None)
+            try:
+                proc["func"].__module__ = alias_path
 
-        # Signature validation following framework procedure signature patterns
-        sig = inspect.signature(patched_func)
-        params = list(sig.parameters.values())
-        print(f"🔍 Signature of {proc['name']}: {sig}")
-        print(f"🔍 Param names: {[p.name for p in params]}")
-        print(f"🔍 Param count: {len(params)}")
+                session.sproc.register(
+                    func=proc["func"],
+                    name=proc["name"],
+                    input_types=proc["input_types"],
+                    return_type=proc["return_type"],
+                    is_permanent=True,
+                    stage_location=f"@{stage_name}",
+                    imports=[f"@{stage_name}/apps/{app_name}/app.zip"],
+                    packages=["snowflake-snowpark-python==1.33.0",
+                              "cloudpickle==3.0.0", "requests"],
+                    replace=True,
+                    is_pandas=False
+                )
 
-        # Handler path logging following framework diagnostic patterns
-        handler_path = f"🔗 Handler path for {proc['name']}: {alias_path}.{patched_func.__name__}"
-        print(handler_path)
+                print(f"✅ Manually registered: {proc['name']}")
+                registered.append({
+                    "name": proc["name"], "kind": "procedure", "tags": proc["tags"],
+                    "source": "manual", "status": "registered"
+                })
 
-        # Register procedure following framework manual procs registration patterns
-        assert session is not None, "session is required for real registration"
-        from typing import cast
-        sess = cast(Session, session)
+            except Exception as reg_error:
+                print(f"❌ Failed to register {proc['name']}: {reg_error}")
+                registered.append({
+                    "name": proc["name"], "kind": "procedure", "tags": proc["tags"],
+                    "source": "manual", "status": "failed", "error": str(reg_error)
+                })
+            finally:
+                if orig_module:
+                    proc["func"].__module__ = orig_module
 
-        orig_module = getattr(patched_func, "__module__", None)
-        try:
-            patched_func.__module__ = alias_path
-
-            sess.sproc.register(
-                func=patched_func,
-                name=proc["name"],
-                input_types=proc["input_types"],
-                return_type=proc["return_type"],
-                is_permanent=True,
-                stage_location=f"@{stage_name}",
-                imports=[f"@{stage_name}/apps/{app_name}/app.zip"],
-                packages=["snowflake-snowpark-python==1.33.0",
-                          "cloudpickle==3.0.0", "tabulate==0.9.0"],
-                replace=True,
-                is_pandas=False
-            )
-
-            print(f"✅ Manually registered: {proc['name']}")
-            registered.append({
-                "name": proc["name"],
-                "kind": "procedure",
-                "tags": proc["tags"],
-                "source": "manual",
-                "status": "registered"
-            })
-        finally:
-            if orig_module is not None:
-                patched_func.__module__ = orig_module
-
-    # Summary reporting following framework summary patterns
     print(
         f"\n✅ Included {len(registered)} manual procedures based on tag filter")
-    print(f"📦 Total manual registered: {len(registered)}")
-
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"🧠 Manual registration completed at {ts}")
-    print(f"🚀 completed register_manual_procs for app '{app_name}'")
 
     return registered
