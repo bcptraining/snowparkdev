@@ -1,12 +1,12 @@
 {
   "Database_name": "DEMO_DB",
   "Schema_name": "PUBLIC",
-  "Target_table": "EMPLOYEE2",
-  "Reject_table": "EMPLOYEE_REJECTS",
+  "Target_table": "EMPLOYEE",
+  "Target_table_schema": "emp_stg_schema_udemy",
+  "Reject_table": "SNOWPARK_DE_REJECTS",
   "persist_all_copy_results": true,
-  "target_columns": ["FIRST_NAME","LAST_NAME","EMAIL","ADDRESS","CITY","DOJ"],
   "on_error": "CONTINUE",
-  "Source_location_real": "@my_s3_stage",
+  "Source_location_real_data": "@my_s3_stage",
   "Source_location": "@DEMO_DB.PUBLIC.DEV_INTERNAL_STAGE",
   "Source_file_type": "csv",
   "file_format": {
